@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
 import { supabase } from '../lib/supabase';
 import { Letter } from '../types';
-import { FileText, Download, ArrowLeft } from 'lucide-react';
+import { FileText, Download, ArrowLeft, Eye } from 'lucide-react';
 
 interface LetterViewProps {
   letterId: string;
@@ -93,14 +93,44 @@ export default function LetterView({ letterId, onBack }: LetterViewProps) {
 
         <div className="border-t border-gray-200 pt-6 space-y-4">
           <div>
+            <h2 className="text-sm font-medium text-gray-500">Type</h2>
+            <p className="text-lg text-gray-900 mt-1 capitalize">{letter.document_type || 'Letter'}</p>
+          </div>
+
+          <div>
             <h2 className="text-sm font-medium text-gray-500">Title</h2>
             <p className="text-lg text-gray-900 mt-1">{letter.title}</p>
           </div>
 
-          {letter.description && (
+          {letter.document_subject && (
             <div>
-              <h2 className="text-sm font-medium text-gray-500">Description</h2>
-              <p className="text-gray-900 mt-1">{letter.description}</p>
+              <h2 className="text-sm font-medium text-gray-500">Subject</h2>
+              <p className="text-gray-900 mt-1">{letter.document_subject}</p>
+            </div>
+          )}
+
+          {letter.file_url && (
+            <div>
+              <h2 className="text-sm font-medium text-gray-500">Scanned Document</h2>
+              <div className="mt-2 flex items-center gap-2">
+                <a
+                  href={letter.file_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-2 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors"
+                >
+                  <Eye className="w-4 h-4" />
+                  View Document
+                </a>
+                <a
+                  href={letter.file_url}
+                  download={letter.file_name}
+                  className="flex items-center gap-2 bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700 transition-colors"
+                >
+                  <Download className="w-4 h-4" />
+                  Download
+                </a>
+              </div>
             </div>
           )}
 
@@ -134,12 +164,12 @@ export default function LetterView({ letterId, onBack }: LetterViewProps) {
             </div>
 
             <div className="mt-6 text-sm text-gray-600 print:block">
-              <p className="font-medium">Instructions:</p>
+              <p className="font-medium">How to use:</p>
               <ol className="mt-2 space-y-1 text-left max-w-md mx-auto">
-                <li>1. Attach this page to your physical letter</li>
-                <li>2. Scan the QR code to update or track status</li>
-                <li>3. Handlers need the PIN to update status</li>
-                <li>4. Anyone can view the tracking receipt</li>
+                <li>1. Print this page with the QR code</li>
+                <li>2. Attach it to your physical document</li>
+                <li>3. Scan the QR code to track or update status</li>
+                <li>4. Handlers need the PIN; receivers can view the receipt</li>
               </ol>
             </div>
           </div>

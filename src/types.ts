@@ -2,7 +2,11 @@ export interface Letter {
   id: string;
   reference_number: string;
   title: string;
-  description: string;
+  description?: string;
+  document_subject?: string;
+  document_type?: string;
+  file_url?: string;
+  file_name?: string;
   handler_pin: string;
   created_at: string;
 }
