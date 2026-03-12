@@ -1,14 +1,15 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { Letter } from '../types';
-import { Search, FileText, Download, Eye, ArrowLeft, Filter } from 'lucide-react';
+import { Search, FileText, Download, Eye, ArrowLeft, Filter, Info } from 'lucide-react';
 
 interface DocumentLibraryProps {
   onDocumentSelected: (letterId: string) => void;
+  onViewDocumentInfo: (letterId: string) => void;
   onBack: () => void;
 }
 
-export default function DocumentLibrary({ onDocumentSelected, onBack }: DocumentLibraryProps) {
+export default function DocumentLibrary({ onDocumentSelected, onViewDocumentInfo, onBack }: DocumentLibraryProps) {
   const [documents, setDocuments] = useState<Letter[]>([]);
   const [filteredDocuments, setFilteredDocuments] = useState<Letter[]>([]);
   const [loading, setLoading] = useState(true);
@@ -64,7 +65,7 @@ export default function DocumentLibrary({ onDocumentSelected, onBack }: Document
     window.open(url, '_blank');
   };
 
-  const getDocumentIcon = (type: string) => {
+  const getDocumentIcon = (type: string | undefined) => {
     switch (type) {
       case 'certificate':
         return '🎓';
@@ -169,6 +170,14 @@ export default function DocumentLibrary({ onDocumentSelected, onBack }: Document
                     </div>
 
                     <div className="flex gap-2 flex-shrink-0">
+                      <button
+                        onClick={() => onViewDocumentInfo(doc.id)}
+                        className="flex items-center gap-1 bg-purple-600 text-white px-3 py-2 rounded-lg hover:bg-purple-700 transition-colors text-sm"
+                        title="View document info"
+                      >
+                        <Info className="w-4 h-4" />
+                        <span className="hidden sm:inline">Info</span>
+                      </button>
                       {doc.file_url && (
                         <button
                           onClick={() => viewDocument(doc.file_url!)}

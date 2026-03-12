@@ -6,14 +6,16 @@ import HandlerUpdate from './components/HandlerUpdate';
 import Receipt from './components/Receipt';
 import QRScanner from './components/QRScanner';
 import DocumentLibrary from './components/DocumentLibrary';
+import DocumentInfo from './components/DocumentInfo';
 import { FileText, Camera, Library } from 'lucide-react';
 
-type View = 'home' | 'letter-view' | 'track' | 'handler' | 'receipt' | 'scanner' | 'library';
+type View = 'home' | 'letter-view' | 'track' | 'handler' | 'receipt' | 'scanner' | 'library' | 'document-info';
 
 function App() {
   const [view, setView] = useState<View>('home');
   const [currentLetterId, setCurrentLetterId] = useState<string>('');
   const [showScanner, setShowScanner] = useState(false);
+  const [previousView, setPreviousView] = useState<View | null>(null);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -64,7 +66,25 @@ function App() {
 
   const handleDocumentSelected = (letterId: string) => {
     setCurrentLetterId(letterId);
+    setPreviousView('library');
     setView('track');
+  };
+
+  const handleViewDocumentInfo = (letterId: string) => {
+    setCurrentLetterId(letterId);
+    setView('document-info');
+  };
+
+  const handleBackToLibrary = () => {
+    setView('library');
+    setPreviousView(null);
+  };
+
+  const handleBackFromTrack = () => {
+    if (previousView === 'library') {
+      setView('library');
+      setPreviousView(null);
+    }
   };
 
   return (
@@ -153,6 +173,7 @@ function App() {
           letterId={currentLetterId}
           onHandlerSelected={handleHandlerSelected}
           onReceiverSelected={handleReceiverSelected}
+          onBack={previousView === 'library' ? handleBackFromTrack : undefined}
         />
       )}
 
@@ -167,7 +188,15 @@ function App() {
       {view === 'library' && (
         <DocumentLibrary
           onDocumentSelected={handleDocumentSelected}
+          onViewDocumentInfo={handleViewDocumentInfo}
           onBack={handleBackToHome}
+        />
+      )}
+
+      {view === 'document-info' && currentLetterId && (
+        <DocumentInfo
+          letterId={currentLetterId}
+          onBack={handleBackToLibrary}
         />
       )}
     </div>

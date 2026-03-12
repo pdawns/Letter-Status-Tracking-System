@@ -1,18 +1,20 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { Letter } from '../types';
-import { FileText, User, Eye } from 'lucide-react';
+import { FileText, User, Eye, ArrowLeft } from 'lucide-react';
 
 interface TrackLetterProps {
   letterId: string;
   onHandlerSelected: () => void;
   onReceiverSelected: () => void;
+  onBack?: () => void;
 }
 
 export default function TrackLetter({
   letterId,
   onHandlerSelected,
   onReceiverSelected,
+  onBack,
 }: TrackLetterProps) {
   const [letter, setLetter] = useState<Letter | null>(null);
   const [loading, setLoading] = useState(true);
@@ -53,7 +55,7 @@ export default function TrackLetter({
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-gray-100 flex items-center justify-center p-4">
         <div className="bg-white rounded-lg shadow-lg p-8 max-w-md text-center">
-          <p className="text-red-600 text-lg">Letter not found</p>
+          <p className="text-red-600 text-lg">Document not found</p>
           <p className="text-gray-600 mt-2">Please check the QR code and try again.</p>
         </div>
       </div>
@@ -63,13 +65,23 @@ export default function TrackLetter({
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-gray-100 flex items-center justify-center p-4">
       <div className="bg-white rounded-lg shadow-xl p-8 max-w-2xl w-full">
+        {onBack && (
+          <button
+            onClick={onBack}
+            className="mb-4 flex items-center gap-2 text-blue-600 hover:text-blue-700 text-sm"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            Back to Library
+          </button>
+        )}
+        
         <div className="text-center mb-8">
           <div className="flex justify-center mb-4">
             <div className="bg-blue-100 p-4 rounded-full">
               <FileText className="w-12 h-12 text-blue-600" />
             </div>
           </div>
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Letter Tracking</h1>
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">Document Tracking</h1>
           <p className="text-gray-600 mb-1">{letter.title}</p>
           <p className="text-sm text-gray-500">Ref: {letter.reference_number}</p>
         </div>
@@ -92,7 +104,7 @@ export default function TrackLetter({
                   I'm the Handler
                 </h3>
                 <p className="text-sm text-gray-600">
-                  I created this letter and manage the tracking system. I record who signed and what statuses were completed.
+                  I created this document and manage the tracking system. I record who signed and what statuses were completed.
                 </p>
                 <span className="text-xs text-blue-600 font-medium">
                   Requires PIN
@@ -112,7 +124,7 @@ export default function TrackLetter({
                   I'm a Receiver/Signer
                 </h3>
                 <p className="text-sm text-gray-600">
-                  I need to sign this letter (Approved, Noted, or Reviewed). I want to see the tracking receipt.
+                  I need to sign this document (Approved, Noted, or Reviewed). I want to see the tracking receipt.
                 </p>
                 <span className="text-xs text-green-600 font-medium">
                   No PIN required
