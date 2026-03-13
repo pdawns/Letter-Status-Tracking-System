@@ -23,7 +23,7 @@ export default function CreateLetter({ onLetterCreated }: CreateLetterProps) {
     return `${prefix}-${year}-${random}`;
   };
 
-  const uploadFile = async (documentId: string, fileName: string): Promise<string | null> => {
+  const uploadFile = async (documentId: string): Promise<string | null> => {
     if (!file) return null;
 
     try {
@@ -95,10 +95,10 @@ export default function CreateLetter({ onLetterCreated }: CreateLetterProps) {
 
       setUploadProgress(50);
 
-      const fileUrl = await uploadFile(data.id, file.name);
+      const fileUrl = await uploadFile(data.id);
 
       if (fileUrl) {
-        const { error: updateError } = await supabase
+        const { error: updateError} = await supabase
           .from('letters')
           .update({
             file_url: fileUrl,
@@ -120,26 +120,26 @@ export default function CreateLetter({ onLetterCreated }: CreateLetterProps) {
   };
 
   return (
-    <div className="max-w-2xl mx-auto px-4 sm:px-0">
-      <div className="bg-white rounded-lg shadow-lg p-6 sm:p-8">
-        <div className="flex items-center gap-3 mb-2">
-          <FileText className="w-8 h-8 text-blue-600" />
-          <h1 className="text-3xl font-bold text-gray-900">Create New Document</h1>
+    <div className="max-w-xl mx-auto px-3">
+      <div className="bg-white rounded-lg shadow-lg p-4">
+        <div className="flex items-center gap-2 mb-1">
+          <FileText className="w-6 h-6" style={{ color: '#004526' }} />
+          <h1 className="text-xl font-bold" style={{ color: '#004526' }}>Create New Document</h1>
         </div>
-        <p className="text-gray-600 ml-11 mb-6">
+        <p className="text-gray-600 text-sm ml-8 mb-4">
           As the handler, create a new document and set up the tracking system
         </p>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
+        <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label htmlFor="type" className="block text-sm font-medium text-gray-700 mb-2">
+            <label htmlFor="type" className="block text-xs font-medium text-gray-700 mb-1">
               Document Type *
             </label>
             <select
               id="type"
               value={documentType}
               onChange={(e) => setDocumentType(e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:border-transparent"
             >
               <option value="letter">Letter</option>
               <option value="certificate">Certificate</option>
@@ -150,7 +150,7 @@ export default function CreateLetter({ onLetterCreated }: CreateLetterProps) {
           </div>
 
           <div>
-            <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-2">
+            <label htmlFor="title" className="block text-xs font-medium text-gray-700 mb-1">
               Document Title *
             </label>
             <input
@@ -158,31 +158,31 @@ export default function CreateLetter({ onLetterCreated }: CreateLetterProps) {
               id="title"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:border-transparent"
               placeholder="e.g., Budget Approval Request"
               required
             />
           </div>
 
           <div>
-            <label htmlFor="subject" className="block text-sm font-medium text-gray-700 mb-2">
+            <label htmlFor="subject" className="block text-xs font-medium text-gray-700 mb-1">
               Document Subject (Optional)
             </label>
             <textarea
               id="subject"
               value={subject}
               onChange={(e) => setSubject(e.target.value)}
-              rows={3}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              rows={2}
+              className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:border-transparent"
               placeholder="Brief subject or summary of the document..."
             />
           </div>
 
           <div>
-            <label htmlFor="file" className="block text-sm font-medium text-gray-700 mb-2">
+            <label htmlFor="file" className="block text-xs font-medium text-gray-700 mb-1">
               Upload Document File * (PDF, Image, DOC)
             </label>
-            <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-blue-500 transition-colors">
+            <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center hover:border-opacity-80 transition-colors" style={{ borderColor: '#9CAF88' }}>
               <input
                 type="file"
                 id="file"
@@ -192,9 +192,9 @@ export default function CreateLetter({ onLetterCreated }: CreateLetterProps) {
                 required
               />
               <label htmlFor="file" className="cursor-pointer">
-                <div className="flex flex-col items-center gap-2">
-                  <Upload className="w-8 h-8 text-gray-400" />
-                  <p className="text-sm font-medium text-gray-700">
+                <div className="flex flex-col items-center gap-1">
+                  <Upload className="w-6 h-6 text-gray-400" />
+                  <p className="text-xs font-medium text-gray-700">
                     {file ? file.name : 'Click to upload or drag and drop'}
                   </p>
                   <p className="text-xs text-gray-500">PDF, PNG, JPG, DOC up to 50MB</p>
@@ -204,7 +204,7 @@ export default function CreateLetter({ onLetterCreated }: CreateLetterProps) {
           </div>
 
           <div>
-            <label htmlFor="pin" className="block text-sm font-medium text-gray-700 mb-2">
+            <label htmlFor="pin" className="block text-xs font-medium text-gray-700 mb-1">
               Handler PIN * (minimum 4 characters)
             </label>
             <input
@@ -212,33 +212,33 @@ export default function CreateLetter({ onLetterCreated }: CreateLetterProps) {
               id="pin"
               value={pin}
               onChange={(e) => setPin(e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:border-transparent"
               placeholder="Enter a secure PIN"
               minLength={4}
               required
             />
-            <p className="mt-1 text-sm text-gray-500">
+            <p className="mt-1 text-xs text-gray-500">
               You'll need this PIN to record status updates. Keep it secure.
             </p>
           </div>
 
           {uploadProgress > 0 && uploadProgress < 100 && (
-            <div className="bg-blue-50 rounded-lg p-4">
-              <div className="flex items-center justify-between mb-2">
-                <p className="text-sm font-medium text-blue-900">Uploading...</p>
-                <p className="text-sm font-medium text-blue-900">{uploadProgress}%</p>
+            <div className="rounded-lg p-3" style={{ backgroundColor: '#DFF5E1' }}>
+              <div className="flex items-center justify-between mb-1">
+                <p className="text-xs font-medium" style={{ color: '#004526' }}>Uploading...</p>
+                <p className="text-xs font-medium" style={{ color: '#004526' }}>{uploadProgress}%</p>
               </div>
-              <div className="w-full bg-blue-200 rounded-full h-2">
+              <div className="w-full rounded-full h-1.5" style={{ backgroundColor: '#9CAF88' }}>
                 <div
-                  className="bg-blue-600 h-2 rounded-full transition-all"
-                  style={{ width: `${uploadProgress}%` }}
+                  className="h-1.5 rounded-full transition-all"
+                  style={{ width: `${uploadProgress}%`, backgroundColor: '#004526' }}
                 ></div>
               </div>
             </div>
           )}
 
           {error && (
-            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
+            <div className="bg-red-50 border border-red-200 text-red-700 px-3 py-2 rounded-lg text-xs">
               {error}
             </div>
           )}
@@ -246,7 +246,10 @@ export default function CreateLetter({ onLetterCreated }: CreateLetterProps) {
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-blue-600 text-white py-3 px-6 rounded-lg font-medium hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
+            className="w-full text-white py-2 px-4 rounded-lg text-sm font-medium disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
+            style={{ backgroundColor: loading ? '#9ca3af' : '#004526' }}
+            onMouseEnter={(e) => !loading && (e.currentTarget.style.backgroundColor = '#9CAF88')}
+            onMouseLeave={(e) => !loading && (e.currentTarget.style.backgroundColor = '#004526')}
           >
             {loading ? 'Creating Document...' : 'Create Document'}
           </button>

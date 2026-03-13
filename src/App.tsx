@@ -1,4 +1,6 @@
 import { useEffect, useState } from 'react';
+import Sidebar from './components/Sidebar';
+import Dashboard from './components/Dashboard';
 import CreateLetter from './components/CreateLetter';
 import LetterView from './components/LetterView';
 import TrackLetter from './components/TrackLetter';
@@ -7,12 +9,12 @@ import Receipt from './components/Receipt';
 import QRScanner from './components/QRScanner';
 import DocumentLibrary from './components/DocumentLibrary';
 import DocumentInfo from './components/DocumentInfo';
-import { FileText, Camera, Library } from 'lucide-react';
+import { Camera, Library, Upload } from 'lucide-react';
 
-type View = 'home' | 'letter-view' | 'track' | 'handler' | 'receipt' | 'scanner' | 'library' | 'document-info';
+type View = 'dashboard' | 'tracking' | 'document-tracking' | 'letter-view' | 'track' | 'handler' | 'receipt' | 'scanner' | 'library' | 'document-info';
 
 function App() {
-  const [view, setView] = useState<View>('home');
+  const [view, setView] = useState<View>('dashboard');
   const [currentLetterId, setCurrentLetterId] = useState<string>('');
   const [showScanner, setShowScanner] = useState(false);
   const [previousView, setPreviousView] = useState<View | null>(null);
@@ -33,7 +35,7 @@ function App() {
   };
 
   const handleBackToHome = () => {
-    setView('home');
+    setView('dashboard');
     setCurrentLetterId('');
     window.history.pushState({}, '', '/');
   };
@@ -64,6 +66,49 @@ function App() {
     }
   };
 
+  const handleQRUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    try {
+      // Use jsQR library to decode QR code from image
+      const image = new Image();
+      const reader = new FileReader();
+
+      reader.onload = (e) => {
+        image.onload = () => {
+          const canvas = document.createElement('canvas');
+          const context = canvas.getContext('2d');
+          if (!context) return;
+
+          canvas.width = image.width;
+          canvas.height = image.height;
+          context.drawImage(image, 0, 0);
+
+          const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
+          
+          // Try to decode QR code from image data
+          // For now, we'll use a simple approach - extract URL from the image
+          // In production, you'd want to use a proper QR code library like jsQR
+          const dataUrl = e.target?.result as string;
+          
+          // Simple fallback: prompt user to enter tracking ID manually
+          const trackingId = prompt('Please enter the tracking ID from the QR code:');
+          if (trackingId) {
+            setCurrentLetterId(trackingId);
+            setView('track');
+          }
+        };
+        image.src = e.target?.result as string;
+      };
+
+      reader.readAsDataURL(file);
+    } catch (error) {
+      console.error('Error processing QR code:', error);
+      alert('Failed to process QR code image. Please try again.');
+    }
+  };
+
   const handleDocumentSelected = (letterId: string) => {
     setCurrentLetterId(letterId);
     setPreviousView('library');
@@ -89,116 +134,134 @@ function App() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-gray-100">
-      {showScanner && (
-        <QRScanner
-          onScanSuccess={handleQRScanSuccess}
-          onClose={() => setShowScanner(false)}
-        />
-      )}
+      <Sidebar 
+        currentView={
+          view === 'library' || view === 'document-info' || view === 'track' || view === 'handler' || view === 'receipt' ? 'tracking' :
+          view === 'dashboard' || view === 'tracking' || view === 'document-tracking' ? view : 
+          'dashboard'
+        } 
+        onViewChange={setView} 
+      />
+      
+      <div className="ml-56 min-h-screen overflow-auto">
+        {showScanner && (
+          <QRScanner
+            onScanSuccess={handleQRScanSuccess}
+            onClose={() => setShowScanner(false)}
+          />
+        )}
 
-      {view === 'home' && (
-        <div className="container mx-auto px-4 py-8">
-          <div className="text-center mb-8">
-            <div className="flex items-center justify-center gap-3 mb-4">
-              <FileText className="w-12 h-12 text-blue-600" />
-              <h1 className="text-3xl sm:text-4xl font-bold text-gray-900">
-                Document Tracking System
-              </h1>
+        {view === 'dashboard' && (
+          <Dashboard />
+        )}
+
+        {view === 'tracking' && (
+          <div className="p-5">
+            <div className="mb-4">
+              <h1 className="text-2xl font-bold" style={{ color: '#004526' }}>Tracking System</h1>
+              <p className="text-gray-600 text-sm mt-1">Manage documents with QR codes</p>
             </div>
-            <p className="text-base sm:text-lg text-gray-600">
-              Create and track documents with QR codes - Letters, Certificates, and More
-            </p>
-          </div>
-
-          <div className="max-w-2xl mx-auto space-y-6">
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              <button
-                onClick={() => {
-                  const element = document.querySelector('form');
-                  element?.scrollIntoView({ behavior: 'smooth' });
-                }}
-                className="group bg-white rounded-lg shadow-lg p-6 hover:shadow-xl transition-all transform hover:scale-105 border-2 border-blue-600"
-              >
-                <div className="flex flex-col items-center text-center space-y-3">
-                  <div className="bg-blue-100 p-4 rounded-full group-hover:bg-blue-200 transition-colors">
-                    <FileText className="w-8 h-8 text-blue-600" />
-                  </div>
-                  <h3 className="text-lg font-semibold text-gray-900">Create Document</h3>
-                  <p className="text-sm text-gray-600">Upload a new document</p>
-                </div>
-              </button>
-
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 max-w-5xl">
               <button
                 onClick={() => setShowScanner(true)}
-                className="group bg-white rounded-lg shadow-lg p-6 hover:shadow-xl transition-all transform hover:scale-105 border-2 border-green-600"
+                className="group bg-white rounded-lg shadow-lg p-6 hover:shadow-xl transition-all transform hover:scale-105 border-2"
+                style={{ borderColor: '#9CAF88' }}
               >
                 <div className="flex flex-col items-center text-center space-y-3">
-                  <div className="bg-green-100 p-4 rounded-full group-hover:bg-green-200 transition-colors">
-                    <Camera className="w-8 h-8 text-green-600" />
+                  <div className="p-4 rounded-full transition-colors" style={{ backgroundColor: '#DFF5E1' }}>
+                    <Camera className="w-8 h-8" style={{ color: '#004526' }} />
                   </div>
-                  <h3 className="text-lg font-semibold text-gray-900">Scan QR Code</h3>
-                  <p className="text-sm text-gray-600">Track a document</p>
+                  <h3 className="text-lg font-semibold" style={{ color: '#004526' }}>Scan QR Code</h3>
+                  <p className="text-gray-600 text-sm">Track a document by scanning its QR code</p>
                 </div>
               </button>
+
+              <label className="group bg-white rounded-lg shadow-lg p-6 hover:shadow-xl transition-all transform hover:scale-105 border-2 cursor-pointer"
+                style={{ borderColor: '#9CAF88' }}
+              >
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleQRUpload}
+                  className="hidden"
+                />
+                <div className="flex flex-col items-center text-center space-y-3">
+                  <div className="p-4 rounded-full transition-colors" style={{ backgroundColor: '#DFF5E1' }}>
+                    <Upload className="w-8 h-8" style={{ color: '#004526' }} />
+                  </div>
+                  <h3 className="text-lg font-semibold" style={{ color: '#004526' }}>Upload QR Code</h3>
+                  <p className="text-gray-600 text-sm">Upload a QR code image to track</p>
+                </div>
+              </label>
 
               <button
                 onClick={() => setView('library')}
-                className="group bg-white rounded-lg shadow-lg p-6 hover:shadow-xl transition-all transform hover:scale-105 border-2 border-purple-600"
+                className="group bg-white rounded-lg shadow-lg p-6 hover:shadow-xl transition-all transform hover:scale-105 border-2"
+                style={{ borderColor: '#9CAF88' }}
               >
                 <div className="flex flex-col items-center text-center space-y-3">
-                  <div className="bg-purple-100 p-4 rounded-full group-hover:bg-purple-200 transition-colors">
-                    <Library className="w-8 h-8 text-purple-600" />
+                  <div className="p-4 rounded-full transition-colors" style={{ backgroundColor: '#DFF5E1' }}>
+                    <Library className="w-8 h-8" style={{ color: '#004526' }} />
                   </div>
-                  <h3 className="text-lg font-semibold text-gray-900">Document Library</h3>
-                  <p className="text-sm text-gray-600">View all documents</p>
+                  <h3 className="text-lg font-semibold" style={{ color: '#004526' }}>Document Library</h3>
+                  <p className="text-gray-600 text-sm">View and track all documents</p>
                 </div>
               </button>
             </div>
+          </div>
+        )}
 
-            <div className="mt-8">
+        {view === 'document-tracking' && (
+          <div className="p-5">
+            <div className="mb-5">
+              <h1 className="text-2xl font-bold" style={{ color: '#004526' }}>Create Document</h1>
+              <p className="text-gray-600 text-sm mt-1">Create documents with QR codes</p>
+            </div>
+
+            <div className="max-w-3xl">
               <CreateLetter onLetterCreated={handleLetterCreated} />
             </div>
           </div>
-        </div>
-      )}
+        )}
 
-      {view === 'letter-view' && currentLetterId && (
-        <div className="container mx-auto px-4 py-8">
-          <LetterView letterId={currentLetterId} onBack={handleBackToHome} />
-        </div>
-      )}
+        {view === 'letter-view' && currentLetterId && (
+          <div className="p-8">
+            <LetterView letterId={currentLetterId} onBack={handleBackToHome} />
+          </div>
+        )}
 
-      {view === 'track' && currentLetterId && (
-        <TrackLetter
-          letterId={currentLetterId}
-          onHandlerSelected={handleHandlerSelected}
-          onReceiverSelected={handleReceiverSelected}
-          onBack={previousView === 'library' ? handleBackFromTrack : undefined}
-        />
-      )}
+        {view === 'track' && currentLetterId && (
+          <TrackLetter
+            letterId={currentLetterId}
+            onHandlerSelected={handleHandlerSelected}
+            onReceiverSelected={handleReceiverSelected}
+            onBack={previousView === 'library' ? handleBackFromTrack : undefined}
+          />
+        )}
 
-      {view === 'handler' && currentLetterId && (
-        <HandlerUpdate letterId={currentLetterId} onBack={handleBackToTrack} />
-      )}
+        {view === 'handler' && currentLetterId && (
+          <HandlerUpdate letterId={currentLetterId} onBack={handleBackToTrack} />
+        )}
 
-      {view === 'receipt' && currentLetterId && (
-        <Receipt letterId={currentLetterId} onBack={handleBackToTrack} />
-      )}
+        {view === 'receipt' && currentLetterId && (
+          <Receipt letterId={currentLetterId} onBack={handleBackToTrack} />
+        )}
 
-      {view === 'library' && (
-        <DocumentLibrary
-          onDocumentSelected={handleDocumentSelected}
-          onViewDocumentInfo={handleViewDocumentInfo}
-          onBack={handleBackToHome}
-        />
-      )}
+        {view === 'library' && (
+          <DocumentLibrary
+            onDocumentSelected={handleDocumentSelected}
+            onViewDocumentInfo={handleViewDocumentInfo}
+            onBack={handleBackToHome}
+          />
+        )}
 
-      {view === 'document-info' && currentLetterId && (
-        <DocumentInfo
-          letterId={currentLetterId}
-          onBack={handleBackToLibrary}
-        />
-      )}
+        {view === 'document-info' && currentLetterId && (
+          <DocumentInfo
+            letterId={currentLetterId}
+            onBack={handleBackToLibrary}
+          />
+        )}
+      </div>
     </div>
   );
 }

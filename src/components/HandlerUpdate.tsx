@@ -132,8 +132,8 @@ export default function HandlerUpdate({ letterId, onBack }: HandlerUpdateProps) 
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-gray-100 flex items-center justify-center p-4">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading...</p>
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 mx-auto" style={{ borderColor: '#004526' }}></div>
+          <p className="mt-3 text-gray-600 text-sm">Loading...</p>
         </div>
       </div>
     );
@@ -142,9 +142,9 @@ export default function HandlerUpdate({ letterId, onBack }: HandlerUpdateProps) 
   if (!letter) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-gray-100 flex items-center justify-center p-4">
-        <div className="bg-white rounded-lg shadow-lg p-8 max-w-md text-center">
-          <p className="text-red-600 text-lg">Letter not found</p>
-          <button onClick={onBack} className="mt-4 text-blue-600 hover:underline">
+        <div className="bg-white rounded-lg shadow-lg p-6 max-w-md text-center">
+          <p className="text-red-600">Letter not found</p>
+          <button onClick={onBack} className="mt-3 hover:underline text-sm" style={{ color: '#004526' }}>
             Go back
           </button>
         </div>
@@ -155,29 +155,30 @@ export default function HandlerUpdate({ letterId, onBack }: HandlerUpdateProps) 
   if (!authenticated) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-gray-100 flex items-center justify-center p-4">
-        <div className="bg-white rounded-lg shadow-xl p-8 max-w-md w-full">
+        <div className="bg-white rounded-lg shadow-xl p-6 max-w-md w-full">
           <button
             onClick={onBack}
-            className="mb-4 flex items-center gap-2 text-blue-600 hover:text-blue-700"
+            className="mb-4 flex items-center gap-2 text-sm hover:opacity-80"
+            style={{ color: '#004526' }}
           >
             <ArrowLeft className="w-4 h-4" />
             Back
           </button>
 
-          <div className="text-center mb-6">
-            <div className="flex justify-center mb-4">
-              <div className="bg-blue-100 p-4 rounded-full">
-                <Lock className="w-12 h-12 text-blue-600" />
+          <div className="text-center mb-5">
+            <div className="flex justify-center mb-3">
+              <div className="p-3 rounded-full" style={{ backgroundColor: '#DFF5E1' }}>
+                <Lock className="w-8 h-8" style={{ color: '#004526' }} />
               </div>
             </div>
-            <h1 className="text-2xl font-bold text-gray-900 mb-2">Handler Verification</h1>
-            <p className="text-gray-600 mb-1">You are the letter handler/manager</p>
-            <p className="text-sm text-gray-500">Enter your PIN to record status updates and signatures</p>
+            <h1 className="text-xl font-bold text-gray-900 mb-2">Handler Verification</h1>
+            <p className="text-gray-600 text-sm mb-1">You are the letter handler/manager</p>
+            <p className="text-xs text-gray-500">Enter your PIN to record status updates and signatures</p>
           </div>
 
-          <form onSubmit={handlePinSubmit} className="space-y-4">
+          <form onSubmit={handlePinSubmit} className="space-y-3">
             <div>
-              <label htmlFor="pin" className="block text-sm font-medium text-gray-700 mb-2">
+              <label htmlFor="pin" className="block text-xs font-medium text-gray-700 mb-1">
                 PIN
               </label>
               <input
@@ -185,21 +186,24 @@ export default function HandlerUpdate({ letterId, onBack }: HandlerUpdateProps) 
                 id="pin"
                 value={pin}
                 onChange={(e) => setPin(e.target.value)}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:border-transparent"
                 placeholder="Enter PIN"
                 required
               />
             </div>
 
             {error && (
-              <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
+              <div className="bg-red-50 border border-red-200 text-red-700 px-3 py-2 rounded-lg text-xs">
                 {error}
               </div>
             )}
 
             <button
               type="submit"
-              className="w-full bg-blue-600 text-white py-2 px-4 rounded-lg font-medium hover:bg-blue-700 transition-colors"
+              className="w-full text-white py-2 px-4 rounded-lg text-sm font-medium transition-colors"
+              style={{ backgroundColor: '#004526' }}
+              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#9CAF88'}
+              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#004526'}
             >
               Authenticate
             </button>
@@ -214,32 +218,30 @@ export default function HandlerUpdate({ letterId, onBack }: HandlerUpdateProps) 
   const existingReviewed = statuses.find((s) => s.status_type === 'reviewed');
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-gray-100 p-4 py-8">
-      <div className="max-w-3xl mx-auto">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-gray-100 p-4 py-6">
+      <div className="max-w-2xl mx-auto">
         <button
           onClick={onBack}
-          className="mb-4 flex items-center gap-2 text-blue-600 hover:text-blue-700"
+          className="mb-3 flex items-center gap-2 text-sm hover:opacity-80"
+          style={{ color: '#004526' }}
         >
           <ArrowLeft className="w-4 h-4" />
           Back
         </button>
 
-        <div className="bg-white rounded-lg shadow-xl p-8">
-          <div className="flex items-center gap-3 mb-6">
-            <CheckSquare className="w-8 h-8 text-blue-600" />
+        <div className="bg-white rounded-lg shadow-xl p-5">
+          <div className="flex items-center gap-2 mb-4">
+            <CheckSquare className="w-6 h-6" style={{ color: '#004526' }} />
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">Record Status Updates</h1>
-              <p className="text-gray-600">{letter.title}</p>
-              <p className="text-sm text-gray-500">Ref: {letter.reference_number}</p>
-              <p className="text-sm text-blue-600 mt-1">
-                As the handler, record when signers complete each status
-              </p>
+              <h1 className="text-xl font-bold" style={{ color: '#004526' }}>Record Status Updates</h1>
+              <p className="text-gray-600 text-sm">{letter.title}</p>
+              <p className="text-xs text-gray-500">Ref: {letter.reference_number}</p>
             </div>
           </div>
 
-          <form onSubmit={handleStatusUpdate} className="space-y-6">
-            <div className="space-y-4 border-t pt-6">
-              <p className="text-sm font-medium text-gray-700 mb-4">
+          <form onSubmit={handleStatusUpdate} className="space-y-4">
+            <div className="space-y-3 border-t pt-4">
+              <p className="text-xs font-medium text-gray-700 mb-3">
                 Check the boxes below as signers complete each status. Enter the signer's name and date.
               </p>
 
@@ -383,7 +385,7 @@ export default function HandlerUpdate({ letterId, onBack }: HandlerUpdateProps) 
             </div>
 
             {error && (
-              <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
+              <div className="bg-red-50 border border-red-200 text-red-700 px-3 py-2 rounded-lg text-xs">
                 {error}
               </div>
             )}
@@ -391,7 +393,10 @@ export default function HandlerUpdate({ letterId, onBack }: HandlerUpdateProps) 
             <button
               type="submit"
               disabled={saving}
-              className="w-full bg-blue-600 text-white py-3 px-6 rounded-lg font-medium hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
+              className="w-full text-white py-2 px-4 rounded-lg text-sm font-medium disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
+              style={{ backgroundColor: saving ? '#9ca3af' : '#004526' }}
+              onMouseEnter={(e) => !saving && (e.currentTarget.style.backgroundColor = '#9CAF88')}
+              onMouseLeave={(e) => !saving && (e.currentTarget.style.backgroundColor = '#004526')}
             >
               {saving ? 'Saving...' : 'Save Status Update'}
             </button>

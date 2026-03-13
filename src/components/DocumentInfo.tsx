@@ -59,25 +59,12 @@ export default function DocumentInfo({ letterId, onBack }: DocumentInfoProps) {
     }
   };
 
-  const getDocumentIcon = (type: string | undefined) => {
-    switch (type) {
-      case 'certificate':
-        return '🎓';
-      case 'memo':
-        return '📝';
-      case 'report':
-        return '📊';
-      default:
-        return '📄';
-    }
-  };
-
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-gray-100 flex items-center justify-center">
+      <div className="flex items-center justify-center p-8">
         <div className="text-center">
-          <Loader className="w-12 h-12 text-blue-600 animate-spin mx-auto mb-4" />
-          <p className="text-gray-600">Loading document...</p>
+          <Loader className="w-8 h-8 text-blue-600 animate-spin mx-auto mb-3" />
+          <p className="text-gray-600 text-sm">Loading document...</p>
         </div>
       </div>
     );
@@ -85,125 +72,141 @@ export default function DocumentInfo({ letterId, onBack }: DocumentInfoProps) {
 
   if (!document) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-gray-100 p-4 py-8">
-        <div className="max-w-4xl mx-auto">
-          <button
-            onClick={onBack}
-            className="mb-6 flex items-center gap-2 text-blue-600 hover:text-blue-700"
-          >
-            <ArrowLeft className="w-4 h-4" />
-            Back
-          </button>
-          <div className="bg-white rounded-lg shadow-xl p-8 text-center">
-            <p className="text-gray-600">Document not found</p>
-          </div>
+      <div className="p-6">
+        <button
+          onClick={onBack}
+          className="mb-4 flex items-center gap-2 text-blue-600 hover:text-blue-700 text-sm"
+        >
+          <ArrowLeft className="w-4 h-4" />
+          Back
+        </button>
+        <div className="bg-white rounded-lg shadow-lg p-6 text-center">
+          <p className="text-gray-600">Document not found</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-gray-100 p-4 py-8">
-      <div className="max-w-4xl mx-auto">
-        <button
-          onClick={onBack}
-          className="mb-6 flex items-center gap-2 text-blue-600 hover:text-blue-700 text-sm sm:text-base"
-        >
-          <ArrowLeft className="w-4 h-4" />
-          Back to Library
-        </button>
+    <div className="p-6">
+      <button
+        onClick={onBack}
+        className="mb-4 flex items-center gap-2 text-sm hover:opacity-80"
+        style={{ color: '#004526' }}
+      >
+        <ArrowLeft className="w-4 h-4" />
+        Back to Library
+      </button>
 
-        <div className="bg-white rounded-lg shadow-xl overflow-hidden">
-          {/* Header */}
-          <div className="bg-gradient-to-r from-blue-600 to-blue-700 p-6 sm:p-8 text-white">
-            <div className="flex items-center gap-3 mb-2">
-              <span className="text-4xl">{getDocumentIcon(document.document_type)}</span>
-              <div>
-                <p className="text-sm opacity-90">{document.reference_number}</p>
-                <h1 className="text-2xl sm:text-3xl font-bold">{document.title}</h1>
-              </div>
+      <div className="bg-white rounded-lg shadow-lg overflow-hidden">
+        {/* Header */}
+        <div className="p-4 text-white" style={{ background: 'linear-gradient(to right, #004526, #9CAF88)' }}>
+          <div className="flex items-center gap-3">
+            <FileText className="w-8 h-8" />
+            <div>
+              <p className="text-xs opacity-90">{document.reference_number}</p>
+              <h1 className="text-xl font-bold">{document.title}</h1>
             </div>
           </div>
+        </div>
 
-          {/* Document Information */}
-          <div className="p-6 sm:p-8">
-            <h2 className="text-xl font-semibold text-gray-900 mb-4 flex items-center gap-2">
-              <FileText className="w-5 h-5 text-blue-600" />
-              Document Information
-            </h2>
+        {/* Document Information */}
+        <div className="p-4">
+          <h2 className="text-base font-semibold mb-3 flex items-center gap-2" style={{ color: '#004526' }}>
+            <FileText className="w-4 h-4" style={{ color: '#004526' }} />
+            Document Information
+          </h2>
 
-            <div className="space-y-4">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="bg-gray-50 p-4 rounded-lg">
-                  <p className="text-sm text-gray-600 mb-1 flex items-center gap-2">
-                    <Tag className="w-4 h-4" />
-                    Document Type
-                  </p>
-                  <p className="font-medium text-gray-900 capitalize">
-                    {document.document_type || 'N/A'}
-                  </p>
-                </div>
-
-                <div className="bg-gray-50 p-4 rounded-lg">
-                  <p className="text-sm text-gray-600 mb-1 flex items-center gap-2">
-                    <Calendar className="w-4 h-4" />
-                    Created Date
-                  </p>
-                  <p className="font-medium text-gray-900">
-                    {new Date(document.created_at).toLocaleDateString('en-US', {
-                      year: 'numeric',
-                      month: 'long',
-                      day: 'numeric',
-                    })}
-                  </p>
-                </div>
-              </div>
-
-              {document.document_subject && (
-                <div className="bg-gray-50 p-4 rounded-lg">
-                  <p className="text-sm text-gray-600 mb-1">Subject</p>
-                  <p className="font-medium text-gray-900">{document.document_subject}</p>
-                </div>
-              )}
-
-              {document.description && (
-                <div className="bg-gray-50 p-4 rounded-lg">
-                  <p className="text-sm text-gray-600 mb-1">Description</p>
-                  <p className="text-gray-900">{document.description}</p>
-                </div>
-              )}
-
-              {document.file_name && (
-                <div className="bg-gray-50 p-4 rounded-lg">
-                  <p className="text-sm text-gray-600 mb-1">File Name</p>
-                  <p className="font-medium text-gray-900">{document.file_name}</p>
-                </div>
-              )}
+          <div className="grid grid-cols-2 gap-3 mb-4">
+            <div className="p-3 rounded-lg" style={{ backgroundColor: '#DFF5E1' }}>
+              <p className="text-xs text-gray-600 mb-1 flex items-center gap-1">
+                <Tag className="w-3 h-3" />
+                Document Type
+              </p>
+              <p className="text-sm font-medium capitalize" style={{ color: '#004526' }}>
+                {document.document_type || 'N/A'}
+              </p>
             </div>
 
-            {/* Document Actions */}
-            {document.file_url && (
-              <div className="mt-6 pt-6 border-t border-gray-200">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">Document File</h3>
-                <div className="flex flex-wrap gap-3">
-                  <button
-                    onClick={viewDocument}
-                    className="flex items-center gap-2 bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700 transition-colors"
-                  >
-                    <Eye className="w-5 h-5" />
-                    View Document
-                  </button>
-                  <button
-                    onClick={downloadDocument}
-                    className="flex items-center gap-2 bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors"
-                  >
-                    <Download className="w-5 h-5" />
-                    Download Document
-                  </button>
-                </div>
+            <div className="p-3 rounded-lg" style={{ backgroundColor: '#DFF5E1' }}>
+              <p className="text-xs text-gray-600 mb-1 flex items-center gap-1">
+                <Calendar className="w-3 h-3" />
+                Created Date
+              </p>
+              <p className="text-sm font-medium" style={{ color: '#004526' }}>
+                {new Date(document.created_at).toLocaleDateString('en-US', {
+                  year: 'numeric',
+                  month: 'short',
+                  day: 'numeric',
+                })}
+              </p>
+            </div>
+
+            <div className="p-3 rounded-lg col-span-2" style={{ backgroundColor: '#DFF5E1' }}>
+              <p className="text-xs text-gray-600 mb-1">Reference Number</p>
+              <p className="text-sm font-medium" style={{ color: '#004526' }}>{document.reference_number}</p>
+            </div>
+
+            {document.document_subject && (
+              <div className="p-3 rounded-lg col-span-2" style={{ backgroundColor: '#DFF5E1' }}>
+                <p className="text-xs text-gray-600 mb-1">Subject</p>
+                <p className="text-sm font-medium" style={{ color: '#004526' }}>{document.document_subject}</p>
+              </div>
+            )}
+
+            {document.description && (
+              <div className="p-3 rounded-lg col-span-2" style={{ backgroundColor: '#DFF5E1' }}>
+                <p className="text-xs text-gray-600 mb-1">Description</p>
+                <p className="text-sm" style={{ color: '#004526' }}>{document.description}</p>
+              </div>
+            )}
+
+            {document.file_name && (
+              <div className="p-3 rounded-lg col-span-2" style={{ backgroundColor: '#DFF5E1' }}>
+                <p className="text-xs text-gray-600 mb-1">File Name</p>
+                <p className="text-sm font-medium break-all" style={{ color: '#004526' }}>{document.file_name}</p>
               </div>
             )}
           </div>
+
+          {/* Document Actions & Preview */}
+          {document.file_url && (
+            <div className="border-t pt-4">
+              <h3 className="text-base font-semibold mb-3" style={{ color: '#004526' }}>Document File</h3>
+              
+              <div className="flex flex-wrap gap-2 mb-4">
+                <button
+                  onClick={viewDocument}
+                  className="flex items-center gap-2 text-white px-4 py-2 rounded-lg transition-colors text-sm"
+                  style={{ backgroundColor: '#004526' }}
+                  onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#9CAF88'}
+                  onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#004526'}
+                >
+                  <Eye className="w-4 h-4" />
+                  View Document
+                </button>
+                <button
+                  onClick={downloadDocument}
+                  className="flex items-center gap-2 text-white px-4 py-2 rounded-lg transition-colors text-sm"
+                  style={{ backgroundColor: '#004526' }}
+                  onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#9CAF88'}
+                  onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#004526'}
+                >
+                  <Download className="w-4 h-4" />
+                  Download
+                </button>
+              </div>
+
+              {/* Document Preview */}
+              <div className="bg-gray-100 rounded-lg overflow-hidden">
+                <iframe
+                  src={document.file_url}
+                  className="w-full h-96 border-0"
+                  title="Document Preview"
+                />
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>
