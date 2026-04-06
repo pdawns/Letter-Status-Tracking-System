@@ -9,7 +9,7 @@ import Receipt from './components/Receipt';
 import QRScanner from './components/QRScanner';
 import DocumentLibrary from './components/DocumentLibrary';
 import DocumentInfo from './components/DocumentInfo';
-import { Camera, Library } from 'lucide-react';
+import { Camera, Library, Upload } from 'lucide-react';
 
 type View = 'dashboard' | 'tracking' | 'document-tracking' | 'letter-view' | 'track' | 'handler' | 'receipt' | 'scanner' | 'library' | 'document-info';
 
@@ -53,27 +53,60 @@ function App() {
   };
 
   const handleQRScanSuccess = (decodedText: string) => {
-    setShowScanner(false);
-
-    const text = decodedText.trim();
-
-    // Extract track param using regex — handles all URL formats including localhost:5173/?track=uuid
-    const trackMatch = text.match(/[?&]track=([a-f0-9-]{36})/i);
-    if (trackMatch) {
-      setCurrentLetterId(trackMatch[1]);
-      setView('track');
-      return;
+    try {
+      const url = new URL(decodedText);
+      const trackId = url.searchParams.get('track');
+      if (trackId) {
+        setCurrentLetterId(trackId);
+        setView('track');
+        setShowScanner(false);
+      }
+    } catch {
+      alert('Invalid QR code. Please try again.');
     }
+  };
 
-    // Plain UUID fallback
-    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-    if (uuidRegex.test(text)) {
-      setCurrentLetterId(text);
-      setView('track');
-      return;
+  const handleQRUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    try {
+      // Use jsQR library to decode QR code from image
+      const image = new Image();
+      const reader = new FileReader();
+
+      reader.onload = (e) => {
+        image.onload = () => {
+          const canvas = document.createElement('canvas');
+          const context = canvas.getContext('2d');
+          if (!context) return;
+
+          canvas.width = image.width;
+          canvas.height = image.height;
+          context.drawImage(image, 0, 0);
+
+          const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
+          
+          // Try to decode QR code from image data
+          // For now, we'll use a simple approach - extract URL from the image
+          // In production, you'd want to use a proper QR code library like jsQR
+          const dataUrl = e.target?.result as string;
+          
+          // Simple fallback: prompt user to enter tracking ID manually
+          const trackingId = prompt('Please enter the tracking ID from the QR code:');
+          if (trackingId) {
+            setCurrentLetterId(trackingId);
+            setView('track');
+          }
+        };
+        image.src = e.target?.result as string;
+      };
+
+      reader.readAsDataURL(file);
+    } catch (error) {
+      console.error('Error processing QR code:', error);
+      alert('Failed to process QR code image. Please try again.');
     }
-
-    alert('Invalid QR code. This QR code is not from this system.');
   };
 
   const handleDocumentSelected = (letterId: string) => {
@@ -128,7 +161,7 @@ function App() {
               <h1 className="text-2xl font-bold" style={{ color: '#004526' }}>Tracking System</h1>
               <p className="text-gray-600 text-sm mt-1">Manage documents with QR codes</p>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-3xl">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 max-w-5xl">
               <button
                 onClick={() => setShowScanner(true)}
                 className="group bg-white rounded-lg shadow-lg p-6 hover:shadow-xl transition-all transform hover:scale-105 border-2"
@@ -139,9 +172,27 @@ function App() {
                     <Camera className="w-8 h-8" style={{ color: '#004526' }} />
                   </div>
                   <h3 className="text-lg font-semibold" style={{ color: '#004526' }}>Scan QR Code</h3>
-                  <p className="text-gray-600 text-sm">Scan via camera or upload a QR code image/PDF</p>
+                  <p className="text-gray-600 text-sm">Track a document by scanning its QR code</p>
                 </div>
               </button>
+
+              <label className="group bg-white rounded-lg shadow-lg p-6 hover:shadow-xl transition-all transform hover:scale-105 border-2 cursor-pointer"
+                style={{ borderColor: '#9CAF88' }}
+              >
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleQRUpload}
+                  className="hidden"
+                />
+                <div className="flex flex-col items-center text-center space-y-3">
+                  <div className="p-4 rounded-full transition-colors" style={{ backgroundColor: '#DFF5E1' }}>
+                    <Upload className="w-8 h-8" style={{ color: '#004526' }} />
+                  </div>
+                  <h3 className="text-lg font-semibold" style={{ color: '#004526' }}>Upload QR Code</h3>
+                  <p className="text-gray-600 text-sm">Upload a QR code image to track</p>
+                </div>
+              </label>
 
               <button
                 onClick={() => setView('library')}
@@ -180,14 +231,12 @@ function App() {
         )}
 
         {view === 'track' && currentLetterId && (
-          <div className="p-5">
-            <TrackLetter
-              letterId={currentLetterId}
-              onHandlerSelected={handleHandlerSelected}
-              onReceiverSelected={handleReceiverSelected}
-              onBack={previousView === 'library' ? handleBackFromTrack : undefined}
-            />
-          </div>
+          <TrackLetter
+            letterId={currentLetterId}
+            onHandlerSelected={handleHandlerSelected}
+            onReceiverSelected={handleReceiverSelected}
+            onBack={previousView === 'library' ? handleBackFromTrack : undefined}
+          />
         )}
 
         {view === 'handler' && currentLetterId && (

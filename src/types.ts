@@ -5,9 +5,6 @@ export interface Letter {
   description?: string;
   document_subject?: string;
   document_type?: string;
-  document_for?: string;
-  document_thru?: string;
-  document_from?: string;
   file_url?: string;
   file_name?: string;
   handler_pin: string;

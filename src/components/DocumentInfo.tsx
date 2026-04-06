@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { Letter } from '../types';
-import { ArrowLeft, FileText, Loader } from 'lucide-react';
+import { ArrowLeft, FileText, Calendar, Tag, Download, Eye, Loader } from 'lucide-react';
 
 interface DocumentInfoProps {
   letterId: string;
@@ -33,21 +33,29 @@ export default function DocumentInfo({ letterId, onBack }: DocumentInfoProps) {
     }
   };
 
-  // Parse description field for document details
-  const parseDescription = (description?: string) => {
-    if (!description) return { documentFor: '', documentThru: '', documentFrom: '' };
-    
-    const lines = description.split('\n');
-    const documentFor = lines.find(line => line.startsWith('For:'))?.replace('For:', '').trim() || '';
-    const documentThru = lines.find(line => line.startsWith('Thru:'))?.replace('Thru:', '').trim() || '';
-    const documentFrom = lines.find(line => line.startsWith('From:'))?.replace('From:', '').trim() || '';
-    
-    return { documentFor, documentThru, documentFrom };
-  };
-
   const viewDocument = () => {
     if (document?.file_url) {
       window.open(document.file_url, '_blank');
+    }
+  };
+
+  const downloadDocument = async () => {
+    if (document?.file_url) {
+      try {
+        const response = await fetch(document.file_url);
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const link = window.document.createElement('a');
+        link.href = url;
+        link.download = document.file_name || 'document';
+        window.document.body.appendChild(link);
+        link.click();
+        window.URL.revokeObjectURL(url);
+        window.document.body.removeChild(link);
+      } catch (err) {
+        console.error('Error downloading document:', err);
+        alert('Failed to download document');
+      }
     }
   };
 
@@ -64,14 +72,13 @@ export default function DocumentInfo({ letterId, onBack }: DocumentInfoProps) {
 
   if (!document) {
     return (
-      <div className="max-w-xl mx-auto px-3 py-6">
+      <div className="p-6">
         <button
           onClick={onBack}
-          className="mb-4 flex items-center gap-2 text-sm hover:opacity-80"
-          style={{ color: '#004526' }}
+          className="mb-4 flex items-center gap-2 text-blue-600 hover:text-blue-700 text-sm"
         >
           <ArrowLeft className="w-4 h-4" />
-          Back to Library
+          Back
         </button>
         <div className="bg-white rounded-lg shadow-lg p-6 text-center">
           <p className="text-gray-600">Document not found</p>
@@ -80,10 +87,8 @@ export default function DocumentInfo({ letterId, onBack }: DocumentInfoProps) {
     );
   }
 
-  const { documentFor, documentThru, documentFrom } = parseDescription(document.description);
-
   return (
-    <div className="max-w-xl mx-auto px-3 py-6">
+    <div className="p-6">
       <button
         onClick={onBack}
         className="mb-4 flex items-center gap-2 text-sm hover:opacity-80"
@@ -93,106 +98,112 @@ export default function DocumentInfo({ letterId, onBack }: DocumentInfoProps) {
         Back to Library
       </button>
 
-      <div className="bg-white rounded-lg shadow-lg p-4">
-        <div className="flex items-center gap-2 mb-1">
-          <FileText className="w-6 h-6" style={{ color: '#004526' }} />
-          <h1 className="text-xl font-bold" style={{ color: '#004526' }}>Document Information</h1>
+      <div className="bg-white rounded-lg shadow-lg overflow-hidden">
+        {/* Header */}
+        <div className="p-4 text-white" style={{ background: 'linear-gradient(to right, #004526, #9CAF88)' }}>
+          <div className="flex items-center gap-3">
+            <FileText className="w-8 h-8" />
+            <div>
+              <p className="text-xs opacity-90">{document.reference_number}</p>
+              <h1 className="text-xl font-bold">{document.title}</h1>
+            </div>
+          </div>
         </div>
-        <p className="text-gray-600 text-sm ml-8 mb-4">
-          View document details and information
-        </p>
 
-        <div className="space-y-4">
-          <div>
-            <label className="block text-xs font-medium text-gray-700 mb-1">
-              Document No.
-            </label>
-            <div className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg bg-gray-50">
-              {document.reference_number}
+        {/* Document Information */}
+        <div className="p-4">
+          <h2 className="text-base font-semibold mb-3 flex items-center gap-2" style={{ color: '#004526' }}>
+            <FileText className="w-4 h-4" style={{ color: '#004526' }} />
+            Document Information
+          </h2>
+
+          <div className="grid grid-cols-2 gap-3 mb-4">
+            <div className="p-3 rounded-lg" style={{ backgroundColor: '#DFF5E1' }}>
+              <p className="text-xs text-gray-600 mb-1 flex items-center gap-1">
+                <Tag className="w-3 h-3" />
+                Document Type
+              </p>
+              <p className="text-sm font-medium capitalize" style={{ color: '#004526' }}>
+                {document.document_type || 'N/A'}
+              </p>
             </div>
+
+            <div className="p-3 rounded-lg" style={{ backgroundColor: '#DFF5E1' }}>
+              <p className="text-xs text-gray-600 mb-1 flex items-center gap-1">
+                <Calendar className="w-3 h-3" />
+                Created Date
+              </p>
+              <p className="text-sm font-medium" style={{ color: '#004526' }}>
+                {new Date(document.created_at).toLocaleDateString('en-US', {
+                  year: 'numeric',
+                  month: 'short',
+                  day: 'numeric',
+                })}
+              </p>
+            </div>
+
+            <div className="p-3 rounded-lg col-span-2" style={{ backgroundColor: '#DFF5E1' }}>
+              <p className="text-xs text-gray-600 mb-1">Reference Number</p>
+              <p className="text-sm font-medium" style={{ color: '#004526' }}>{document.reference_number}</p>
+            </div>
+
+            {document.document_subject && (
+              <div className="p-3 rounded-lg col-span-2" style={{ backgroundColor: '#DFF5E1' }}>
+                <p className="text-xs text-gray-600 mb-1">Subject</p>
+                <p className="text-sm font-medium" style={{ color: '#004526' }}>{document.document_subject}</p>
+              </div>
+            )}
+
+            {document.description && (
+              <div className="p-3 rounded-lg col-span-2" style={{ backgroundColor: '#DFF5E1' }}>
+                <p className="text-xs text-gray-600 mb-1">Description</p>
+                <p className="text-sm" style={{ color: '#004526' }}>{document.description}</p>
+              </div>
+            )}
+
+            {document.file_name && (
+              <div className="p-3 rounded-lg col-span-2" style={{ backgroundColor: '#DFF5E1' }}>
+                <p className="text-xs text-gray-600 mb-1">File Name</p>
+                <p className="text-sm font-medium break-all" style={{ color: '#004526' }}>{document.file_name}</p>
+              </div>
+            )}
           </div>
 
-          <div>
-            <label className="block text-xs font-medium text-gray-700 mb-1">
-              Document Type
-            </label>
-            <div className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg bg-gray-50">
-              {document.document_type || 'N/A'}
-            </div>
-          </div>
-
-          {documentFor && (
-            <div>
-              <label className="block text-xs font-medium text-gray-700 mb-1">
-                Document For
-              </label>
-              <div className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg bg-gray-50">
-                {documentFor}
+          {/* Document Actions & Preview */}
+          {document.file_url && (
+            <div className="border-t pt-4">
+              <h3 className="text-base font-semibold mb-3" style={{ color: '#004526' }}>Document File</h3>
+              
+              <div className="flex flex-wrap gap-2 mb-4">
+                <button
+                  onClick={viewDocument}
+                  className="flex items-center gap-2 text-white px-4 py-2 rounded-lg transition-colors text-sm"
+                  style={{ backgroundColor: '#004526' }}
+                  onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#9CAF88'}
+                  onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#004526'}
+                >
+                  <Eye className="w-4 h-4" />
+                  View Document
+                </button>
+                <button
+                  onClick={downloadDocument}
+                  className="flex items-center gap-2 text-white px-4 py-2 rounded-lg transition-colors text-sm"
+                  style={{ backgroundColor: '#004526' }}
+                  onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#9CAF88'}
+                  onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#004526'}
+                >
+                  <Download className="w-4 h-4" />
+                  Download
+                </button>
               </div>
-            </div>
-          )}
 
-          {documentThru && (
-            <div>
-              <label className="block text-xs font-medium text-gray-700 mb-1">
-                Thru
-              </label>
-              <div className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg bg-gray-50">
-                {documentThru}
-              </div>
-            </div>
-          )}
-
-          {documentFrom && (
-            <div>
-              <label className="block text-xs font-medium text-gray-700 mb-1">
-                Document From
-              </label>
-              <div className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg bg-gray-50">
-                {documentFrom}
-              </div>
-            </div>
-          )}
-
-          {document.document_subject && (
-            <div>
-              <label className="block text-xs font-medium text-gray-700 mb-1">
-                Document Subject
-              </label>
-              <div className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg bg-gray-50 min-h-[60px]">
-                {document.document_subject}
-              </div>
-            </div>
-          )}
-
-          <div>
-            <label className="block text-xs font-medium text-gray-700 mb-1">
-              Date Created
-            </label>
-            <div className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg bg-gray-50">
-              {new Date(document.created_at).toLocaleString()}
-            </div>
-          </div>
-
-          {document.file_name && (
-            <div>
-              <label className="block text-xs font-medium text-gray-700 mb-1">
-                Uploaded Document File
-              </label>
-              <div className="border-2 border-dashed rounded-lg p-4 text-center" style={{ borderColor: '#9CAF88', backgroundColor: '#DFF5E1' }}>
-                <div className="flex flex-col items-center gap-2">
-                  <FileText className="w-6 h-6" style={{ color: '#004526' }} />
-                  <p className="text-xs font-medium" style={{ color: '#004526' }}>
-                    {document.file_name}
-                  </p>
-                  <button
-                    onClick={viewDocument}
-                    className="text-xs hover:underline"
-                    style={{ color: '#004526' }}
-                  >
-                    Click to view document
-                  </button>
-                </div>
+              {/* Document Preview */}
+              <div className="bg-gray-100 rounded-lg overflow-hidden">
+                <iframe
+                  src={document.file_url}
+                  className="w-full h-96 border-0"
+                  title="Document Preview"
+                />
               </div>
             </div>
           )}

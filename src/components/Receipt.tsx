@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
 import { supabase } from '../lib/supabase';
 import { Letter, LetterStatus } from '../types';
-import { FileText, CheckCircle, Download, ArrowLeft, Paperclip, ExternalLink } from 'lucide-react';
+import { FileText, CheckCircle, Clock, Download, ArrowLeft, Paperclip, ExternalLink } from 'lucide-react';
 import { generateReceiptPDF, downloadPDF } from '../Generates/pdf';
 
 interface ReceiptProps {
@@ -91,20 +91,6 @@ export default function Receipt({ letterId, onBack }: ReceiptProps) {
   const hasApproved = statuses.some((s) => s.status_type === 'approved');
   const allComplete = hasNoted && hasReviewed && hasApproved;
 
-  // Parse description field for document details
-  const parseDescription = (description?: string) => {
-    if (!description) return { documentFor: '', documentThru: '', documentFrom: '' };
-    
-    const lines = description.split('\n');
-    const documentFor = lines.find(line => line.startsWith('For:'))?.replace('For:', '').trim() || '';
-    const documentThru = lines.find(line => line.startsWith('Thru:'))?.replace('Thru:', '').trim() || '';
-    const documentFrom = lines.find(line => line.startsWith('From:'))?.replace('From:', '').trim() || '';
-    
-    return { documentFor, documentThru, documentFrom };
-  };
-
-  const { documentFor, documentThru, documentFrom } = parseDescription(letter.description);
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-50 to-gray-100 p-3 py-4 print:bg-white">
       <div className="max-w-4xl mx-auto">
@@ -114,7 +100,7 @@ export default function Receipt({ letterId, onBack }: ReceiptProps) {
             className="flex items-center gap-2 text-green-600 hover:text-green-700 text-sm px-4 py-2 rounded-lg border border-green-600 hover:bg-green-50 transition-colors"
           >
             <ArrowLeft className="w-4 h-4" />
-            Back 
+            Back to Dashboard
           </button>
           
           <button
@@ -139,38 +125,35 @@ export default function Receipt({ letterId, onBack }: ReceiptProps) {
           </button>
         </div>
 
-        <div className="bg-white rounded-xl shadow-xl p-6 print:shadow-none print:p-0 border border-gray-100">
+        <div className="bg-white rounded-lg shadow-xl p-5 print:shadow-none print:p-0">
           {/* Header Section */}
-          <div className="text-center mb-6 pb-5 border-b-2 print:mb-4 print:pb-3" style={{ borderColor: '#9CAF88' }}>
-            <div className="flex justify-center mb-4">
-              <div className="p-4 rounded-full" style={{ backgroundColor: '#DFF5E1' }}>
-                <FileText className="w-10 h-10" style={{ color: '#004526' }} />
+          <div className="text-center mb-5 pb-4 border-b-2 border-gray-200 print:mb-4 print:pb-3">
+            <div className="flex justify-center mb-3">
+              <div className="bg-green-100 p-3 rounded-full">
+                <FileText className="w-8 h-8 text-green-600" />
               </div>
             </div>
-            <h1 className="text-2xl font-bold mb-2 print:text-lg" style={{ color: '#004526' }}>Document Tracking Receipt</h1>
-            <p className="font-medium text-sm print:text-xs" style={{ color: '#9CAF88' }}>Official Status Record</p>
-            <p className="text-xs text-gray-500 mt-2 print:text-[10px]">
+            <h1 className="text-xl font-bold text-gray-900 mb-1 print:text-lg">Document Tracking Receipt</h1>
+            <p className="text-gray-600 font-medium text-sm print:text-xs">Official Status Record</p>
+            <p className="text-xs text-gray-500 mt-1 print:text-[10px]">
               This is the official record of all signatures and status updates on this document
             </p>
           </div>
 
           {/* Document Information and QR Code Section - Side by Side */}
-          <div className="mb-6 pb-5 border-b-2 print:mb-4 print:pb-3" style={{ borderColor: '#9CAF88' }}>
-            <div className="grid md:grid-cols-3 gap-6 print:gap-3">
+          <div className="mb-5 pb-4 border-b-2 border-gray-200 print:mb-4 print:pb-3">
+            <div className="grid md:grid-cols-3 gap-4 print:gap-3">
               {/* Document Information - Left Side (2/3 width) */}
               <div className="md:col-span-2">
-                <h2 className="text-lg font-bold mb-4 print:text-sm flex items-center gap-2" style={{ color: '#004526' }}>
-                  <div className="w-1 h-6 rounded-full" style={{ backgroundColor: '#004526' }}></div>
-                  Document Information
-                </h2>
-                <div className="space-y-3 print:space-y-2">
-                  <div className="grid grid-cols-2 gap-4 print:gap-2">
-                    <div className="print:break-inside-avoid bg-gray-50 p-3 rounded-lg print:bg-transparent print:p-1">
-                      <p className="text-[10px] font-semibold uppercase tracking-wide mb-1" style={{ color: '#9CAF88' }}>Document No.</p>
-                      <p className="text-sm font-bold print:text-xs" style={{ color: '#004526' }}>{letter.reference_number}</p>
+                <h2 className="text-base font-bold text-gray-900 mb-3 print:text-sm">Document Information</h2>
+                <div className="space-y-2 print:space-y-2">
+                  <div className="grid grid-cols-2 gap-3 print:gap-2">
+                    <div className="print:break-inside-avoid">
+                      <p className="text-[10px] font-semibold text-gray-500 uppercase tracking-wide mb-1">Reference Number</p>
+                      <p className="text-sm font-bold text-gray-900 print:text-xs">{letter.reference_number}</p>
                     </div>
-                    <div className="print:break-inside-avoid bg-gray-50 p-3 rounded-lg print:bg-transparent print:p-1">
-                      <p className="text-[10px] font-semibold uppercase tracking-wide mb-1" style={{ color: '#9CAF88' }}>Status</p>
+                    <div className="print:break-inside-avoid">
+                      <p className="text-[10px] font-semibold text-gray-500 uppercase tracking-wide mb-1">Status</p>
                       <p className="text-sm font-bold print:text-xs">
                         {allComplete ? (
                           <span className="text-green-600">✓ Complete</span>
@@ -181,65 +164,51 @@ export default function Receipt({ letterId, onBack }: ReceiptProps) {
                     </div>
                   </div>
 
+                  <div className="print:break-inside-avoid">
+                    <p className="text-[10px] font-semibold text-gray-500 uppercase tracking-wide mb-1">Title</p>
+                    <p className="text-gray-900 font-medium text-sm print:text-xs">{letter.title}</p>
+                  </div>
+
                   {letter.document_type && (
-                    <div className="print:break-inside-avoid bg-gray-50 p-3 rounded-lg print:bg-transparent print:p-1">
-                      <p className="text-[10px] font-semibold uppercase tracking-wide mb-1" style={{ color: '#9CAF88' }}>Document Type</p>
-                      <p className="text-gray-900 text-sm print:text-xs font-medium">{letter.document_type}</p>
-                    </div>
-                  )}
-
-                  {documentFor && (
-                    <div className="print:break-inside-avoid bg-gray-50 p-3 rounded-lg print:bg-transparent print:p-1">
-                      <p className="text-[10px] font-semibold uppercase tracking-wide mb-1" style={{ color: '#9CAF88' }}>Document For</p>
-                      <p className="text-gray-900 text-sm print:text-xs font-medium">{documentFor}</p>
-                    </div>
-                  )}
-
-                  {documentThru && (
-                    <div className="print:break-inside-avoid bg-gray-50 p-3 rounded-lg print:bg-transparent print:p-1">
-                      <p className="text-[10px] font-semibold uppercase tracking-wide mb-1" style={{ color: '#9CAF88' }}>Thru</p>
-                      <p className="text-gray-900 text-sm print:text-xs font-medium">{documentThru}</p>
-                    </div>
-                  )}
-
-                  {documentFrom && (
-                    <div className="print:break-inside-avoid bg-gray-50 p-3 rounded-lg print:bg-transparent print:p-1">
-                      <p className="text-[10px] font-semibold uppercase tracking-wide mb-1" style={{ color: '#9CAF88' }}>Document From</p>
-                      <p className="text-gray-900 text-sm print:text-xs font-medium">{documentFrom}</p>
+                    <div className="print:break-inside-avoid">
+                      <p className="text-[10px] font-semibold text-gray-500 uppercase tracking-wide mb-1">Document Type</p>
+                      <p className="text-gray-900 capitalize text-sm print:text-xs">{letter.document_type}</p>
                     </div>
                   )}
 
                   {letter.document_subject && (
-                    <div className="print:break-inside-avoid bg-gray-50 p-3 rounded-lg print:bg-transparent print:p-1">
-                      <p className="text-[10px] font-semibold uppercase tracking-wide mb-1" style={{ color: '#9CAF88' }}>Document Subject</p>
-                      <p className="text-gray-900 text-sm print:text-xs font-medium leading-relaxed">{letter.document_subject}</p>
+                    <div className="print:break-inside-avoid">
+                      <p className="text-[10px] font-semibold text-gray-500 uppercase tracking-wide mb-1">Subject</p>
+                      <p className="text-gray-900 text-sm print:text-xs">{letter.document_subject}</p>
                     </div>
                   )}
 
-                  <div className="print:break-inside-avoid bg-gray-50 p-3 rounded-lg print:bg-transparent print:p-1">
-                    <p className="text-[10px] font-semibold uppercase tracking-wide mb-1" style={{ color: '#9CAF88' }}>Date Created</p>
-                    <p className="text-gray-900 text-sm print:text-xs font-medium">{new Date(letter.created_at).toLocaleString()}</p>
+                  {letter.description && (
+                    <div className="print:break-inside-avoid">
+                      <p className="text-[10px] font-semibold text-gray-500 uppercase tracking-wide mb-1">Description</p>
+                      <p className="text-gray-900 text-sm print:text-xs">{letter.description}</p>
+                    </div>
+                  )}
+
+                  <div className="print:break-inside-avoid">
+                    <p className="text-[10px] font-semibold text-gray-500 uppercase tracking-wide mb-1">Created Date</p>
+                    <p className="text-gray-900 text-sm print:text-xs">{new Date(letter.created_at).toLocaleString()}</p>
                   </div>
                 </div>
               </div>
 
               {/* QR Code - Right Side (1/3 width) */}
               <div className="md:col-span-1 flex flex-col items-center justify-start">
-                <h2 className="text-sm font-bold mb-3 print:text-xs" style={{ color: '#004526' }}>Document QR Code</h2>
+                <h2 className="text-sm font-bold text-gray-900 mb-2 print:text-xs">Reference QR Code</h2>
                 <div className="flex flex-col items-center">
-                  <div className="bg-white p-3 rounded-lg shadow-sm border-2 print:p-2 print:shadow-none" style={{ borderColor: '#9CAF88' }}>
+                  <div className="bg-white p-2 rounded print:p-1">
                     <QRCodeSVG 
-                      value={letter.file_url || letter.reference_number} 
-                      size={120} 
+                      value={letter.reference_number} 
+                      size={100} 
                       level="H"
-                      className="print:w-20 print:h-20"
-                      fgColor="#004526"
-                      bgColor="#ffffff"
+                      className="print:w-16 print:h-16"
                     />
                   </div>
-                  <p className="text-xs text-gray-600 mt-2 text-center print:text-[10px]">
-                    Scan to access document
-                  </p>
                 </div>
               </div>
             </div>
@@ -287,187 +256,61 @@ export default function Receipt({ letterId, onBack }: ReceiptProps) {
             </div>
           )}
 
-          {/* Signature History Section - Simple & Structured */}
-          <div className="mb-6 print:mb-4">
-            <h2 className="text-base font-bold mb-4 print:text-sm" style={{ color: '#004526' }}>
-              Signature History
-            </h2>
+          {/* Signature History Section - Only Noted Signatures */}
+          <div className="mb-5 print:mb-4">
+            <h2 className="text-base font-bold text-gray-900 mb-3 print:text-sm">Signature History</h2>
             
-            <div className="space-y-3 print:space-y-2">
-              {/* Noted Status */}
-              {statuses.filter((s) => s.status_type === 'noted').map((status) => (
-                <div
-                  key={status.id}
-                  className="border rounded-lg p-4 print:p-3 print:break-inside-avoid bg-white"
-                  style={{ borderColor: '#e5e7eb' }}
-                >
-                  <div className="flex items-start gap-3 mb-3">
-                    <div className="flex-shrink-0 mt-1">
-                      <CheckCircle className="w-5 h-5 print:w-4 print:h-4" style={{ color: '#004526' }} />
+            {statuses.filter((s) => s.status_type === 'noted').length > 0 ? (
+              <div className="space-y-2 print:space-y-2">
+                {statuses
+                  .filter((s) => s.status_type === 'noted')
+                  .map((status, index) => (
+                    <div
+                      key={status.id}
+                      className="border-2 rounded-lg p-3 print:border print:p-2 print:bg-white print:break-inside-avoid"
+                      style={{ borderColor: '#004526', backgroundColor: '#DFF5E1' }}
+                    >
+                      <div className="flex items-start gap-2">
+                        <div className="mt-1 flex-shrink-0">
+                          <CheckCircle className="w-5 h-5 print:w-4 print:h-4" style={{ color: '#004526' }} />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <h3 className="font-bold text-gray-900 text-sm mb-1 print:text-xs">
+                            Noted #{index + 1}
+                          </h3>
+                          <p className="text-xs text-gray-600 mb-1 print:text-[10px]">Acknowledged and noted</p>
+                          <div className="space-y-1 text-xs print:text-[10px]">
+                            <p className="text-gray-700 print:text-gray-900">
+                              <span className="font-semibold">Signed by:</span> {status.signed_by}
+                            </p>
+                            <p className="text-gray-700 print:text-gray-900">
+                              <span className="font-semibold">Date & Time:</span>{' '}
+                              {new Date(status.signed_at).toLocaleString()}
+                            </p>
+                            {status.notes && (
+                              <p className="text-gray-700 print:text-gray-900">
+                                <span className="font-semibold">Notes:</span> {status.notes}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                      </div>
                     </div>
-                    <div className="flex-1">
-                      <h3 className="font-bold text-sm print:text-xs" style={{ color: '#004526' }}>
-                        Noted ✓ Completed
-                      </h3>
-                      <p className="text-xs text-gray-500 print:text-[10px]">
-                        Person who noted the letter
-                      </p>
-                    </div>
+                  ))}
+              </div>
+            ) : (
+              <div className="border-2 border-gray-300 bg-gray-50 rounded-lg p-3 print:border print:p-2 print:bg-white">
+                <div className="flex items-start gap-2">
+                  <div className="mt-1 flex-shrink-0">
+                    <Clock className="w-5 h-5 text-gray-400 print:w-4 print:h-4" />
                   </div>
-                  
-                  <div className="ml-8 space-y-1">
-                    <p className="text-sm text-gray-900 print:text-xs">
-                      <span className="text-gray-600">Signed by:</span> {status.signed_by}
-                    </p>
-                    <p className="text-sm text-gray-900 print:text-xs">
-                      <span className="text-gray-600">Date:</span> {new Date(status.signed_at).toLocaleString('en-US', {
-                        month: 'numeric',
-                        day: 'numeric',
-                        year: 'numeric',
-                        hour: 'numeric',
-                        minute: '2-digit',
-                        hour12: true
-                      })}
-                    </p>
-                    {status.notes && (
-                      <p className="text-sm text-gray-900 print:text-xs mt-2">
-                        <span className="text-gray-600">Notes:</span> {status.notes}
-                      </p>
-                    )}
+                  <div className="flex-1">
+                    <h3 className="font-bold text-gray-900 text-sm mb-1 print:text-xs">No Signatures Yet</h3>
+                    <p className="text-xs text-gray-500 print:text-[10px]">Awaiting signatures</p>
                   </div>
                 </div>
-              ))}
-              
-              {/* Reviewed Status */}
-              {statuses.filter((s) => s.status_type === 'reviewed').length > 0 ? (
-                statuses.filter((s) => s.status_type === 'reviewed').map((status) => (
-                  <div
-                    key={status.id}
-                    className="border rounded-lg p-4 print:p-3 print:break-inside-avoid bg-white"
-                    style={{ borderColor: '#e5e7eb' }}
-                  >
-                    <div className="flex items-start gap-3 mb-3">
-                      <div className="flex-shrink-0 mt-1">
-                        <CheckCircle className="w-5 h-5 print:w-4 print:h-4" style={{ color: '#004526' }} />
-                      </div>
-                      <div className="flex-1">
-                        <h3 className="font-bold text-sm print:text-xs" style={{ color: '#004526' }}>
-                          Reviewed ✓ Completed
-                        </h3>
-                        <p className="text-xs text-gray-500 print:text-[10px]">
-                          Person who reviewed the letter
-                        </p>
-                      </div>
-                    </div>
-                    
-                    <div className="ml-8 space-y-1">
-                      <p className="text-sm text-gray-900 print:text-xs">
-                        <span className="text-gray-600">Signed by:</span> {status.signed_by}
-                      </p>
-                      <p className="text-sm text-gray-900 print:text-xs">
-                        <span className="text-gray-600">Date:</span> {new Date(status.signed_at).toLocaleString('en-US', {
-                          month: 'numeric',
-                          day: 'numeric',
-                          year: 'numeric',
-                          hour: 'numeric',
-                          minute: '2-digit',
-                          hour12: true
-                        })}
-                      </p>
-                      {status.notes && (
-                        <p className="text-sm text-gray-900 print:text-xs mt-2">
-                          <span className="text-gray-600">Notes:</span> {status.notes}
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                ))
-              ) : (
-                <div
-                  className="border rounded-lg p-4 print:p-3 bg-gray-50"
-                  style={{ borderColor: '#e5e7eb' }}
-                >
-                  <div className="flex items-start gap-3">
-                    <div className="flex-shrink-0 mt-1">
-                      <div className="w-5 h-5 border-2 rounded print:w-4 print:h-4" style={{ borderColor: '#d1d5db' }}></div>
-                    </div>
-                    <div className="flex-1">
-                      <h3 className="font-bold text-sm text-gray-400 print:text-xs">
-                        Reviewed
-                      </h3>
-                      <p className="text-xs text-gray-400 print:text-[10px]">
-                        Person who reviewed the letter
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              )}
-              
-              {/* Approved Status */}
-              {statuses.filter((s) => s.status_type === 'approved').length > 0 ? (
-                statuses.filter((s) => s.status_type === 'approved').map((status) => (
-                  <div
-                    key={status.id}
-                    className="border rounded-lg p-4 print:p-3 print:break-inside-avoid bg-white"
-                    style={{ borderColor: '#e5e7eb' }}
-                  >
-                    <div className="flex items-start gap-3 mb-3">
-                      <div className="flex-shrink-0 mt-1">
-                        <CheckCircle className="w-5 h-5 print:w-4 print:h-4" style={{ color: '#004526' }} />
-                      </div>
-                      <div className="flex-1">
-                        <h3 className="font-bold text-sm print:text-xs" style={{ color: '#004526' }}>
-                          Approved ✓ Completed
-                        </h3>
-                        <p className="text-xs text-gray-500 print:text-[10px]">
-                          Person who approved the letter
-                        </p>
-                      </div>
-                    </div>
-                    
-                    <div className="ml-8 space-y-1">
-                      <p className="text-sm text-gray-900 print:text-xs">
-                        <span className="text-gray-600">Signed by:</span> {status.signed_by}
-                      </p>
-                      <p className="text-sm text-gray-900 print:text-xs">
-                        <span className="text-gray-600">Date:</span> {new Date(status.signed_at).toLocaleString('en-US', {
-                          month: 'numeric',
-                          day: 'numeric',
-                          year: 'numeric',
-                          hour: 'numeric',
-                          minute: '2-digit',
-                          hour12: true
-                        })}
-                      </p>
-                      {status.notes && (
-                        <p className="text-sm text-gray-900 print:text-xs mt-2">
-                          <span className="text-gray-600">Notes:</span> {status.notes}
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                ))
-              ) : (
-                <div
-                  className="border rounded-lg p-4 print:p-3 bg-gray-50"
-                  style={{ borderColor: '#e5e7eb' }}
-                >
-                  <div className="flex items-start gap-3">
-                    <div className="flex-shrink-0 mt-1">
-                      <div className="w-5 h-5 border-2 rounded print:w-4 print:h-4" style={{ borderColor: '#d1d5db' }}></div>
-                    </div>
-                    <div className="flex-1">
-                      <h3 className="font-bold text-sm text-gray-400 print:text-xs">
-                        Approved
-                      </h3>
-                      <p className="text-xs text-gray-400 print:text-[10px]">
-                        Person who approved the letter
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
+              </div>
+            )}
           </div>
 
           {/* Footer Section */}

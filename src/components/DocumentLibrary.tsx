@@ -44,9 +44,7 @@ export default function DocumentLibrary({ onDocumentSelected, onViewDocumentInfo
     let filtered = documents;
 
     if (typeFilter !== 'all') {
-      filtered = filtered.filter((doc) => 
-        doc.document_type?.toLowerCase() === typeFilter.toLowerCase()
-      );
+      filtered = filtered.filter((doc) => doc.document_type === typeFilter);
     }
 
     if (searchQuery.trim()) {
@@ -54,6 +52,7 @@ export default function DocumentLibrary({ onDocumentSelected, onViewDocumentInfo
       filtered = filtered.filter(
         (doc) =>
           doc.reference_number.toLowerCase().includes(query) ||
+          doc.title.toLowerCase().includes(query) ||
           doc.document_subject?.toLowerCase().includes(query) ||
           doc.document_type?.toLowerCase().includes(query)
       );
@@ -75,7 +74,7 @@ export default function DocumentLibrary({ onDocumentSelected, onViewDocumentInfo
           style={{ color: '#004526' }}
         >
           <ArrowLeft className="w-4 h-4" />
-          Back
+          Back to Home
         </button>
 
         <div className="bg-white rounded-lg shadow-lg p-5">
@@ -89,7 +88,7 @@ export default function DocumentLibrary({ onDocumentSelected, onViewDocumentInfo
               <Search className="absolute left-3 top-2.5 w-4 h-4 text-gray-400" />
               <input
                 type="text"
-                placeholder="Search by document no., subject, or type..."
+                placeholder="Search by reference, title, or subject..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="w-full pl-9 pr-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:border-transparent"
@@ -104,13 +103,11 @@ export default function DocumentLibrary({ onDocumentSelected, onViewDocumentInfo
                 className="px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:border-transparent"
               >
                 <option value="all">All Documents</option>
-                <option value="Request">Request</option>
-                <option value="Letter">Letter</option>
-                <option value="Certificate">Certificate</option>
-                <option value="Memo">Memo</option>
-                <option value="Report">Report</option>
-                <option value="Notice">Notice</option>
-                <option value="Other">Other</option>
+                <option value="letter">Letters</option>
+                <option value="certificate">Certificates</option>
+                <option value="memo">Memos</option>
+                <option value="report">Reports</option>
+                <option value="other">Other</option>
               </select>
             </div>
           </div>
@@ -132,67 +129,55 @@ export default function DocumentLibrary({ onDocumentSelected, onViewDocumentInfo
               {filteredDocuments.map((doc) => (
                 <div
                   key={doc.id}
-                  className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow bg-white"
+                  className="border border-gray-200 rounded-lg p-3 hover:shadow-md transition-shadow"
                 >
                   <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-start gap-3 mb-3">
-                        <FileText className="w-5 h-5 mt-1 flex-shrink-0" style={{ color: '#004526' }} />
-                        <div className="min-w-0 flex-1">
-                          <div className="flex items-center gap-2 mb-1">
-                            <p className="text-sm font-bold" style={{ color: '#004526' }}>
-                              {doc.reference_number}
-                            </p>
-                            <span 
-                              className="inline-block text-xs px-2 py-1 rounded-full font-medium"
-                              style={{ 
-                                backgroundColor: '#DFF5E1', 
-                                color: '#004526',
-                                border: '1px solid #9CAF88'
-                              }}
-                            >
-                              {doc.document_type}
-                            </span>
-                          </div>
-                          {doc.document_subject && (
-                            <p className="text-sm text-gray-700 mb-2 leading-relaxed">
-                              {doc.document_subject}
-                            </p>
-                          )}
-                          <p className="text-xs text-gray-500">
-                            Created: {new Date(doc.created_at).toLocaleDateString('en-US', {
-                              year: 'numeric',
-                              month: 'short',
-                              day: 'numeric',
-                              hour: '2-digit',
-                              minute: '2-digit'
-                            })}
+                      <div className="flex items-start gap-2 mb-1">
+                        <FileText className="w-5 h-5 mt-0.5 flex-shrink-0" style={{ color: '#004526' }} />
+                        <div className="min-w-0">
+                          <p className="text-xs font-medium text-gray-500">
+                            {doc.reference_number}
                           </p>
+                          <h3 className="font-semibold text-gray-900 break-words text-sm">
+                            {doc.title}
+                          </h3>
                         </div>
+                      </div>
+                      {doc.document_subject && (
+                        <p className="text-xs text-gray-600 ml-7">{doc.document_subject}</p>
+                      )}
+                      <div className="flex flex-wrap gap-1 mt-2 ml-7">
+                        <span className="inline-block text-xs px-2 py-0.5 rounded" style={{ backgroundColor: '#DFF5E1', color: '#004526' }}>
+                          {doc.document_type}
+                        </span>
+                        <span className="inline-block bg-gray-100 text-gray-800 text-xs px-2 py-0.5 rounded">
+                          {new Date(doc.created_at).toLocaleDateString()}
+                        </span>
                       </div>
                     </div>
 
                     <div className="flex gap-2 flex-shrink-0">
                       <button
                         onClick={() => onViewDocumentInfo(doc.id)}
-                        className="flex items-center gap-1 text-white px-3 py-2 rounded-lg transition-colors text-sm font-medium"
+                        className="flex items-center gap-1 text-white px-3 py-1.5 rounded-lg transition-colors text-xs"
                         style={{ backgroundColor: '#9CAF88' }}
                         onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#004526'}
                         onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#9CAF88'}
                         title="View document info"
                       >
-                        <Info className="w-4 h-4" />
+                        <Info className="w-3 h-3" />
                         <span className="hidden sm:inline">Info</span>
                       </button>
                       <button
                         onClick={() => onDocumentSelected(doc.id)}
-                        className="flex items-center gap-1 text-white px-3 py-2 rounded-lg transition-colors text-sm font-medium"
+                        className="flex items-center gap-1 text-white px-3 py-1.5 rounded-lg transition-colors text-xs"
                         style={{ backgroundColor: '#004526' }}
                         onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#9CAF88'}
                         onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#004526'}
                         title="Track document"
                       >
-                        <Download className="w-4 h-4" />
+                        <Download className="w-3 h-3" />
                         <span className="hidden sm:inline">Track</span>
                       </button>
                     </div>
