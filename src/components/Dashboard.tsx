@@ -24,7 +24,7 @@ export default function Dashboard() {
       .on('postgres_changes', { event: '*', schema: 'public', table: 'letters' }, () => {
         loadStats();
       })
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'letter_handlers' }, () => {
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'letter_statuses' }, () => {
         loadStats();
       })
       .subscribe();
@@ -36,35 +36,29 @@ export default function Dashboard() {
 
   const loadStats = async () => {
     try {
-      const { data: letters } = await supabase
-        .from('letters')
-        .select('*, letter_handlers(*)');
+      const [{ data: letters }, { data: statuses }] = await Promise.all([
+        supabase.from('letters').select('id, document_type'),
+        supabase.from('letter_statuses').select('letter_id, signed_by'),
+      ]);
 
       if (letters) {
-        const completed = letters.filter((l: any) => l.received_at).length;
+        const lettersWithStatus = new Set(statuses?.map((s: any) => s.letter_id) ?? []);
+        const completed = letters.filter((l: any) => lettersWithStatus.has(l.id)).length;
         const pending = letters.length - completed;
-        
-        const uniqueHandlers = new Set();
+
+        const uniqueSigners = new Set(statuses?.map((s: any) => s.signed_by) ?? []);
+
         const typeCounts: DocumentTypeCount = {};
-        
         letters.forEach((letter: any) => {
-          // Count document types
           const docType = letter.document_type || 'Unspecified';
           typeCounts[docType] = (typeCounts[docType] || 0) + 1;
-          
-          // Count handlers
-          if (letter.letter_handlers) {
-            letter.letter_handlers.forEach((h: any) => {
-              uniqueHandlers.add(h.handler_name);
-            });
-          }
         });
 
         setStats({
           total: letters.length,
           pending,
           completed,
-          handlers: uniqueHandlers.size,
+          handlers: uniqueSigners.size,
         });
         setDocumentTypes(typeCounts);
       }

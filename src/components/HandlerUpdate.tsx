@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { Letter, LetterStatus } from '../types';
-import { Lock, CheckSquare, ArrowLeft } from 'lucide-react';
+import { Lock, CheckSquare, ArrowLeft, FileText, X, Download } from 'lucide-react';
 
 interface HandlerUpdateProps {
   letterId: string;
@@ -29,6 +29,7 @@ export default function HandlerUpdate({ letterId, onBack }: HandlerUpdateProps) 
   const [reviewedNotes, setReviewedNotes] = useState('');
 
   const [saving, setSaving] = useState(false);
+  const [showDoc, setShowDoc] = useState(false);
 
   useEffect(() => {
     fetchLetter();
@@ -36,6 +37,8 @@ export default function HandlerUpdate({ letterId, onBack }: HandlerUpdateProps) 
 
   const fetchLetter = async () => {
     try {
+      console.log('Fetching letter with ID:', letterId);
+      
       const { data: letterData, error: letterError } = await supabase
         .from('letters')
         .select('*')
@@ -43,6 +46,11 @@ export default function HandlerUpdate({ letterId, onBack }: HandlerUpdateProps) 
         .single();
 
       if (letterError) throw letterError;
+      
+      console.log('Letter data fetched:', letterData);
+      console.log('File URL:', letterData.file_url);
+      console.log('File Name:', letterData.file_name);
+      
       setLetter(letterData);
 
       const { data: statusData, error: statusError } = await supabase
@@ -230,14 +238,65 @@ export default function HandlerUpdate({ letterId, onBack }: HandlerUpdateProps) 
         </button>
 
         <div className="bg-white rounded-lg shadow-xl p-5">
-          <div className="flex items-center gap-2 mb-4">
-            <CheckSquare className="w-6 h-6" style={{ color: '#004526' }} />
-            <div>
-              <h1 className="text-xl font-bold" style={{ color: '#004526' }}>Record Status Updates</h1>
-              <p className="text-gray-600 text-sm">{letter.title}</p>
-              <p className="text-xs text-gray-500">Ref: {letter.reference_number}</p>
+          <div className="flex items-start gap-2 mb-4">
+            <div className="flex items-center gap-2">
+              <CheckSquare className="w-6 h-6" style={{ color: '#004526' }} />
+              <div>
+                <h1 className="text-xl font-bold" style={{ color: '#004526' }}>Record Status Updates</h1>
+                <p className="text-gray-600 text-sm">{letter.title}</p>
+                <p className="text-xs text-gray-500">Ref: {letter.reference_number}</p>
+              </div>
             </div>
           </div>
+
+          {/* Document file modal */}
+          {showDoc && letter.file_url && letter.file_name && (
+            <div className="fixed inset-0 bg-black bg-opacity-60 flex items-start justify-center z-50 p-4 overflow-y-auto">
+              <div className="bg-white rounded-xl shadow-2xl w-full max-w-3xl my-8">
+                <div className="flex items-center justify-between px-4 py-3 border-b">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <FileText className="w-4 h-4 shrink-0" style={{ color: '#004526' }} />
+                    <span className="text-sm font-medium text-gray-800 truncate">{letter.file_name}</span>
+                  </div>
+                  <div className="flex items-center gap-2 ml-2 shrink-0">
+                    <a
+                      href={letter.file_url}
+                      download={letter.file_name}
+                      className="flex items-center gap-1 text-xs text-white px-2.5 py-1.5 rounded-lg"
+                      style={{ backgroundColor: '#004526' }}
+                    >
+                      <Download className="w-3.5 h-3.5" />
+                      Download
+                    </a>
+                    <button onClick={() => setShowDoc(false)} className="p-1 hover:bg-gray-100 rounded-lg">
+                      <X className="w-5 h-5 text-gray-500" />
+                    </button>
+                  </div>
+                </div>
+                <div className="p-4">
+                  {/\.(jpg|jpeg|png|gif|webp|bmp)$/i.test(letter.file_name) ? (
+                    <img src={letter.file_url} alt={letter.file_name} className="w-full rounded-lg object-contain max-h-[70vh]" />
+                  ) : /\.pdf$/i.test(letter.file_name) ? (
+                    <iframe src={letter.file_url} className="w-full rounded-lg" style={{ height: '70vh' }} title={letter.file_name} />
+                  ) : /\.docx?$/i.test(letter.file_name) ? (
+                    <iframe
+                      src={`https://docs.google.com/viewer?url=${encodeURIComponent(letter.file_url)}&embedded=true`}
+                      className="w-full rounded-lg"
+                      style={{ height: '70vh' }}
+                      title={letter.file_name}
+                    />
+                  ) : (
+                    <div className="text-center py-8">
+                      <p className="text-gray-500 text-sm">Preview not available.</p>
+                      <a href={letter.file_url} target="_blank" rel="noopener noreferrer" className="text-xs underline mt-2 block" style={{ color: '#004526' }}>
+                        Open in new tab
+                      </a>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
 
           <form onSubmit={handleStatusUpdate} className="space-y-4">
             <div className="space-y-3 border-t pt-4">
@@ -400,6 +459,28 @@ export default function HandlerUpdate({ letterId, onBack }: HandlerUpdateProps) 
             >
               {saving ? 'Saving...' : 'Save Status Update'}
             </button>
+
+            {letter.file_url && letter.file_name ? (
+              <button
+                type="button"
+                onClick={() => setShowDoc(true)}
+                className="w-full flex items-center justify-center gap-2 py-2 px-4 rounded-lg text-sm font-medium border-2 transition-colors"
+                style={{ borderColor: '#004526', color: '#004526' }}
+                onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#DFF5E1'; }}
+                onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; }}
+              >
+                <FileText className="w-4 h-4" />
+                View Document File
+              </button>
+            ) : (
+              <div
+                className="w-full flex items-center justify-center gap-2 py-2 px-4 rounded-lg text-sm border-2 border-dashed text-gray-400"
+                style={{ borderColor: '#e5e7eb' }}
+              >
+                <FileText className="w-4 h-4" />
+                No document file available — file must be uploaded during document creation
+              </div>
+            )}
           </form>
         </div>
       </div>
