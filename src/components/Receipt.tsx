@@ -203,12 +203,26 @@ export default function Receipt({ letterId, onBack }: ReceiptProps) {
                 <div className="flex flex-col items-center">
                   <div className="bg-white p-2 rounded print:p-1">
                     <QRCodeSVG 
-                      value={letter.reference_number} 
+                      value={`${window.location.origin}/?track=${letter.id}`}
                       size={100} 
                       level="H"
                       className="print:w-16 print:h-16"
                     />
                   </div>
+                  <p className="text-[10px] text-gray-500 mt-1 text-center print:text-[8px]">
+                    Scan to track
+                  </p>
+                  <button
+                    onClick={() => {
+                      const url = `${window.location.origin}/?track=${letter.id}`;
+                      console.log('QR Code URL:', url);
+                      navigator.clipboard.writeText(url);
+                      alert('QR URL copied to clipboard:\n' + url);
+                    }}
+                    className="text-[10px] text-blue-600 underline mt-1 print:hidden"
+                  >
+                    Copy URL
+                  </button>
                 </div>
               </div>
             </div>

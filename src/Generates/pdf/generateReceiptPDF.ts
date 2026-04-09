@@ -1,5 +1,6 @@
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
+import QRCode from 'qrcode';
 import { Letter, LetterStatus } from '../../types';
 
 /**
@@ -28,6 +29,14 @@ export async function generateReceiptPDF(
     });
 
     let yPosition = 20;
+    
+    // Generate QR code as data URL
+    const trackingUrl = `${window.location.origin}/?track=${letter.id}`;
+    const qrCodeDataUrl = await QRCode.toDataURL(trackingUrl, {
+      width: 200,
+      margin: 1,
+      errorCorrectionLevel: 'H'
+    });
     
     // Add simple header WITHOUT border
     pdf.setFontSize(18);
@@ -120,6 +129,19 @@ export async function generateReceiptPDF(
     drawTableRow('Created Date', new Date(letter.created_at).toLocaleString(), currentRow++);
     
     yPosition = tableStartY + (currentRow * rowHeight) + 10;
+    
+    // Add QR Code on the right side
+    const qrSize = 35;
+    const qrX = 160;
+    const qrY = tableStartY;
+    
+    pdf.addImage(qrCodeDataUrl, 'PNG', qrX, qrY, qrSize, qrSize);
+    
+    // Add "Scan to track" text below QR
+    pdf.setFontSize(8);
+    pdf.setFont('helvetica', 'normal');
+    pdf.setTextColor(100, 100, 100);
+    pdf.text('Scan to track', qrX + (qrSize / 2), qrY + qrSize + 4, { align: 'center' });
     
     // Signature section (NO border, NO "Noted #X", just "Signed by" on right)
     const notedStatuses = statuses.filter((s) => s.status_type === 'noted');
