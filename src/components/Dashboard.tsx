@@ -24,7 +24,7 @@ export default function Dashboard() {
       .on('postgres_changes', { event: '*', schema: 'public', table: 'letters' }, () => {
         loadStats();
       })
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'letter_handlers' }, () => {
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'letter_statuses' }, () => {
         loadStats();
       })
       .subscribe();
@@ -36,29 +36,33 @@ export default function Dashboard() {
 
   const loadStats = async () => {
     try {
-      const { data: letters } = await supabase
+      const { data: letters, error: fetchError } = await supabase
         .from('letters')
-        .select('*, letter_handlers(*)');
+        .select('*, letter_statuses(*)');
+
+      console.log('Dashboard fetch result:', { letters, fetchError });
 
       if (letters) {
-        const completed = letters.filter((l: any) => l.received_at).length;
-        const pending = letters.length - completed;
-        
-        const uniqueHandlers = new Set();
         const typeCounts: DocumentTypeCount = {};
-        
+        let completed = 0;
+        const uniqueHandlers = new Set<string>();
+
         letters.forEach((letter: any) => {
           // Count document types
           const docType = letter.document_type || 'Unspecified';
           typeCounts[docType] = (typeCounts[docType] || 0) + 1;
-          
-          // Count handlers
-          if (letter.letter_handlers) {
-            letter.letter_handlers.forEach((h: any) => {
-              uniqueHandlers.add(h.handler_name);
+
+          // A letter is "completed" if it has any status update
+          if (letter.letter_statuses && letter.letter_statuses.length > 0) {
+            completed++;
+            // Collect unique signers as "handlers"
+            letter.letter_statuses.forEach((s: any) => {
+              if (s.signed_by) uniqueHandlers.add(s.signed_by);
             });
           }
         });
+
+        const pending = letters.length - completed;
 
         setStats({
           total: letters.length,
