@@ -3,7 +3,7 @@ import { Html5QrcodeScanner } from 'html5-qrcode';
 import { Camera, X, CheckCircle, AlertCircle } from 'lucide-react';
 
 interface QRScannerProps {
-  onScanSuccess: (decodedText: string) => void;
+  onScanSuccess: (letterId: string) => void;
   onClose: () => void;
 }
 
@@ -33,22 +33,33 @@ export default function QRScanner({ onScanSuccess, onClose }: QRScannerProps) {
       scanner.render(
         (decodedText) => {
           console.log('QR Code decoded:', decodedText);
+          
+          let resolvedId: string | null = null;
+
+          // Try parsing as a full URL first
           try {
             const url = new URL(decodedText);
-            const trackId = url.searchParams.get('track');
-            if (trackId) {
-              setDecodedData(decodedText);
-              setTrackingId(trackId);
-              setSuccess(`Valid QR code detected! Document ID: ${trackId.substring(0, 8)}...`);
-              setError('');
-              // Stop scanning after successful decode
-              scanner.pause();
-            } else {
-              setError('Invalid QR code: No tracking ID found.');
-              setSuccess('');
-            }
+            resolvedId = url.searchParams.get('id') || url.searchParams.get('track');
           } catch {
-            setError('Invalid QR code format. Please scan a document QR code from this system.');
+            // Not a valid URL — try extracting id param manually from a partial URL string
+            const idMatch = decodedText.match(/[?&]id=([^&]+)/);
+            const trackMatch = decodedText.match(/[?&]track=([^&]+)/);
+            resolvedId = (idMatch?.[1] || trackMatch?.[1]) ?? null;
+
+            // If still nothing, treat the raw text as the ID (UUID or plain string)
+            if (!resolvedId && decodedText.trim().length > 0) {
+              resolvedId = decodedText.trim();
+            }
+          }
+
+          if (resolvedId && resolvedId.trim().length > 0) {
+            setDecodedData(resolvedId);
+            setTrackingId(resolvedId);
+            setSuccess(`Valid QR code detected! Ready to track.`);
+            setError('');
+            scanner.pause();
+          } else {
+            setError('Invalid QR code: No tracking ID found. Make sure you are scanning a document QR code from this system.');
             setSuccess('');
           }
         },
@@ -84,7 +95,7 @@ export default function QRScanner({ onScanSuccess, onClose }: QRScannerProps) {
   const handleSubmit = () => {
     if (decodedData && scannerRef.current) {
       scannerRef.current.clear();
-      onScanSuccess(decodedData);
+      onScanSuccess(decodedData); // now passing letterId directly
     }
   };
 

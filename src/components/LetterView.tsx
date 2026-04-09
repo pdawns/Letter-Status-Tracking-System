@@ -34,7 +34,7 @@ export default function LetterView({ letterId, onBack }: LetterViewProps) {
     }
   };
 
-  const trackingUrl = `${window.location.origin}?track=${letterId}`;
+  const trackingUrl = `${window.location.origin}/?track=${letterId}`;
 
   const handlePrint = () => {
     window.print();

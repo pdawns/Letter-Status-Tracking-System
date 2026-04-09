@@ -8,13 +8,13 @@ interface CreateLetterProps {
 
 export default function CreateLetter({ onLetterCreated }: CreateLetterProps) {
   const [documentType, setDocumentType] = useState('letter');
+  const [otherDocumentType, setOtherDocumentType] = useState('');
   const [title, setTitle] = useState('');
   const [subject, setSubject] = useState('');
   const [pin, setPin] = useState('');
   const [file, setFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [uploadProgress, setUploadProgress] = useState(0);
 
   const generateReferenceNumber = () => {
     const year = new Date().getFullYear();
@@ -69,6 +69,11 @@ export default function CreateLetter({ onLetterCreated }: CreateLetterProps) {
       return;
     }
 
+    if (documentType === 'other' && !otherDocumentType.trim()) {
+      setError('Please specify the document type');
+      return;
+    }
+
     if (pin.length < 4) {
       setError('PIN must be at least 4 characters');
       return;
@@ -85,15 +90,13 @@ export default function CreateLetter({ onLetterCreated }: CreateLetterProps) {
           reference_number: referenceNumber,
           title,
           document_subject: subject,
-          document_type: documentType,
+          document_type: documentType === 'other' ? otherDocumentType.trim() : documentType,
           handler_pin: pin,
         })
         .select()
         .single();
 
       if (insertError) throw insertError;
-
-      setUploadProgress(50);
 
       const fileUrl = await uploadFile(data.id);
 
@@ -109,13 +112,11 @@ export default function CreateLetter({ onLetterCreated }: CreateLetterProps) {
         if (updateError) throw updateError;
       }
 
-      setUploadProgress(100);
       onLetterCreated(data.id);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to create document');
     } finally {
       setLoading(false);
-      setUploadProgress(0);
     }
   };
 
@@ -138,7 +139,10 @@ export default function CreateLetter({ onLetterCreated }: CreateLetterProps) {
             <select
               id="type"
               value={documentType}
-              onChange={(e) => setDocumentType(e.target.value)}
+              onChange={(e) => {
+                setDocumentType(e.target.value);
+                setOtherDocumentType('');
+              }}
               className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:border-transparent"
             >
               <option value="letter">Letter</option>
@@ -147,6 +151,16 @@ export default function CreateLetter({ onLetterCreated }: CreateLetterProps) {
               <option value="report">Report</option>
               <option value="other">Other</option>
             </select>
+            {documentType === 'other' && (
+              <input
+                type="text"
+                value={otherDocumentType}
+                onChange={(e) => setOtherDocumentType(e.target.value)}
+                className="w-full mt-2 px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:border-transparent"
+                placeholder="Specify document type..."
+                required
+              />
+            )}
           </div>
 
           <div>
@@ -221,21 +235,6 @@ export default function CreateLetter({ onLetterCreated }: CreateLetterProps) {
               You'll need this PIN to record status updates. Keep it secure.
             </p>
           </div>
-
-          {uploadProgress > 0 && uploadProgress < 100 && (
-            <div className="rounded-lg p-3" style={{ backgroundColor: '#DFF5E1' }}>
-              <div className="flex items-center justify-between mb-1">
-                <p className="text-xs font-medium" style={{ color: '#004526' }}>Uploading...</p>
-                <p className="text-xs font-medium" style={{ color: '#004526' }}>{uploadProgress}%</p>
-              </div>
-              <div className="w-full rounded-full h-1.5" style={{ backgroundColor: '#9CAF88' }}>
-                <div
-                  className="h-1.5 rounded-full transition-all"
-                  style={{ width: `${uploadProgress}%`, backgroundColor: '#004526' }}
-                ></div>
-              </div>
-            </div>
-          )}
 
           {error && (
             <div className="bg-red-50 border border-red-200 text-red-700 px-3 py-2 rounded-lg text-xs">

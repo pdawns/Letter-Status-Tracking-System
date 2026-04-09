@@ -203,7 +203,7 @@ export default function Receipt({ letterId, onBack }: ReceiptProps) {
                 <div className="flex flex-col items-center">
                   <div className="bg-white p-2 rounded print:p-1">
                     <QRCodeSVG 
-                      value={`${window.location.origin}/?track=${letter.id}`}
+                      value={`${window.location.origin}/?ref=${letter.reference_number}&type=${letter.document_type || 'document'}&id=${letter.id}`}
                       size={100} 
                       level="H"
                       className="print:w-16 print:h-16"
@@ -214,7 +214,7 @@ export default function Receipt({ letterId, onBack }: ReceiptProps) {
                   </p>
                   <button
                     onClick={() => {
-                      const url = `${window.location.origin}/?track=${letter.id}`;
+                      const url = `${window.location.origin}/?ref=${letter.reference_number}&type=${letter.document_type || 'document'}&id=${letter.id}`;
                       console.log('QR Code URL:', url);
                       navigator.clipboard.writeText(url);
                       alert('QR URL copied to clipboard:\n' + url);

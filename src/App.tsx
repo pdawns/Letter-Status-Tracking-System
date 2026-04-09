@@ -21,10 +21,20 @@ function App() {
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
-    const trackId = params.get('track');
+    
+    // Try new format first: ?ref=XXX&type=YYY&id=ZZZ
+    const trackId = params.get('id');
+    
+    // Fallback to old format: ?track=id
+    const oldTrackId = params.get('track');
 
     if (trackId) {
+      // New format detected
       setCurrentLetterId(trackId);
+      setView('track');
+    } else if (oldTrackId) {
+      // Old format detected (backward compatibility)
+      setCurrentLetterId(oldTrackId);
       setView('track');
     }
   }, []);
@@ -52,14 +62,10 @@ function App() {
     setView('track');
   };
 
-  const handleQRScanSuccess = (decodedText: string) => {
-    const url = new URL(decodedText);
-    const trackId = url.searchParams.get('track');
-    if (trackId) {
-      setCurrentLetterId(trackId);
-      setView('track');
-      setShowScanner(false);
-    }
+  const handleQRScanSuccess = (letterId: string) => {
+    setCurrentLetterId(letterId);
+    setView('track');
+    setShowScanner(false);
   };
 
   const handleDocumentSelected = (letterId: string) => {
