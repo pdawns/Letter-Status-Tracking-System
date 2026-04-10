@@ -68,13 +68,10 @@ export default function CreateLetter({ onLetterCreated }: CreateLetterProps) {
         handler_pin: pin,
       });
 
-      console.log('Letter inserted:', letter);
-
       if (file) {
         try {
           const fileUrl = await uploadFileToStorage(file, letter.id);
           updateLetter(letter.id, { file_url: fileUrl ?? undefined, file_name: file.name });
-          console.log('File stored successfully');
         } catch (fileErr) {
           console.warn('File too large for localStorage, saving document without file:', fileErr);
           updateLetter(letter.id, { file_name: file.name });

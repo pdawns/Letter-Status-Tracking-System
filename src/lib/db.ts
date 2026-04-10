@@ -24,7 +24,6 @@ export const insertLetter = (data: Omit<Letter, 'id' | 'created_at'>): Letter =>
   const existing = getLetters();
   existing.push(letter);
   saveLetters(existing);
-  console.log('Saved to localStorage. Total letters:', existing.length);
   return letter;
 };
 

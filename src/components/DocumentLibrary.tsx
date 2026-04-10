@@ -38,7 +38,6 @@ export default function DocumentLibrary({ onDocumentSelected, onViewDocumentInfo
   const fetchDocuments = async () => {
     try {
       const data = getLetters();
-      console.log('Loaded documents from localStorage:', data.length, data);
       setDocuments(data);
     } catch (err) {
       console.error('Error fetching documents:', err);
