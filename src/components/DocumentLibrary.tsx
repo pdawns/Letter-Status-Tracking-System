@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { supabase } from '../lib/supabase';
+import { getLetters, deleteLetter } from '../lib/db';
 import { Letter } from '../types';
 import { Search, FileText, Download, Eye, ArrowLeft, Filter, Info, Trash2 } from 'lucide-react';
 
@@ -29,13 +29,8 @@ export default function DocumentLibrary({ onDocumentSelected, onViewDocumentInfo
 
   const fetchDocuments = async () => {
     try {
-      const { data, error } = await supabase
-        .from('letters')
-        .select('*')
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-      setDocuments(data || []);
+      const data = getLetters();
+      setDocuments(data);
     } catch (err) {
       console.error('Error fetching documents:', err);
     } finally {
@@ -83,8 +78,7 @@ export default function DocumentLibrary({ onDocumentSelected, onViewDocumentInfo
     setDeletingId(confirmDelete.id);
     setConfirmDelete(null);
     try {
-      const { error } = await supabase.from('letters').delete().eq('id', confirmDelete.id);
-      if (error) throw error;
+      deleteLetter(confirmDelete.id);
       setDocuments((prev) => prev.filter((d) => d.id !== confirmDelete.id));
     } catch (err) {
       console.error('Error deleting document:', err);

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
-import { supabase } from '../lib/supabase';
+import { getLetter, getStatusesForLetter } from '../lib/db';
 import { Letter, LetterStatus } from '../types';
 import { FileText, CheckCircle, Clock, Download, ArrowLeft, Paperclip, ExternalLink } from 'lucide-react';
 import { generateReceiptPDF, downloadPDF } from '../Generates/pdf';
@@ -21,23 +21,10 @@ export default function Receipt({ letterId, onBack }: ReceiptProps) {
 
   const fetchData = async () => {
     try {
-      const { data: letterData, error: letterError } = await supabase
-        .from('letters')
-        .select('*')
-        .eq('id', letterId)
-        .single();
-
-      if (letterError) throw letterError;
+      const letterData = getLetter(letterId);
+      if (!letterData) throw new Error('Letter not found');
       setLetter(letterData);
-
-      const { data: statusData, error: statusError } = await supabase
-        .from('letter_statuses')
-        .select('*')
-        .eq('letter_id', letterId)
-        .order('signed_at', { ascending: true });
-
-      if (statusError) throw statusError;
-      setStatuses(statusData || []);
+      setStatuses(getStatusesForLetter(letterId));
     } catch (err) {
       console.error('Error fetching data:', err);
     } finally {

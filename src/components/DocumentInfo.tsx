@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { supabase } from '../lib/supabase';
+import { getLetter } from '../lib/db';
 import { Letter } from '../types';
 import { ArrowLeft, FileText, Calendar, Tag, Download, Eye, Loader } from 'lucide-react';
 
@@ -18,13 +18,8 @@ export default function DocumentInfo({ letterId, onBack }: DocumentInfoProps) {
 
   const fetchDocument = async () => {
     try {
-      const { data, error } = await supabase
-        .from('letters')
-        .select('*')
-        .eq('id', letterId)
-        .single();
-
-      if (error) throw error;
+      const data = getLetter(letterId);
+      if (!data) throw new Error('Not found');
       setDocument(data);
     } catch (err) {
       console.error('Error fetching document:', err);

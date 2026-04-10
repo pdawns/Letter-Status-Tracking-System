@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { supabase } from '../lib/supabase';
+import { getLetter, getStatusesForLetter, insertStatuses } from '../lib/db';
 import { Letter, LetterStatus } from '../types';
 import { Lock, CheckSquare, ArrowLeft } from 'lucide-react';
 
@@ -36,28 +36,15 @@ export default function HandlerUpdate({ letterId, onBack }: HandlerUpdateProps) 
 
   const fetchLetter = async () => {
     try {
-      const { data: letterData, error: letterError } = await supabase
-        .from('letters')
-        .select('*')
-        .eq('id', letterId)
-        .single();
-
-      if (letterError) throw letterError;
+      const letterData = getLetter(letterId);
+      if (!letterData) throw new Error('Letter not found');
       setLetter(letterData);
 
-      const { data: statusData, error: statusError } = await supabase
-        .from('letter_statuses')
-        .select('*')
-        .eq('letter_id', letterId)
-        .order('signed_at', { ascending: true });
-
-      if (statusError) throw statusError;
-      setStatuses(statusData || []);
-
-      const existingStatuses = statusData || [];
-      setNoted(existingStatuses.some((s) => s.status_type === 'noted'));
-      setApproved(existingStatuses.some((s) => s.status_type === 'approved'));
-      setReviewed(existingStatuses.some((s) => s.status_type === 'reviewed'));
+      const statusData = getStatusesForLetter(letterId);
+      setStatuses(statusData);
+      setNoted(statusData.some((s) => s.status_type === 'noted'));
+      setApproved(statusData.some((s) => s.status_type === 'approved'));
+      setReviewed(statusData.some((s) => s.status_type === 'reviewed'));
     } catch (err) {
       console.error('Error fetching letter:', err);
       setError('Failed to load letter');
@@ -108,17 +95,7 @@ export default function HandlerUpdate({ letterId, onBack }: HandlerUpdateProps) 
     setSaving(true);
 
     try {
-      const insertData = updates.map((update) => ({
-        letter_id: letterId,
-        ...update,
-      }));
-
-      const { error: insertError } = await supabase
-        .from('letter_statuses')
-        .insert(insertData);
-
-      if (insertError) throw insertError;
-
+      insertStatuses(updates.map((u) => ({ letter_id: letterId, ...u })));
       alert('Status updated successfully!');
       fetchLetter();
     } catch (err) {

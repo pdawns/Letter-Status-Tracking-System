@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { supabase } from '../lib/supabase';
+import { insertLetter, updateLetter, uploadFile as uploadFileToStorage } from '../lib/db';
 import { FileText, Upload } from 'lucide-react';
 
 interface CreateLetterProps {
@@ -21,30 +21,6 @@ export default function CreateLetter({ onLetterCreated }: CreateLetterProps) {
     const prefix = documentType === 'certificate' ? 'CERT' : 'DOC';
     const random = Math.floor(Math.random() * 10000).toString().padStart(4, '0');
     return `${prefix}-${year}-${random}`;
-  };
-
-  const uploadFile = async (documentId: string): Promise<string | null> => {
-    if (!file) return null;
-
-    try {
-      const fileExt = file.name.split('.').pop();
-      const filePath = `${documentId}/${Date.now()}.${fileExt}`;
-
-      const { error: uploadError } = await supabase.storage
-        .from('documents')
-        .upload(filePath, file);
-
-      if (uploadError) throw uploadError;
-
-      const { data } = supabase.storage
-        .from('documents')
-        .getPublicUrl(filePath);
-
-      return data.publicUrl;
-    } catch (err) {
-      console.error('File upload error:', err);
-      throw new Error('Failed to upload document file');
-    }
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -84,37 +60,24 @@ export default function CreateLetter({ onLetterCreated }: CreateLetterProps) {
     try {
       const referenceNumber = generateReferenceNumber();
 
-      const { data, error: insertError } = await supabase
-        .from('letters')
-        .insert({
-          reference_number: referenceNumber,
-          title,
-          document_subject: subject,
-          document_type: documentType === 'other' ? otherDocumentType.trim() : documentType,
-          handler_pin: pin,
-        })
-        .select()
-        .single();
+      const letter = insertLetter({
+        reference_number: referenceNumber,
+        title,
+        document_subject: subject,
+        document_type: documentType === 'other' ? otherDocumentType.trim() : documentType,
+        handler_pin: pin,
+      });
 
-      if (insertError) throw insertError;
-
-      const fileUrl = await uploadFile(data.id);
-
-      if (fileUrl) {
-        const { error: updateError} = await supabase
-          .from('letters')
-          .update({
-            file_url: fileUrl,
-            file_name: file.name,
-          })
-          .eq('id', data.id);
-
-        if (updateError) throw updateError;
+      if (file) {
+        const fileUrl = await uploadFileToStorage(file, letter.id);
+        updateLetter(letter.id, { file_url: fileUrl ?? undefined, file_name: file.name });
       }
 
-      onLetterCreated(data.id);
+      onLetterCreated(letter.id);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to create document');
+      console.error('Create document error:', err);
+      const msg = (err as any)?.message || JSON.stringify(err);
+      setError(msg || 'Failed to create document');
     } finally {
       setLoading(false);
     }
