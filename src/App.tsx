@@ -9,11 +9,13 @@ import Receipt from './components/Receipt';
 import QRScanner from './components/QRScanner';
 import DocumentLibrary from './components/DocumentLibrary';
 import DocumentInfo from './components/DocumentInfo';
+import LandingPage from './components/LandingPage';
 import { Camera, Library } from 'lucide-react';
 
 type View = 'dashboard' | 'tracking' | 'document-tracking' | 'letter-view' | 'track' | 'handler' | 'receipt' | 'scanner' | 'library' | 'document-info';
 
 function App() {
+  const [showLanding, setShowLanding] = useState(true);
   const [view, setView] = useState<View>('dashboard');
   const [currentLetterId, setCurrentLetterId] = useState<string>('');
   const [showScanner, setShowScanner] = useState(false);
@@ -92,6 +94,9 @@ function App() {
   };
 
   return (
+    <>
+    {showLanding && <LandingPage onEnter={() => setShowLanding(false)} />}
+    {!showLanding && (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-gray-100">
       <Sidebar 
         currentView={
@@ -204,6 +209,8 @@ function App() {
         )}
       </div>
     </div>
+    )}
+    </>
   );
 }
 
