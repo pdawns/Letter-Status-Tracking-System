@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { Letter } from '../types';
-import { Search, FileText, Download, Eye, ArrowLeft, Filter, Info } from 'lucide-react';
+import { Search, FileText, Download, Eye, ArrowLeft, Filter, Info, Trash2 } from 'lucide-react';
 
 interface DocumentLibraryProps {
   onDocumentSelected: (letterId: string) => void;
@@ -15,6 +15,9 @@ export default function DocumentLibrary({ onDocumentSelected, onViewDocumentInfo
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [typeFilter, setTypeFilter] = useState('all');
+  const [sortOrder, setSortOrder] = useState('desc');
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [confirmDelete, setConfirmDelete] = useState<Letter | null>(null);
 
   useEffect(() => {
     fetchDocuments();
@@ -22,7 +25,7 @@ export default function DocumentLibrary({ onDocumentSelected, onViewDocumentInfo
 
   useEffect(() => {
     filterDocuments();
-  }, [documents, searchQuery, typeFilter]);
+  }, [documents, searchQuery, typeFilter, sortOrder]);
 
   const fetchDocuments = async () => {
     try {
@@ -58,14 +61,40 @@ export default function DocumentLibrary({ onDocumentSelected, onViewDocumentInfo
       );
     }
 
-    setFilteredDocuments(filtered);
+    setFilteredDocuments(filtered.sort((a, b) => {
+      const dateA = new Date(a.created_at).getTime();
+      const dateB = new Date(b.created_at).getTime();
+      return sortOrder === 'desc' ? dateB - dateA : dateA - dateB;
+    }));
   };
 
-  const viewDocument = (url: string) => {
-    window.open(url, '_blank');
+  const viewDocument = (doc: Letter) => {
+    if (!doc.file_url) return;
+    const isOfficeFile = doc.file_url.match(/\.(doc|docx|xls|xlsx|ppt|pptx)$/i);
+    if (isOfficeFile) {
+      window.open(`https://docs.google.com/viewer?url=${encodeURIComponent(doc.file_url)}&embedded=false`, '_blank');
+    } else {
+      window.open(doc.file_url, '_blank', 'noopener,noreferrer');
+    }
+  };
+
+  const handleDeleteConfirmed = async () => {
+    if (!confirmDelete) return;
+    setDeletingId(confirmDelete.id);
+    setConfirmDelete(null);
+    try {
+      const { error } = await supabase.from('letters').delete().eq('id', confirmDelete.id);
+      if (error) throw error;
+      setDocuments((prev) => prev.filter((d) => d.id !== confirmDelete.id));
+    } catch (err) {
+      console.error('Error deleting document:', err);
+    } finally {
+      setDeletingId(null);
+    }
   };
 
   return (
+    <>
     <div className="p-5">
       <div className="max-w-5xl mx-auto">
         <button
@@ -107,7 +136,16 @@ export default function DocumentLibrary({ onDocumentSelected, onViewDocumentInfo
                 <option value="certificate">Certificates</option>
                 <option value="memo">Memos</option>
                 <option value="report">Reports</option>
+                <option value="disbursement_voucher">Disbursement Voucher</option>
                 <option value="other">Other</option>
+              </select>
+              <select
+                value={sortOrder}
+                onChange={(e) => setSortOrder(e.target.value)}
+                className="px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:border-transparent"
+              >
+                <option value="desc">Newest First</option>
+                <option value="asc">Oldest First</option>
               </select>
             </div>
           </div>
@@ -169,6 +207,16 @@ export default function DocumentLibrary({ onDocumentSelected, onViewDocumentInfo
                         <Info className="w-3 h-3" />
                         <span className="hidden sm:inline">Info</span>
                       </button>
+                      {doc.file_url && (
+                        <button
+                          onClick={() => viewDocument(doc)}
+                          className="flex items-center gap-1 bg-green-600 text-white px-3 py-1.5 rounded-lg hover:bg-green-700 transition-colors text-xs"
+                          title="View document"
+                        >
+                          <Eye className="w-3 h-3" />
+                          <span className="hidden sm:inline">View</span>
+                        </button>
+                      )}
                       <button
                         onClick={() => onDocumentSelected(doc.id)}
                         className="flex items-center gap-1 text-white px-3 py-1.5 rounded-lg transition-colors text-xs"
@@ -179,6 +227,15 @@ export default function DocumentLibrary({ onDocumentSelected, onViewDocumentInfo
                       >
                         <Download className="w-3 h-3" />
                         <span className="hidden sm:inline">Track</span>
+                      </button>
+                      <button
+                        onClick={() => setConfirmDelete(doc)}
+                        disabled={deletingId === doc.id}
+                        className="flex items-center gap-1 bg-red-600 text-white px-3 py-1.5 rounded-lg hover:bg-red-700 transition-colors text-xs disabled:opacity-50"
+                        title="Delete document"
+                      >
+                        <Trash2 className="w-3 h-3" />
+                        <span className="hidden sm:inline">Delete</span>
                       </button>
                     </div>
                   </div>
@@ -195,5 +252,21 @@ export default function DocumentLibrary({ onDocumentSelected, onViewDocumentInfo
         </div>
       </div>
     </div>
+
+    {confirmDelete && (
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div className="bg-white rounded-lg shadow-xl p-6 max-w-sm w-full">
+          <h2 className="text-lg font-bold text-gray-900 mb-2">Delete Document</h2>
+          <p className="text-gray-600 mb-1">Are you sure you want to delete:</p>
+          <p className="font-semibold text-gray-900 mb-4">"{confirmDelete.title}"</p>
+          <p className="text-sm text-red-600 mb-6">This action cannot be undone.</p>
+          <div className="flex gap-3">
+            <button onClick={() => setConfirmDelete(null)} className="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors">Cancel</button>
+            <button onClick={handleDeleteConfirmed} className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors">Yes, Delete</button>
+          </div>
+        </div>
+      </div>
+    )}
+    </>
   );
 }

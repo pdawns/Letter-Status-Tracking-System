@@ -149,6 +149,7 @@ export default function CreateLetter({ onLetterCreated }: CreateLetterProps) {
               <option value="certificate">Certificate</option>
               <option value="memo">Memo</option>
               <option value="report">Report</option>
+              <option value="disbursement_voucher">Disbursement Voucher</option>
               <option value="other">Other</option>
             </select>
             {documentType === 'other' && (

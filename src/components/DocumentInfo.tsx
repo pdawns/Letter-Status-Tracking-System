@@ -34,8 +34,12 @@ export default function DocumentInfo({ letterId, onBack }: DocumentInfoProps) {
   };
 
   const viewDocument = () => {
-    if (document?.file_url) {
-      window.open(document.file_url, '_blank');
+    if (!document?.file_url) return;
+    const isOfficeFile = document.file_url.match(/\.(doc|docx|xls|xlsx|ppt|pptx)$/i);
+    if (isOfficeFile) {
+      window.open(`https://docs.google.com/viewer?url=${encodeURIComponent(document.file_url)}&embedded=false`, '_blank');
+    } else {
+      window.open(document.file_url, '_blank', 'noopener,noreferrer');
     }
   };
 

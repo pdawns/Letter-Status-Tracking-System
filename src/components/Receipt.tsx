@@ -142,9 +142,9 @@ export default function Receipt({ letterId, onBack }: ReceiptProps) {
 
           {/* Document Information and QR Code Section - Side by Side */}
           <div className="mb-5 pb-4 border-b-2 border-gray-200 print:mb-4 print:pb-3">
-            <div className="grid md:grid-cols-3 gap-4 print:gap-3">
-              {/* Document Information - Left Side (2/3 width) */}
-              <div className="md:col-span-2">
+            <div className="flex flex-row gap-4 print:gap-3">
+              {/* Document Information - Left Side */}
+              <div className="flex-1 min-w-0">
                 <h2 className="text-base font-bold text-gray-900 mb-3 print:text-sm">Document Information</h2>
                 <div className="space-y-2 print:space-y-2">
                   <div className="grid grid-cols-2 gap-3 print:gap-2">
@@ -197,8 +197,8 @@ export default function Receipt({ letterId, onBack }: ReceiptProps) {
                 </div>
               </div>
 
-              {/* QR Code - Right Side (1/3 width) */}
-              <div className="md:col-span-1 flex flex-col items-center justify-start">
+              {/* QR Code - Always on the Right */}
+              <div className="flex-shrink-0 flex flex-col items-center justify-start w-36">
                 <h2 className="text-sm font-bold text-gray-900 mb-2 print:text-xs">Reference QR Code</h2>
                 <div className="flex flex-col items-center">
                   <div className="bg-white p-2 rounded print:p-1">
