@@ -1,6 +1,6 @@
 import { FileText, Clock, CheckCircle, Users } from 'lucide-react';
 import { useEffect, useState } from 'react';
-import { supabase } from '../lib/supabase';
+import { getLetters, getStatuses } from '../lib/db';
 
 interface DocumentTypeCount {
   [key: string]: number;
@@ -17,61 +17,37 @@ export default function Dashboard() {
 
   useEffect(() => {
     loadStats();
-    
-    // Real-time subscription
-    const channel = supabase
-      .channel('dashboard-changes')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'letters' }, () => {
-        loadStats();
-      })
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'letter_statuses' }, () => {
-        loadStats();
-      })
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
   }, []);
 
-  const loadStats = async () => {
+  const loadStats = () => {
     try {
-      const { data: letters, error: fetchError } = await supabase
-        .from('letters')
-        .select('*, letter_statuses(*)');
+      const letters = getLetters();
+      const allStatuses = getStatuses();
 
-      console.log('Dashboard fetch result:', { letters, fetchError });
+      const typeCounts: DocumentTypeCount = {};
+      let completed = 0;
+      const uniqueHandlers = new Set<string>();
 
-      if (letters) {
-        const typeCounts: DocumentTypeCount = {};
-        let completed = 0;
-        const uniqueHandlers = new Set<string>();
+      letters.forEach((letter) => {
+        const docType = letter.document_type || 'Unspecified';
+        typeCounts[docType] = (typeCounts[docType] || 0) + 1;
 
-        letters.forEach((letter: any) => {
-          // Count document types
-          const docType = letter.document_type || 'Unspecified';
-          typeCounts[docType] = (typeCounts[docType] || 0) + 1;
+        const letterStatuses = allStatuses.filter((s) => s.letter_id === letter.id);
+        if (letterStatuses.length > 0) {
+          completed++;
+          letterStatuses.forEach((s) => {
+            if (s.signed_by) uniqueHandlers.add(s.signed_by);
+          });
+        }
+      });
 
-          // A letter is "completed" if it has any status update
-          if (letter.letter_statuses && letter.letter_statuses.length > 0) {
-            completed++;
-            // Collect unique signers as "handlers"
-            letter.letter_statuses.forEach((s: any) => {
-              if (s.signed_by) uniqueHandlers.add(s.signed_by);
-            });
-          }
-        });
-
-        const pending = letters.length - completed;
-
-        setStats({
-          total: letters.length,
-          pending,
-          completed,
-          handlers: uniqueHandlers.size,
-        });
-        setDocumentTypes(typeCounts);
-      }
+      setStats({
+        total: letters.length,
+        pending: letters.length - completed,
+        completed,
+        handlers: uniqueHandlers.size,
+      });
+      setDocumentTypes(typeCounts);
     } catch (error) {
       console.error('Error loading stats:', error);
     }

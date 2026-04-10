@@ -21,7 +21,10 @@ export const getLetter = (id: string): Letter | null =>
 
 export const insertLetter = (data: Omit<Letter, 'id' | 'created_at'>): Letter => {
   const letter: Letter = { ...data, id: generateId(), created_at: new Date().toISOString() };
-  saveLetters([...getLetters(), letter]);
+  const existing = getLetters();
+  existing.push(letter);
+  saveLetters(existing);
+  console.log('Saved to localStorage. Total letters:', existing.length);
   return letter;
 };
 

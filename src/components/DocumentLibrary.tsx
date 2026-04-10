@@ -23,6 +23,14 @@ export default function DocumentLibrary({ onDocumentSelected, onViewDocumentInfo
     fetchDocuments();
   }, []);
 
+  // Refresh every time the component mounts or becomes active
+  useEffect(() => {
+    fetchDocuments();
+    const handleFocus = () => fetchDocuments();
+    window.addEventListener('focus', handleFocus);
+    return () => window.removeEventListener('focus', handleFocus);
+  }, []);
+
   useEffect(() => {
     filterDocuments();
   }, [documents, searchQuery, typeFilter, sortOrder]);
@@ -30,6 +38,7 @@ export default function DocumentLibrary({ onDocumentSelected, onViewDocumentInfo
   const fetchDocuments = async () => {
     try {
       const data = getLetters();
+      console.log('Loaded documents from localStorage:', data.length, data);
       setDocuments(data);
     } catch (err) {
       console.error('Error fetching documents:', err);

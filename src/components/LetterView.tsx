@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
-import { supabase } from '../lib/supabase';
+import { getLetter } from '../lib/db';
 import { Letter } from '../types';
 import { FileText, Download, ArrowLeft, Eye } from 'lucide-react';
 
@@ -19,13 +19,8 @@ export default function LetterView({ letterId, onBack }: LetterViewProps) {
 
   const fetchLetter = async () => {
     try {
-      const { data, error } = await supabase
-        .from('letters')
-        .select('*')
-        .eq('id', letterId)
-        .single();
-
-      if (error) throw error;
+      const data = getLetter(letterId);
+      if (!data) throw new Error('Not found');
       setLetter(data);
     } catch (err) {
       console.error('Error fetching letter:', err);
