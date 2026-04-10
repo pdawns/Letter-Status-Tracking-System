@@ -1,4 +1,6 @@
 import { FileText, QrCode, Library, ArrowRight, Shield, Clock, CheckCircle } from 'lucide-react';
+import misamisSeal from '../assets/misamis-seal.png';
+import ptoLogo from '../assets/pto-logo.png';
 
 interface LandingPageProps {
   onEnter: () => void;
@@ -15,12 +17,9 @@ export default function LandingPage({ onEnter }: LandingPageProps) {
             {/* Province Seal */}
             <div className="w-14 h-14 rounded-full overflow-hidden bg-white flex items-center justify-center flex-shrink-0 border-2 border-yellow-400">
               <img
-                src="https://upload.wikimedia.org/wikipedia/commons/thumb/8/8e/Seal_of_Misamis_Oriental.svg/1200px-Seal_of_Misamis_Oriental.svg.png"
+                src={misamisSeal}
                 alt="Province of Misamis Oriental Seal"
                 className="w-full h-full object-contain"
-                onError={(e) => {
-                  e.currentTarget.style.display = 'none';
-                }}
               />
             </div>
             <div>
@@ -72,20 +71,10 @@ export default function LandingPage({ onEnter }: LandingPageProps) {
             <div className="flex flex-col items-center gap-4">
               <div className="flex gap-6 items-center">
                 <div className="w-28 h-28 rounded-full bg-white p-2 shadow-xl border-4 border-yellow-400 flex items-center justify-center">
-                  <img
-                    src="https://upload.wikimedia.org/wikipedia/commons/thumb/8/8e/Seal_of_Misamis_Oriental.svg/1200px-Seal_of_Misamis_Oriental.svg.png"
-                    alt="Province of Misamis Oriental"
-                    className="w-full h-full object-contain"
-                    onError={(e) => {
-                      e.currentTarget.parentElement!.innerHTML = '<div class="text-center p-2"><div class="text-2xl">🏛️</div><div class="text-xs text-gray-600 mt-1">Misamis Oriental</div></div>';
-                    }}
-                  />
+                  <img src={misamisSeal} alt="Province of Misamis Oriental" className="w-full h-full object-contain" />
                 </div>
                 <div className="w-28 h-28 rounded-full bg-white p-2 shadow-xl border-4 flex items-center justify-center" style={{ borderColor: '#9CAF88' }}>
-                  <div className="text-center">
-                    <div className="text-3xl">💰</div>
-                    <div className="text-xs font-bold mt-1" style={{ color: '#004526' }}>PTO</div>
-                  </div>
+                  <img src={ptoLogo} alt="Provincial Treasurer's Office" className="w-full h-full object-contain" />
                 </div>
               </div>
               <p className="text-xs opacity-70 text-center">Province of Misamis Oriental<br/>Provincial Treasurer's Office</p>
