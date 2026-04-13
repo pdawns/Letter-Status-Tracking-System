@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { getLetter } from '../lib/db';
+import { getLetter } from '../lib/api';
 import { Letter } from '../types';
 import { FileText, User, Eye, ArrowLeft } from 'lucide-react';
 

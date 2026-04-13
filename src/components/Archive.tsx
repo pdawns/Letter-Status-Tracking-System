@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { getArchivedLetters, unarchiveLetter, deleteLetter } from '../lib/db';
+import { getArchivedLetters, unarchiveLetter, deleteLetter } from '../lib/api';
 import { Letter } from '../types';
 import { Search, FileText, Eye, ArrowLeft, Filter, ArchiveRestore, Trash2 } from 'lucide-react';
 
@@ -23,8 +23,9 @@ export default function Archive({ onBack, onDocumentSelected }: ArchiveProps) {
 
   useEffect(() => { applyFilters(); }, [documents, searchQuery, typeFilter, sortBy, sortOrder]);
 
-  const fetchDocs = () => {
-    setDocuments(getArchivedLetters());
+  const fetchDocs = async () => {
+    const data = await getArchivedLetters();
+    setDocuments(data);
     setLoading(false);
   };
 
@@ -52,16 +53,16 @@ export default function Archive({ onBack, onDocumentSelected }: ArchiveProps) {
     setFiltered(result);
   };
 
-  const handleUnarchive = () => {
+  const handleUnarchive = async () => {
     if (!confirmRestore) return;
-    unarchiveLetter(confirmRestore.id);
+    await unarchiveLetter(confirmRestore.id);
     setConfirmRestore(null);
     fetchDocs();
   };
 
-  const handleDeleteConfirmed = () => {
+  const handleDeleteConfirmed = async () => {
     if (!confirmDelete) return;
-    deleteLetter(confirmDelete.id);
+    await deleteLetter(confirmDelete.id);
     setConfirmDelete(null);
     fetchDocs();
   };

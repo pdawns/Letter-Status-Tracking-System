@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { insertLetter, updateLetter, uploadFile as uploadFileToStorage } from '../lib/db';
+import { insertLetter, updateLetter, uploadFile as uploadFileToStorage } from '../lib/api';
 import { FileText, Upload } from 'lucide-react';
 
 interface CreateLetterProps {

@@ -1,6 +1,6 @@
 import { FileText, Clock, CheckCircle, Users } from 'lucide-react';
 import { useEffect, useState } from 'react';
-import { getLetters, getStatuses } from '../lib/db';
+import { getLetters, getStatusesForLetter } from '../lib/api';
 
 interface DocumentTypeCount {
   [key: string]: number;
@@ -19,34 +19,24 @@ export default function Dashboard() {
     loadStats();
   }, []);
 
-  const loadStats = () => {
+  const loadStats = async () => {
     try {
-      const letters = getLetters();
-      const allStatuses = getStatuses();
-
+      const letters = await getLetters();
       const typeCounts: DocumentTypeCount = {};
       let completed = 0;
       const uniqueHandlers = new Set<string>();
 
-      letters.forEach((letter) => {
+      for (const letter of letters) {
         const docType = letter.document_type || 'Unspecified';
         typeCounts[docType] = (typeCounts[docType] || 0) + 1;
-
-        const letterStatuses = allStatuses.filter((s) => s.letter_id === letter.id);
+        const letterStatuses = await getStatusesForLetter(letter.id);
         if (letterStatuses.length > 0) {
           completed++;
-          letterStatuses.forEach((s) => {
-            if (s.signed_by) uniqueHandlers.add(s.signed_by);
-          });
+          letterStatuses.forEach((s) => { if (s.signed_by) uniqueHandlers.add(s.signed_by); });
         }
-      });
+      }
 
-      setStats({
-        total: letters.length,
-        pending: letters.length - completed,
-        completed,
-        handlers: uniqueHandlers.size,
-      });
+      setStats({ total: letters.length, pending: letters.length - completed, completed, handlers: uniqueHandlers.size });
       setDocumentTypes(typeCounts);
     } catch (error) {
       console.error('Error loading stats:', error);

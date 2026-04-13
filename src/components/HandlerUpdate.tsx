@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { getLetter, getStatusesForLetter, insertStatuses } from '../lib/db';
+import { getLetter, getStatusesForLetter, insertStatuses } from '../lib/api';
 import { Letter, LetterStatus } from '../types';
 import { Lock, CheckSquare, ArrowLeft } from 'lucide-react';
 

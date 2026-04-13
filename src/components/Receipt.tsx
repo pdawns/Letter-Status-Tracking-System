@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
-import { getLetter, getStatusesForLetter } from '../lib/db';
+import { getLetter, getStatusesForLetter } from '../lib/api';
 import { Letter, LetterStatus } from '../types';
 import { FileText, CheckCircle, Clock, Download, ArrowLeft, Paperclip, ExternalLink } from 'lucide-react';
 import { generateReceiptPDF, downloadPDF } from '../Generates/pdf';
