@@ -3,15 +3,21 @@ const Database = require('better-sqlite3');
 const cors = require('cors');
 const multer = require('multer');
 const path = require('path');
-const fs = require('fs');
 const crypto = require('crypto');
+require('dotenv').config({ path: path.join(__dirname, '../.env') });
+const { createClient } = require('@supabase/supabase-js');
 
 const app = express();
 const PORT = 3001;
 
-// Ensure uploads folder exists
-const UPLOADS_DIR = path.join(__dirname, 'uploads');
-if (!fs.existsSync(UPLOADS_DIR)) fs.mkdirSync(UPLOADS_DIR, { recursive: true });
+// Supabase client for storage only
+const supabase = createClient(
+  process.env.VITE_SUPABASE_URL,
+  process.env.VITE_SUPABASE_ANON_KEY
+);
+
+// Use memory storage — files go straight to Supabase, not disk
+const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 500 * 1024 * 1024 } });
 
 // Setup SQLite
 const db = new Database(path.join(__dirname, 'dts.db'));
@@ -42,16 +48,8 @@ db.exec(`
   );
 `);
 
-// File storage
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => cb(null, UPLOADS_DIR),
-  filename: (req, file, cb) => cb(null, `${Date.now()}-${file.originalname}`),
-});
-const upload = multer({ storage, limits: { fileSize: 500 * 1024 * 1024 } });
-
 app.use(cors());
 app.use(express.json());
-app.use('/uploads', express.static(UPLOADS_DIR));
 
 // ── Letters ──────────────────────────────────────────────
 
@@ -96,7 +94,7 @@ app.delete('/api/letters/:id', (req, res) => {
 });
 
 app.patch('/api/letters/:id/archive', (req, res) => {
-  db.prepare('UPDATE letters SET archived = 1, archived_at = datetime(\'now\') WHERE id = ?').run(req.params.id);
+  db.prepare("UPDATE letters SET archived = 1, archived_at = datetime('now') WHERE id = ?").run(req.params.id);
   res.json({ success: true });
 });
 
@@ -105,12 +103,31 @@ app.patch('/api/letters/:id/unarchive', (req, res) => {
   res.json({ success: true });
 });
 
-// ── File Upload ───────────────────────────────────────────
+// ── File Upload (Supabase Storage) ───────────────────────
 
-app.post('/api/upload', upload.single('file'), (req, res) => {
+app.post('/api/upload', upload.single('file'), async (req, res) => {
   if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
-  const fileUrl = `http://localhost:${PORT}/uploads/${req.file.filename}`;
-  res.json({ file_url: fileUrl, file_name: req.file.originalname });
+
+  try {
+    const fileExt = req.file.originalname.split('.').pop();
+    const filePath = `documents/${Date.now()}-${crypto.randomUUID()}.${fileExt}`;
+
+    const { error: uploadError } = await supabase.storage
+      .from('documents')
+      .upload(filePath, req.file.buffer, {
+        contentType: req.file.mimetype,
+        upsert: false,
+      });
+
+    if (uploadError) throw uploadError;
+
+    const { data } = supabase.storage.from('documents').getPublicUrl(filePath);
+
+    res.json({ file_url: data.publicUrl, file_name: req.file.originalname });
+  } catch (err) {
+    console.error('Upload error:', err);
+    res.status(500).json({ error: err.message || 'Upload failed' });
+  }
 });
 
 // ── Statuses ─────────────────────────────────────────────
