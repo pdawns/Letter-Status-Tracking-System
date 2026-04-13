@@ -17,6 +17,11 @@ export default function CreateLetter({ onLetterCreated }: CreateLetterProps) {
   const [error, setError] = useState('');
   const [fileWarning, setFileWarning] = useState('');
   const [showConfirm, setShowConfirm] = useState(false);
+  // Sender info
+  const [senderName, setSenderName] = useState('');
+  const [senderOffice, setSenderOffice] = useState('');
+  const [senderPhone, setSenderPhone] = useState('');
+  const [senderEmail, setSenderEmail] = useState('');
 
   const generateReferenceNumber = () => {
     const year = new Date().getFullYear();
@@ -72,21 +77,25 @@ export default function CreateLetter({ onLetterCreated }: CreateLetterProps) {
     try {
       const referenceNumber = generateReferenceNumber();
 
-      const letter = insertLetter({
+      const letter = await insertLetter({
         reference_number: referenceNumber,
         title,
         document_subject: subject,
         document_type: documentType === 'other' ? otherDocumentType.trim() : documentType,
         handler_pin: pin,
+        sender_name: senderName,
+        sender_office: senderOffice,
+        sender_phone: senderPhone,
+        sender_email: senderEmail,
       });
 
       if (file) {
         try {
           const fileUrl = await uploadFileToStorage(file, letter.id);
-          updateLetter(letter.id, { file_url: fileUrl ?? undefined, file_name: file.name });
+          await updateLetter(letter.id, { file_url: fileUrl ?? undefined, file_name: file.name });
         } catch (fileErr) {
-          console.warn('File too large for localStorage, saving document without file:', fileErr);
-          updateLetter(letter.id, { file_name: file.name });
+          console.warn('File too large, saving without file:', fileErr);
+          await updateLetter(letter.id, { file_name: file.name });
         }
       }
 
@@ -203,6 +212,57 @@ export default function CreateLetter({ onLetterCreated }: CreateLetterProps) {
                 <span>{fileWarning}</span>
               </div>
             )}
+          </div>
+
+          {/* Sender Information */}
+          <div className="border-t pt-4">
+            <p className="text-xs font-semibold text-gray-700 mb-3 uppercase tracking-wide">Sender Information (Optional)</p>
+            <div className="space-y-3">
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">Sender Name</label>
+                  <input
+                    type="text"
+                    value={senderName}
+                    onChange={(e) => setSenderName(e.target.value)}
+                    className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:border-transparent"
+                    placeholder="e.g., Juan Dela Cruz"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">Office / Company</label>
+                  <input
+                    type="text"
+                    value={senderOffice}
+                    onChange={(e) => setSenderOffice(e.target.value)}
+                    className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:border-transparent"
+                    placeholder="e.g., DILG Regional Office"
+                  />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">Phone Number</label>
+                  <input
+                    type="tel"
+                    value={senderPhone}
+                    onChange={(e) => setSenderPhone(e.target.value)}
+                    className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:border-transparent"
+                    placeholder="e.g., 09XXXXXXXXX"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">Email Address</label>
+                  <input
+                    type="email"
+                    value={senderEmail}
+                    onChange={(e) => setSenderEmail(e.target.value)}
+                    className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:border-transparent"
+                    placeholder="e.g., sender@email.com"
+                  />
+                </div>
+              </div>
+            </div>
           </div>
 
           <div>

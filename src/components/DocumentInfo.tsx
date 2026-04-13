@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { getLetter } from '../lib/api';
 import { Letter } from '../types';
-import { ArrowLeft, FileText, Calendar, Tag, Download, Eye, Loader } from 'lucide-react';
+import { ArrowLeft, FileText, Calendar, Tag, Download, Eye, Loader, Bell } from 'lucide-react';
+import NotifySender from './NotifySender';
 
 interface DocumentInfoProps {
   letterId: string;
@@ -11,6 +12,7 @@ interface DocumentInfoProps {
 export default function DocumentInfo({ letterId, onBack }: DocumentInfoProps) {
   const [document, setDocument] = useState<Letter | null>(null);
   const [loading, setLoading] = useState(true);
+  const [showNotify, setShowNotify] = useState(false);
 
   useEffect(() => {
     fetchDocument();
@@ -193,6 +195,24 @@ export default function DocumentInfo({ letterId, onBack }: DocumentInfoProps) {
                     Download
                   </button>
                 </div>
+                {(document.sender_phone || document.sender_email) && (
+                  <button
+                    onClick={() => setShowNotify(true)}
+                    className="flex items-center gap-1.5 text-white px-3 py-1.5 rounded-lg transition-colors text-xs mt-2"
+                    style={{ backgroundColor: '#9CAF88' }}
+                    onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#004526'}
+                    onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#9CAF88'}
+                  >
+                    <Bell className="w-3.5 h-3.5" />
+                    Notify Sender
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+      {showNotify && document && <NotifySender letter={document} onClose={() => setShowNotify(false)} />}
               )}
             </div>
 

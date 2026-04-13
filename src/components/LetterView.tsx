@@ -2,7 +2,8 @@ import { useEffect, useState } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
 import { getLetter } from '../lib/api';
 import { Letter } from '../types';
-import { FileText, Download, ArrowLeft, Eye } from 'lucide-react';
+import { FileText, Download, ArrowLeft, Eye, Bell } from 'lucide-react';
+import NotifySender from './NotifySender';
 
 interface LetterViewProps {
   letterId: string;
@@ -12,6 +13,7 @@ interface LetterViewProps {
 export default function LetterView({ letterId, onBack }: LetterViewProps) {
   const [letter, setLetter] = useState<Letter | null>(null);
   const [loading, setLoading] = useState(true);
+  const [showNotify, setShowNotify] = useState(false);
 
   useEffect(() => {
     fetchLetter();
@@ -121,7 +123,20 @@ export default function LetterView({ letterId, onBack }: LetterViewProps) {
             <Download className="w-4 h-4" />
             Print/Save
           </button>
+          {(letter.sender_phone || letter.sender_email) && (
+            <button
+              onClick={() => setShowNotify(true)}
+              className="flex items-center gap-2 text-white px-4 py-2 rounded-lg transition-colors print:hidden"
+              style={{ backgroundColor: '#9CAF88' }}
+              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#004526'}
+              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#9CAF88'}
+            >
+              <Bell className="w-4 h-4" />
+              Notify Sender
+            </button>
+          )}
         </div>
+        {showNotify && letter && <NotifySender letter={letter} onClose={() => setShowNotify(false)} />}
 
         <div className="border-t border-gray-200 pt-6 space-y-4">
           <div>

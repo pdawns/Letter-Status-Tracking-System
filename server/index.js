@@ -35,6 +35,10 @@ db.exec(`
     file_name TEXT,
     archived INTEGER DEFAULT 0,
     archived_at TEXT,
+    sender_name TEXT DEFAULT '',
+    sender_office TEXT DEFAULT '',
+    sender_phone TEXT DEFAULT '',
+    sender_email TEXT DEFAULT '',
     created_at TEXT DEFAULT (datetime('now'))
   );
   CREATE TABLE IF NOT EXISTS letter_statuses (
@@ -69,9 +73,9 @@ app.get('/api/letters/:id', (req, res) => {
 
 app.post('/api/letters', (req, res) => {
   const id = crypto.randomUUID();
-  const { reference_number, title, document_subject, document_type, handler_pin, description } = req.body;
-  db.prepare('INSERT INTO letters (id, reference_number, title, document_subject, document_type, handler_pin, description) VALUES (?, ?, ?, ?, ?, ?, ?)')
-    .run(id, reference_number, title, document_subject || '', document_type || 'letter', handler_pin, description || '');
+  const { reference_number, title, document_subject, document_type, handler_pin, description, sender_name, sender_office, sender_phone, sender_email } = req.body;
+  db.prepare('INSERT INTO letters (id, reference_number, title, document_subject, document_type, handler_pin, description, sender_name, sender_office, sender_phone, sender_email) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)')
+    .run(id, reference_number, title, document_subject || '', document_type || 'letter', handler_pin, description || '', sender_name || '', sender_office || '', sender_phone || '', sender_email || '');
   res.json(db.prepare('SELECT * FROM letters WHERE id = ?').get(id));
 });
 

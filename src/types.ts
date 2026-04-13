@@ -11,6 +11,10 @@ export interface Letter {
   created_at: string;
   archived?: boolean;
   archived_at?: string;
+  sender_name?: string;
+  sender_office?: string;
+  sender_phone?: string;
+  sender_email?: string;
 }
 
 export interface LetterStatus {
