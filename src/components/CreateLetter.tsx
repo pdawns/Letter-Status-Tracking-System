@@ -15,6 +15,7 @@ export default function CreateLetter({ onLetterCreated }: CreateLetterProps) {
   const [file, setFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [fileWarning, setFileWarning] = useState('');
 
   const generateReferenceNumber = () => {
     const year = new Date().getFullYear();
@@ -33,6 +34,14 @@ export default function CreateLetter({ onLetterCreated }: CreateLetterProps) {
       }
       setFile(selectedFile);
       setError('');
+      // Warn if file exceeds local preview limit (~1.5MB)
+      if (selectedFile.size > 1.5 * 1024 * 1024) {
+        setFileWarning(
+          `This file is ${(selectedFile.size / (1024 * 1024)).toFixed(1)}MB. Files larger than 1.5MB cannot be previewed due to browser storage limitations. The document will still be created, but Print Preview will not be available.`
+        );
+      } else {
+        setFileWarning('');
+      }
     }
   };
 
@@ -184,6 +193,12 @@ export default function CreateLetter({ onLetterCreated }: CreateLetterProps) {
                 </div>
               </label>
             </div>
+            {fileWarning && (
+              <div className="mt-2 bg-yellow-50 border border-yellow-200 text-yellow-800 px-3 py-2 rounded-lg text-xs flex items-start gap-2">
+                <span className="mt-0.5">⚠️</span>
+                <span>{fileWarning}</span>
+              </div>
+            )}
           </div>
 
           <div>

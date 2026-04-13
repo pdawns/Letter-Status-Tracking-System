@@ -2,9 +2,9 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <link rel="icon" id="dynamic-favicon" type="image/png" href="" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Document Tracking System</title>
+    <title>DTS | Provincial Treasurer's Office</title>
     <meta property="og:image" content="https://bolt.new/static/og_default.png" />
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:image" content="https://bolt.new/static/og_default.png" />
@@ -12,5 +12,34 @@
   <body>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
+    <script>
+      const canvas = document.createElement('canvas');
+      canvas.width = 64; canvas.height = 64;
+      const ctx = canvas.getContext('2d');
+      // Draw image offscreen with filter applied
+      const offscreen = document.createElement('canvas');
+      offscreen.width = 64; offscreen.height = 64;
+      const octx = offscreen.getContext('2d');
+      const img = new Image();
+      img.src = '/logo1.jpg';
+      img.onload = () => {
+        // Apply green filter same as sidebar logo
+        octx.filter = 'hue-rotate(200deg) saturate(1.5) brightness(0.95)';
+        octx.drawImage(img, 0, 0, 64, 64);
+        // Green circle background
+        ctx.beginPath();
+        ctx.arc(32, 32, 32, 0, Math.PI * 2);
+        ctx.fillStyle = '#004526';
+        ctx.fill();
+        // Clip to circle then draw filtered image
+        ctx.save();
+        ctx.beginPath();
+        ctx.arc(32, 32, 28, 0, Math.PI * 2);
+        ctx.clip();
+        ctx.drawImage(offscreen, 4, 4, 56, 56);
+        ctx.restore();
+        document.getElementById('dynamic-favicon').href = canvas.toDataURL('image/png');
+      };
+    </script>
   </body>
 </html>

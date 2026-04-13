@@ -30,32 +30,33 @@ export default function DocumentInfo({ letterId, onBack }: DocumentInfoProps) {
 
   const viewDocument = () => {
     if (!document?.file_url) return;
-    const isOfficeFile = document.file_url.match(/\.(doc|docx|xls|xlsx|ppt|pptx)$/i);
-    if (isOfficeFile) {
-      window.open(`https://docs.google.com/viewer?url=${encodeURIComponent(document.file_url)}&embedded=false`, '_blank');
-    } else {
-      window.open(document.file_url, '_blank', 'noopener,noreferrer');
-    }
+    const blob = dataUrlToBlob(document.file_url);
+    const blobUrl = URL.createObjectURL(blob);
+    window.open(blobUrl, '_blank', 'noopener,noreferrer');
+    setTimeout(() => URL.revokeObjectURL(blobUrl), 10000);
   };
 
   const downloadDocument = async () => {
-    if (document?.file_url) {
-      try {
-        const response = await fetch(document.file_url);
-        const blob = await response.blob();
-        const url = window.URL.createObjectURL(blob);
-        const link = window.document.createElement('a');
-        link.href = url;
-        link.download = document.file_name || 'document';
-        window.document.body.appendChild(link);
-        link.click();
-        window.URL.revokeObjectURL(url);
-        window.document.body.removeChild(link);
-      } catch (err) {
-        console.error('Error downloading document:', err);
-        alert('Failed to download document');
-      }
-    }
+    if (!document?.file_url) return;
+    const blob = dataUrlToBlob(document.file_url);
+    const blobUrl = URL.createObjectURL(blob);
+    const link = window.document.createElement('a');
+    link.href = blobUrl;
+    link.download = document.file_name || 'document';
+    window.document.body.appendChild(link);
+    link.click();
+    window.document.body.removeChild(link);
+    setTimeout(() => URL.revokeObjectURL(blobUrl), 1000);
+  };
+
+  // Convert base64 data URL to Blob for safe browser open/download
+  const dataUrlToBlob = (dataUrl: string): Blob => {
+    const [header, base64] = dataUrl.split(',');
+    const mime = header.match(/:(.*?);/)?.[1] || 'application/octet-stream';
+    const binary = atob(base64);
+    const bytes = new Uint8Array(binary.length);
+    for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+    return new Blob([bytes], { type: mime });
   };
 
   if (loading) {
@@ -160,52 +161,77 @@ export default function DocumentInfo({ letterId, onBack }: DocumentInfoProps) {
               </div>
             )}
 
-            {document.file_name && (
-              <div className="p-3 rounded-lg col-span-2" style={{ backgroundColor: '#DFF5E1' }}>
-                <p className="text-xs text-gray-600 mb-1">File Name</p>
-                <p className="text-sm font-medium break-all" style={{ color: '#004526' }}>{document.file_name}</p>
-              </div>
-            )}
           </div>
 
-          {/* Document Actions & Preview */}
-          {document.file_url && (
-            <div className="border-t pt-4">
-              <h3 className="text-base font-semibold mb-3" style={{ color: '#004526' }}>Document File</h3>
-              
-              <div className="flex flex-wrap gap-2 mb-4">
-                <button
-                  onClick={viewDocument}
-                  className="flex items-center gap-2 text-white px-4 py-2 rounded-lg transition-colors text-sm"
-                  style={{ backgroundColor: '#004526' }}
-                  onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#9CAF88'}
-                  onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#004526'}
-                >
-                  <Eye className="w-4 h-4" />
-                  View Document
-                </button>
-                <button
-                  onClick={downloadDocument}
-                  className="flex items-center gap-2 text-white px-4 py-2 rounded-lg transition-colors text-sm"
-                  style={{ backgroundColor: '#004526' }}
-                  onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#9CAF88'}
-                  onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#004526'}
-                >
-                  <Download className="w-4 h-4" />
-                  Download
-                </button>
-              </div>
+          {/* Print Preview Section */}
+          <div className="border-t pt-4">
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-base font-semibold flex items-center gap-2" style={{ color: '#004526' }}>
+                <Eye className="w-4 h-4" />
+                Print Preview
+              </h3>
+              {document.file_url && (
+                <div className="flex gap-2">
+                  <button
+                    onClick={viewDocument}
+                    className="flex items-center gap-1.5 text-white px-3 py-1.5 rounded-lg transition-colors text-xs"
+                    style={{ backgroundColor: '#004526' }}
+                    onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#9CAF88'}
+                    onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#004526'}
+                  >
+                    <Eye className="w-3.5 h-3.5" />
+                    Open
+                  </button>
+                  <button
+                    onClick={downloadDocument}
+                    className="flex items-center gap-1.5 text-white px-3 py-1.5 rounded-lg transition-colors text-xs"
+                    style={{ backgroundColor: '#004526' }}
+                    onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#9CAF88'}
+                    onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#004526'}
+                  >
+                    <Download className="w-3.5 h-3.5" />
+                    Download
+                  </button>
+                </div>
+              )}
+            </div>
 
-              {/* Document Preview */}
-              <div className="bg-gray-100 rounded-lg overflow-hidden">
-                <iframe
-                  src={document.file_url}
-                  className="w-full h-96 border-0"
-                  title="Document Preview"
-                />
+            {/* File name badge */}
+            {document.file_name && (
+              <p className="text-xs text-gray-500 mb-2 flex items-center gap-1">
+                <FileText className="w-3 h-3" />
+                {document.file_name}
+              </p>
+            )}
+
+            {/* Preview frame */}
+            <div className="rounded-lg overflow-hidden border border-gray-200 shadow-inner bg-gray-200 p-3">
+              <div className="bg-white shadow-lg rounded mx-auto overflow-hidden" style={{ minHeight: '500px' }}>
+                {document.file_url ? (
+                  document.file_url.match(/\.(jpg|jpeg|png|gif|webp)$/i) || document.file_url.startsWith('data:image/') ? (
+                    <img
+                      src={document.file_url}
+                      alt={document.file_name || 'Document'}
+                      className="w-full h-auto object-contain"
+                    />
+                  ) : (
+                    <iframe
+                      src={document.file_url}
+                      className="w-full border-0"
+                      style={{ height: '600px' }}
+                      title="Print Preview"
+                    />
+                  )
+                ) : (
+                  <div className="flex flex-col items-center justify-center h-full py-16 text-gray-400">
+                    <FileText className="w-12 h-12 mb-3 opacity-30" />
+                    <p className="text-sm">No preview available</p>
+                    <p className="text-xs mt-1 opacity-70">The file could not be loaded for preview</p>
+                  </div>
+                )}
               </div>
             </div>
-          )}
+          </div>
         </div>
       </div>
     </div>

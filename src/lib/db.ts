@@ -69,10 +69,29 @@ export const insertStatuses = (items: Omit<LetterStatus, 'id' | 'signed_at'>[]):
 
 // ── File Storage (base64 in localStorage) ────────────────
 
-export const uploadFile = async (file: File, documentId: string): Promise<string> => {
+// localStorage has ~5MB limit; base64 encoding adds ~33% overhead
+// Safe limit for a single file is ~1.5MB original size
+const MAX_PREVIEW_SIZE = 1.5 * 1024 * 1024; // 1.5MB
+
+export const uploadFile = async (file: File, _documentId: string): Promise<string> => {
+  if (file.size > MAX_PREVIEW_SIZE) {
+    throw new Error(
+      `FILE_TOO_LARGE:${(file.size / (1024 * 1024)).toFixed(1)}MB`
+    );
+  }
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
-    reader.onload = () => resolve(reader.result as string);
+    reader.onload = () => {
+      const result = reader.result as string;
+      try {
+        // Test if it fits in localStorage
+        localStorage.setItem('_size_test', result);
+        localStorage.removeItem('_size_test');
+        resolve(result);
+      } catch {
+        reject(new Error('FILE_TOO_LARGE:storage_full'));
+      }
+    };
     reader.onerror = () => reject(new Error('Failed to read file'));
     reader.readAsDataURL(file);
   });

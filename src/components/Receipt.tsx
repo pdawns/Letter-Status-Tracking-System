@@ -199,7 +199,7 @@ export default function Receipt({ letterId, onBack }: ReceiptProps) {
                   <p className="text-[10px] text-gray-500 mt-1 text-center print:text-[8px]">
                     Scan to track
                   </p>
-                  <button
+                  {/* <button
                     onClick={() => {
                       const url = `${window.location.origin}/?ref=${letter.reference_number}&type=${letter.document_type || 'document'}&id=${letter.id}`;
                       console.log('QR Code URL:', url);
@@ -209,7 +209,7 @@ export default function Receipt({ letterId, onBack }: ReceiptProps) {
                     className="text-[10px] text-blue-600 underline mt-1 print:hidden"
                   >
                     Copy URL
-                  </button>
+                  </button> */}
                 </div>
               </div>
             </div>
@@ -237,20 +237,24 @@ export default function Receipt({ letterId, onBack }: ReceiptProps) {
                     <p className="text-xs text-gray-600 mb-2 print:text-[10px] print:mb-1">
                       This is the official document attached to this tracking receipt.
                     </p>
-                    <a
-                      href={letter.file_url}
-                      target="_blank"
-                      rel="noopener noreferrer"
+                    <button
+                      onClick={() => {
+                        const [header, base64] = letter.file_url!.split(',');
+                        const mime = header.match(/:(.*?);/)?.[1] || 'application/octet-stream';
+                        const binary = atob(base64);
+                        const bytes = new Uint8Array(binary.length);
+                        for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+                        const blob = new Blob([bytes], { type: mime });
+                        const blobUrl = URL.createObjectURL(blob);
+                        window.open(blobUrl, '_blank', 'noopener,noreferrer');
+                        setTimeout(() => URL.revokeObjectURL(blobUrl), 10000);
+                      }}
                       className="inline-flex items-center gap-2 hover:underline font-medium text-xs print:hidden"
                       style={{ color: '#004526' }}
                     >
                       <ExternalLink className="w-3 h-3" />
                       View Document
-                    </a>
-                    <div className="hidden print:block text-[10px] text-gray-600 break-all mt-1">
-                      <p className="font-semibold mb-1">Document URL:</p>
-                      <p>{letter.file_url}</p>
-                    </div>
+                    </button>
                   </div>
                 </div>
               </div>

@@ -35,6 +35,38 @@ export default function LetterView({ letterId, onBack }: LetterViewProps) {
     window.print();
   };
 
+  // Convert base64 data URL to a Blob URL for safe browser opening/downloading
+  const dataUrlToBlob = (dataUrl: string): Blob => {
+    const [header, base64] = dataUrl.split(',');
+    const mime = header.match(/:(.*?);/)?.[1] || 'application/octet-stream';
+    const binary = atob(base64);
+    const bytes = new Uint8Array(binary.length);
+    for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+    return new Blob([bytes], { type: mime });
+  };
+
+  const handleViewDocument = () => {
+    if (!letter?.file_url) return;
+    const blob = dataUrlToBlob(letter.file_url);
+    const blobUrl = URL.createObjectURL(blob);
+    window.open(blobUrl, '_blank', 'noopener,noreferrer');
+    // Revoke after a short delay to allow the tab to load
+    setTimeout(() => URL.revokeObjectURL(blobUrl), 10000);
+  };
+
+  const handleDownload = () => {
+    if (!letter?.file_url) return;
+    const blob = dataUrlToBlob(letter.file_url);
+    const blobUrl = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = blobUrl;
+    link.download = letter.file_name || 'document';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    setTimeout(() => URL.revokeObjectURL(blobUrl), 1000);
+  };
+
   if (loading) {
     return (
       <div className="max-w-4xl mx-auto text-center py-12">
@@ -113,23 +145,20 @@ export default function LetterView({ letterId, onBack }: LetterViewProps) {
             <div>
               <h2 className="text-sm font-medium text-gray-500">Scanned Document</h2>
               <div className="mt-2 flex items-center gap-2">
-                <a
-                  href={letter.file_url}
-                  target="_blank"
-                  rel="noopener noreferrer"
+                <button
+                  onClick={handleViewDocument}
                   className="flex items-center gap-2 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors"
                 >
                   <Eye className="w-4 h-4" />
                   View Document
-                </a>
-                <a
-                  href={letter.file_url}
-                  download={letter.file_name}
+                </button>
+                <button
+                  onClick={handleDownload}
                   className="flex items-center gap-2 bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700 transition-colors"
                 >
                   <Download className="w-4 h-4" />
                   Download
-                </a>
+                </button>
               </div>
             </div>
           )}
