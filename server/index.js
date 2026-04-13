@@ -8,7 +8,7 @@ require('dotenv').config({ path: path.join(__dirname, '../.env') });
 const cloudinary = require('cloudinary').v2;
 
 const app = express();
-const PORT = 3001;
+const PORT = process.env.PORT || 3001;
 
 // Cloudinary config
 cloudinary.config({
@@ -49,8 +49,8 @@ db.exec(`
   );
 `);
 
-app.use(cors());
-app.use(express.json());
+app.use(cors({ origin: '*' }));
+app.use(express.json({ limit: '500mb' }));
 
 // ── Letters ──────────────────────────────────────────────
 
