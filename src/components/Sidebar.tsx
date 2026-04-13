@@ -1,7 +1,7 @@
-import { LayoutDashboard, Search, FileText } from 'lucide-react';
+import { LayoutDashboard, Search, FileText, Archive } from 'lucide-react';
 import logo1 from '../../images/LOGO1.jpg';
 
-type View = 'dashboard' | 'tracking' | 'document-tracking';
+type View = 'dashboard' | 'tracking' | 'document-tracking' | 'archive';
 
 interface SidebarProps {
   currentView: View;
@@ -13,6 +13,7 @@ export default function Sidebar({ currentView, onViewChange }: SidebarProps) {
     { id: 'dashboard' as View, label: 'Dashboard', icon: LayoutDashboard },
     { id: 'tracking' as View, label: 'Tracking System', icon: Search },
     { id: 'document-tracking' as View, label: 'Create Document', icon: FileText },
+    { id: 'archive' as View, label: 'Archive', icon: Archive },
   ];
 
   return (

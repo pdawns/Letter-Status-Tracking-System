@@ -8,11 +8,12 @@ import HandlerUpdate from './components/HandlerUpdate';
 import Receipt from './components/Receipt';
 import QRScanner from './components/QRScanner';
 import DocumentLibrary from './components/DocumentLibrary';
+import { Camera, Library } from 'lucide-react';
 import DocumentInfo from './components/DocumentInfo';
 import LandingPage from './components/LandingPage';
-import { Camera, Library } from 'lucide-react';
+import Archive from './components/Archive';
 
-type View = 'dashboard' | 'tracking' | 'document-tracking' | 'letter-view' | 'track' | 'handler' | 'receipt' | 'scanner' | 'library' | 'document-info';
+type View = 'dashboard' | 'tracking' | 'document-tracking' | 'letter-view' | 'track' | 'handler' | 'receipt' | 'scanner' | 'library' | 'document-info' | 'archive';
 
 function App() {
   const [showLanding, setShowLanding] = useState(true);
@@ -90,6 +91,9 @@ function App() {
     if (previousView === 'library') {
       setView('library');
       setPreviousView(null);
+    } else if (previousView === 'archive') {
+      setView('archive');
+      setPreviousView(null);
     }
   };
 
@@ -101,6 +105,7 @@ function App() {
       <Sidebar 
         currentView={
           view === 'library' || view === 'document-info' || view === 'track' || view === 'handler' || view === 'receipt' ? 'tracking' :
+          view === 'archive' ? 'archive' :
           view === 'dashboard' || view === 'tracking' || view === 'document-tracking' ? view : 
           'dashboard'
         } 
@@ -205,6 +210,17 @@ function App() {
           <DocumentInfo
             letterId={currentLetterId}
             onBack={handleBackToLibrary}
+          />
+        )}
+
+        {view === 'archive' && (
+          <Archive
+            onBack={() => setView('dashboard')}
+            onDocumentSelected={(id: string) => {
+              setCurrentLetterId(id);
+              setPreviousView('archive');
+              setView('track');
+            }}
           />
         )}
       </div>

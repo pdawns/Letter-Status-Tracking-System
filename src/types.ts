@@ -9,6 +9,8 @@ export interface Letter {
   file_name?: string;
   handler_pin: string;
   created_at: string;
+  archived?: boolean;
+  archived_at?: string;
 }
 
 export interface LetterStatus {

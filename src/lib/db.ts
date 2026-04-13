@@ -7,28 +7,31 @@ const generateId = () => crypto.randomUUID();
 
 // ── Letters ──────────────────────────────────────────────
 
-export const getLetters = (): Letter[] => {
+const getAllLetters = (): Letter[] => {
   try {
     return JSON.parse(localStorage.getItem(LETTERS_KEY) || '[]');
   } catch { return []; }
 };
 
+export const getLetters = (): Letter[] =>
+  getAllLetters().filter((l: Letter) => !l.archived);
+
 const saveLetters = (letters: Letter[]) =>
   localStorage.setItem(LETTERS_KEY, JSON.stringify(letters));
 
 export const getLetter = (id: string): Letter | null =>
-  getLetters().find((l) => l.id === id) || null;
+  getAllLetters().find((l) => l.id === id) || null;
 
 export const insertLetter = (data: Omit<Letter, 'id' | 'created_at'>): Letter => {
   const letter: Letter = { ...data, id: generateId(), created_at: new Date().toISOString() };
-  const existing = getLetters();
+  const existing = getAllLetters();
   existing.push(letter);
   saveLetters(existing);
   return letter;
 };
 
 export const updateLetter = (id: string, data: Partial<Letter>): Letter | null => {
-  const letters = getLetters();
+  const letters = getAllLetters();
   const idx = letters.findIndex((l) => l.id === id);
   if (idx === -1) return null;
   letters[idx] = { ...letters[idx], ...data };
@@ -37,9 +40,28 @@ export const updateLetter = (id: string, data: Partial<Letter>): Letter | null =
 };
 
 export const deleteLetter = (id: string): void => {
-  saveLetters(getLetters().filter((l) => l.id !== id));
+  saveLetters(getAllLetters().filter((l) => l.id !== id));
   saveStatuses(getStatuses().filter((s) => s.letter_id !== id));
 };
+
+export const archiveLetter = (id: string): void => {
+  const letters = getAllLetters();
+  const idx = letters.findIndex((l) => l.id === id);
+  if (idx === -1) return;
+  letters[idx] = { ...letters[idx], archived: true, archived_at: new Date().toISOString() };
+  saveLetters(letters);
+};
+
+export const unarchiveLetter = (id: string): void => {
+  const letters = getAllLetters();
+  const idx = letters.findIndex((l) => l.id === id);
+  if (idx === -1) return;
+  letters[idx] = { ...letters[idx], archived: false, archived_at: undefined };
+  saveLetters(letters);
+};
+
+export const getArchivedLetters = (): Letter[] =>
+  getAllLetters().filter((l) => l.archived === true);
 
 // ── Statuses ─────────────────────────────────────────────
 

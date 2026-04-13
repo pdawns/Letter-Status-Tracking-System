@@ -16,6 +16,7 @@ export default function CreateLetter({ onLetterCreated }: CreateLetterProps) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [fileWarning, setFileWarning] = useState('');
+  const [showConfirm, setShowConfirm] = useState(false);
 
   const generateReferenceNumber = () => {
     const year = new Date().getFullYear();
@@ -53,19 +54,21 @@ export default function CreateLetter({ onLetterCreated }: CreateLetterProps) {
       setError('Please fill in all required fields and select a document');
       return;
     }
-
     if (documentType === 'other' && !otherDocumentType.trim()) {
       setError('Please specify the document type');
       return;
     }
-
     if (pin.length < 4) {
       setError('PIN must be at least 4 characters');
       return;
     }
 
-    setLoading(true);
+    setShowConfirm(true);
+  };
 
+  const handleConfirmedSubmit = async () => {
+    setShowConfirm(false);
+    setLoading(true);
     try {
       const referenceNumber = generateReferenceNumber();
 
@@ -98,6 +101,7 @@ export default function CreateLetter({ onLetterCreated }: CreateLetterProps) {
   };
 
   return (
+    <>
     <div className="max-w-xl mx-auto px-3">
       <div className="bg-white rounded-lg shadow-lg p-4">
         <div className="flex items-center gap-2 mb-1">
@@ -239,5 +243,26 @@ export default function CreateLetter({ onLetterCreated }: CreateLetterProps) {
         </form>
       </div>
     </div>
+
+    {showConfirm && (
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div className="bg-white rounded-lg shadow-xl p-6 max-w-sm w-full">
+          <h2 className="text-lg font-bold text-gray-900 mb-2">Create Document</h2>
+          <p className="text-gray-600 mb-3 text-sm">Are you sure you want to create this document?</p>
+          <div className="bg-gray-50 rounded-lg p-3 mb-4 space-y-1 text-sm">
+            <p><span className="text-gray-500">Title:</span> <span className="font-medium">{title}</span></p>
+            <p><span className="text-gray-500">Type:</span> <span className="font-medium capitalize">{documentType === 'other' ? otherDocumentType : documentType}</span></p>
+            {subject && <p><span className="text-gray-500">Subject:</span> <span className="font-medium">{subject}</span></p>}
+            {file && <p><span className="text-gray-500">File:</span> <span className="font-medium">{file.name}</span></p>}
+          </div>
+          <p className="text-xs text-gray-500 mb-5">Make sure all details are correct before proceeding.</p>
+          <div className="flex gap-3">
+            <button onClick={() => setShowConfirm(false)} className="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50">Cancel</button>
+            <button onClick={handleConfirmedSubmit} className="flex-1 px-4 py-2 text-white rounded-lg transition-colors" style={{ backgroundColor: '#004526' }}>Yes, Create</button>
+          </div>
+        </div>
+      </div>
+    )}
+    </>
   );
 }

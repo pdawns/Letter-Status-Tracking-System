@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
-import { getLetters, deleteLetter } from '../lib/db';
+import { getLetters, archiveLetter } from '../lib/db';
 import { Letter } from '../types';
-import { Search, FileText, Download, Eye, ArrowLeft, Filter, Info, Trash2 } from 'lucide-react';
+import { Search, FileText, Download, Eye, ArrowLeft, Filter, Info, Archive } from 'lucide-react';
 
 interface DocumentLibraryProps {
   onDocumentSelected: (letterId: string) => void;
@@ -17,7 +17,7 @@ export default function DocumentLibrary({ onDocumentSelected, onViewDocumentInfo
   const [typeFilter, setTypeFilter] = useState('all');
   const [sortOrder, setSortOrder] = useState('desc');
   const [deletingId, setDeletingId] = useState<string | null>(null);
-  const [confirmDelete, setConfirmDelete] = useState<Letter | null>(null);
+  const [confirmArchive, setConfirmArchive] = useState<Letter | null>(null);
 
   useEffect(() => {
     fetchDocuments();
@@ -82,14 +82,14 @@ export default function DocumentLibrary({ onDocumentSelected, onViewDocumentInfo
   };
 
   const handleDeleteConfirmed = async () => {
-    if (!confirmDelete) return;
-    setDeletingId(confirmDelete.id);
-    setConfirmDelete(null);
+    if (!confirmArchive) return;
+    setDeletingId(confirmArchive.id);
+    setConfirmArchive(null);
     try {
-      deleteLetter(confirmDelete.id);
-      setDocuments((prev) => prev.filter((d) => d.id !== confirmDelete.id));
+      archiveLetter(confirmArchive.id);
+      setDocuments((prev) => prev.filter((d) => d.id !== confirmArchive.id));
     } catch (err) {
-      console.error('Error deleting document:', err);
+      console.error('Error archiving document:', err);
     } finally {
       setDeletingId(null);
     }
@@ -231,13 +231,13 @@ export default function DocumentLibrary({ onDocumentSelected, onViewDocumentInfo
                         <span className="hidden sm:inline">Track</span>
                       </button>
                       <button
-                        onClick={() => setConfirmDelete(doc)}
+                        onClick={() => setConfirmArchive(doc)}
                         disabled={deletingId === doc.id}
-                        className="flex items-center gap-1 bg-red-600 text-white px-3 py-1.5 rounded-lg hover:bg-red-700 transition-colors text-xs disabled:opacity-50"
-                        title="Delete document"
+                        className="flex items-center gap-1 bg-yellow-600 text-white px-3 py-1.5 rounded-lg hover:bg-yellow-700 transition-colors text-xs disabled:opacity-50"
+                        title="Archive document"
                       >
-                        <Trash2 className="w-3 h-3" />
-                        <span className="hidden sm:inline">Delete</span>
+                        <Archive className="w-3 h-3" />
+                        <span className="hidden sm:inline">Archive</span>
                       </button>
                     </div>
                   </div>
@@ -255,16 +255,16 @@ export default function DocumentLibrary({ onDocumentSelected, onViewDocumentInfo
       </div>
     </div>
 
-    {confirmDelete && (
+    {confirmArchive && (
       <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
         <div className="bg-white rounded-lg shadow-xl p-6 max-w-sm w-full">
-          <h2 className="text-lg font-bold text-gray-900 mb-2">Delete Document</h2>
-          <p className="text-gray-600 mb-1">Are you sure you want to delete:</p>
-          <p className="font-semibold text-gray-900 mb-4">"{confirmDelete.title}"</p>
-          <p className="text-sm text-red-600 mb-6">This action cannot be undone.</p>
+          <h2 className="text-lg font-bold text-gray-900 mb-2">Archive Document</h2>
+          <p className="text-gray-600 mb-1">Are you sure you want to archive:</p>
+          <p className="font-semibold text-gray-900 mb-4">"{confirmArchive.title}"</p>
+          <p className="text-sm text-yellow-600 mb-6">You can restore it later from the Archive.</p>
           <div className="flex gap-3">
-            <button onClick={() => setConfirmDelete(null)} className="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors">Cancel</button>
-            <button onClick={handleDeleteConfirmed} className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors">Yes, Delete</button>
+            <button onClick={() => setConfirmArchive(null)} className="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors">Cancel</button>
+            <button onClick={handleDeleteConfirmed} className="flex-1 px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 transition-colors">Yes, Archive</button>
           </div>
         </div>
       </div>
