@@ -1,4 +1,5 @@
-import { LayoutDashboard, Search, FileText, Library } from 'lucide-react';
+import { LayoutDashboard, Search, FileText } from 'lucide-react';
+import logo1 from '../../images/LOGO1.jpg';
 
 type View = 'dashboard' | 'tracking' | 'document-tracking';
 
@@ -18,7 +19,12 @@ export default function Sidebar({ currentView, onViewChange }: SidebarProps) {
     <div className="w-56 text-white h-screen flex flex-col fixed left-0 top-0 overflow-y-auto" style={{ backgroundColor: '#004526', fontFamily: 'serif' }}>
       <div className="p-4 border-b border-opacity-20" style={{ borderColor: '#9CAF88' }}>
         <div className="flex items-center gap-2">
-          <Library className="w-6 h-6" style={{ color: '#DFF5E1' }} />
+          <img
+            src={logo1}
+            alt="PTO Logo"
+            className="w-8 h-8 rounded-full object-cover"
+            style={{ filter: 'hue-rotate(200deg) saturate(1.5) brightness(0.95)' }}
+          />
           <h1 className="text-lg font-bold">DTS</h1>
         </div>
       </div>

@@ -1,6 +1,6 @@
 import { FileText, QrCode, Library, ArrowRight, Shield, Clock, CheckCircle } from 'lucide-react';
-import misamisSeal from '../assets/misamis-seal.png';
-import ptoLogo from '../assets/pto-logo.png';
+import logo3 from '../../images/LOGO3.jpg';
+import logo1 from '../../images/LOGO1.jpg';
 
 interface LandingPageProps {
   onEnter: () => void;
@@ -17,7 +17,7 @@ export default function LandingPage({ onEnter }: LandingPageProps) {
             {/* Province Seal */}
             <div className="w-14 h-14 rounded-full overflow-hidden bg-white flex items-center justify-center flex-shrink-0 border-2 border-yellow-400">
               <img
-                src={misamisSeal}
+                src={logo3}
                 alt="Province of Misamis Oriental Seal"
                 className="w-full h-full object-contain"
               />
@@ -70,11 +70,16 @@ export default function LandingPage({ onEnter }: LandingPageProps) {
             {/* Logos */}
             <div className="flex flex-col items-center gap-4">
               <div className="flex gap-6 items-center">
-                <div className="w-28 h-28 rounded-full bg-white p-2 shadow-xl border-4 border-yellow-400 flex items-center justify-center">
-                  <img src={misamisSeal} alt="Province of Misamis Oriental" className="w-full h-full object-contain" />
+                <div className="w-28 h-28 rounded-full overflow-hidden shadow-xl border-4 border-yellow-400 flex items-center justify-center bg-white">
+                  <img src={logo3} alt="Province of Misamis Oriental" className="w-full h-full object-cover" />
                 </div>
-                <div className="w-28 h-28 rounded-full bg-white p-2 shadow-xl border-4 flex items-center justify-center" style={{ borderColor: '#9CAF88' }}>
-                  <img src={ptoLogo} alt="Provincial Treasurer's Office" className="w-full h-full object-contain" />
+                <div className="w-28 h-28 rounded-full overflow-hidden shadow-xl border-4 flex items-center justify-center bg-white" style={{ borderColor: '#9CAF88' }}>
+                  <img
+                    src={logo1}
+                    alt="Provincial Treasurer's Office"
+                    className="w-full h-full object-cover"
+                    style={{ filter: 'hue-rotate(200deg) saturate(1.5) brightness(0.95)' }}
+                  />
                 </div>
               </div>
               <p className="text-xs opacity-70 text-center">Province of Misamis Oriental<br/>Provincial Treasurer's Office</p>
