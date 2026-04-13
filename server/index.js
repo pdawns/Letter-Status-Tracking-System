@@ -5,18 +5,19 @@ const multer = require('multer');
 const path = require('path');
 const crypto = require('crypto');
 require('dotenv').config({ path: path.join(__dirname, '../.env') });
-const { createClient } = require('@supabase/supabase-js');
+const cloudinary = require('cloudinary').v2;
 
 const app = express();
 const PORT = 3001;
 
-// Supabase client for storage only
-const supabase = createClient(
-  process.env.VITE_SUPABASE_URL,
-  process.env.VITE_SUPABASE_ANON_KEY
-);
+// Cloudinary config
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
+});
 
-// Use memory storage — files go straight to Supabase, not disk
+// Use memory storage — files go straight to Cloudinary
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 500 * 1024 * 1024 } });
 
 // Setup SQLite
@@ -103,29 +104,31 @@ app.patch('/api/letters/:id/unarchive', (req, res) => {
   res.json({ success: true });
 });
 
-// ── File Upload (Supabase Storage) ───────────────────────
+// ── File Upload (Cloudinary) ──────────────────────────────
 
 app.post('/api/upload', upload.single('file'), async (req, res) => {
   if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
 
   try {
-    const fileExt = req.file.originalname.split('.').pop();
-    const filePath = `documents/${Date.now()}-${crypto.randomUUID()}.${fileExt}`;
+    const result = await new Promise((resolve, reject) => {
+      const stream = cloudinary.uploader.upload_stream(
+        {
+          folder: 'dts-documents',
+          resource_type: 'auto',
+          use_filename: true,
+          unique_filename: true,
+        },
+        (error, result) => {
+          if (error) reject(error);
+          else resolve(result);
+        }
+      );
+      stream.end(req.file.buffer);
+    });
 
-    const { error: uploadError } = await supabase.storage
-      .from('documents')
-      .upload(filePath, req.file.buffer, {
-        contentType: req.file.mimetype,
-        upsert: false,
-      });
-
-    if (uploadError) throw uploadError;
-
-    const { data } = supabase.storage.from('documents').getPublicUrl(filePath);
-
-    res.json({ file_url: data.publicUrl, file_name: req.file.originalname });
+    res.json({ file_url: result.secure_url, file_name: req.file.originalname });
   } catch (err) {
-    console.error('Upload error:', err);
+    console.error('Cloudinary upload error:', err);
     res.status(500).json({ error: err.message || 'Upload failed' });
   }
 });
