@@ -38,7 +38,7 @@ export default function LetterView({ letterId, onBack }: LetterViewProps) {
   if (loading) {
     return (
       <div className="max-w-4xl mx-auto text-center py-12">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 mx-auto" style={{ borderColor: '#004526' }}></div>
         <p className="mt-4 text-gray-600">Loading letter...</p>
       </div>
     );
@@ -50,7 +50,8 @@ export default function LetterView({ letterId, onBack }: LetterViewProps) {
         <p className="text-red-600">Letter not found</p>
         <button
           onClick={onBack}
-          className="mt-4 text-blue-600 hover:underline"
+          className="mt-4 hover:underline"
+          style={{ color: '#004526' }}
         >
           Go back
         </button>
@@ -62,7 +63,8 @@ export default function LetterView({ letterId, onBack }: LetterViewProps) {
     <div className="max-w-4xl mx-auto">
       <button
         onClick={onBack}
-        className="mb-4 flex items-center gap-2 text-blue-600 hover:text-blue-700 print:hidden"
+        className="mb-4 flex items-center gap-2 print:hidden"
+        style={{ color: '#004526' }}
       >
         <ArrowLeft className="w-4 h-4" />
         Back to Home
@@ -71,7 +73,7 @@ export default function LetterView({ letterId, onBack }: LetterViewProps) {
       <div className="bg-white rounded-lg shadow-lg p-8 print:shadow-none">
         <div className="flex items-center justify-between mb-6 print:mb-8">
           <div className="flex items-center gap-3">
-            <FileText className="w-8 h-8 text-blue-600" />
+            <FileText className="w-8 h-8" style={{ color: '#004526' }} />
             <div>
               <h1 className="text-3xl font-bold text-gray-900">Letter Created</h1>
               <p className="text-gray-600">Reference: {letter.reference_number}</p>
@@ -79,7 +81,10 @@ export default function LetterView({ letterId, onBack }: LetterViewProps) {
           </div>
           <button
             onClick={handlePrint}
-            className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 print:hidden"
+            className="flex items-center gap-2 text-white px-4 py-2 rounded-lg print:hidden transition-colors"
+            style={{ backgroundColor: '#004526' }}
+            onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#9CAF88')}
+            onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = '#004526')}
           >
             <Download className="w-4 h-4" />
             Print/Save
