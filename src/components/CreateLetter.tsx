@@ -28,9 +28,9 @@ export default function CreateLetter({ onLetterCreated }: CreateLetterProps) {
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files?.[0];
     if (selectedFile) {
-      const maxSize = 50 * 1024 * 1024;
+      const maxSize = 500 * 1024 * 1024;
       if (selectedFile.size > maxSize) {
-        setError('File size must be less than 50MB');
+        setError('File size must be less than 500MB');
         return;
       }
       setFile(selectedFile);
@@ -193,7 +193,7 @@ export default function CreateLetter({ onLetterCreated }: CreateLetterProps) {
                   <p className="text-xs font-medium text-gray-700">
                     {file ? file.name : 'Click to upload or drag and drop'}
                   </p>
-                  <p className="text-xs text-gray-500">PDF, PNG, JPG, DOC up to 50MB</p>
+                  <p className="text-xs text-gray-500">PDF, PNG, JPG, DOC up to 500MB</p>
                 </div>
               </label>
             </div>
