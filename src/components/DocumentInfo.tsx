@@ -195,19 +195,19 @@ export default function DocumentInfo({ letterId, onBack }: DocumentInfoProps) {
                     Download
                   </button>
                 </div>
-                {(document.sender_phone || document.sender_email) && (
-                  <button
-                    onClick={() => setShowNotify(true)}
-                    className="flex items-center gap-1.5 text-white px-3 py-1.5 rounded-lg transition-colors text-xs mt-2"
-                    style={{ backgroundColor: '#9CAF88' }}
-                    onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#004526'}
-                    onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#9CAF88'}
-                  >
-                    <Bell className="w-3.5 h-3.5" />
-                    Notify Sender
-                  </button>
-                )}
               </div>
+              {(document.sender_phone || document.sender_email) && (
+                <button
+                  onClick={() => setShowNotify(true)}
+                  className="flex items-center gap-1.5 text-white px-3 py-1.5 rounded-lg transition-colors text-xs mt-2"
+                  style={{ backgroundColor: '#9CAF88' }}
+                  onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#004526'}
+                  onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#9CAF88'}
+                >
+                  <Bell className="w-3.5 h-3.5" />
+                  Notify Sender
+                </button>
+              )}
             )}
           </div>
         </div>
