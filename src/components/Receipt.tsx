@@ -215,15 +215,13 @@ export default function Receipt({ letterId, onBack }: ReceiptProps) {
             </div>
           </div>
 
-          {/* Signature History Section - Only Noted Signatures */}
+          {/* Signature History Section */}
           <div className="mb-5 print:mb-4">
             <h2 className="text-base font-bold text-gray-900 mb-3 print:text-sm">Signature History</h2>
             
-            {statuses.filter((s) => s.status_type === 'noted').length > 0 ? (
+            {statuses.length > 0 ? (
               <div className="space-y-2 print:space-y-2">
-                {statuses
-                  .filter((s) => s.status_type === 'noted')
-                  .map((status, index) => (
+                {statuses.map((status) => (
                     <div
                       key={status.id}
                       className="border-2 rounded-lg p-3 print:border print:p-2 print:bg-white print:break-inside-avoid"
@@ -234,10 +232,9 @@ export default function Receipt({ letterId, onBack }: ReceiptProps) {
                           <CheckCircle className="w-5 h-5 print:w-4 print:h-4" style={{ color: '#004526' }} />
                         </div>
                         <div className="flex-1 min-w-0">
-                          <h3 className="font-bold text-gray-900 text-sm mb-1 print:text-xs">
-                            Noted #{index + 1}
+                          <h3 className="font-bold text-gray-900 text-sm mb-1 print:text-xs capitalize">
+                            {status.status_type}
                           </h3>
-                          <p className="text-xs text-gray-600 mb-1 print:text-[10px]">Acknowledged and noted</p>
                           <div className="space-y-1 text-xs print:text-[10px]">
                             <p className="text-gray-700 print:text-gray-900">
                               <span className="font-semibold">Signed by:</span> {status.signed_by}

@@ -132,25 +132,21 @@ export async function generateReceiptPDF(
 
     yPosition = Math.max(tableEndY, finalQrY + qrSize + 8) + 6;
     
-    // Signature section (NO border, NO "Noted #X", just "Signed by" on right)
-    const notedStatuses = statuses.filter((s) => s.status_type === 'noted');
+    // Signature section
+    const signatureStatuses = statuses;
     
-    if (notedStatuses.length > 0) {
-      notedStatuses.forEach((status) => {
-        // Check if we need a new page
+    if (signatureStatuses.length > 0) {
+      signatureStatuses.forEach((status) => {
         if (yPosition > 260) {
           pdf.addPage();
           yPosition = 20;
         }
-        
-        // Just display "Signed by: NAME" on the RIGHT side, no border, no badge
         pdf.setFontSize(10);
         pdf.setFont('helvetica', 'normal');
         pdf.setTextColor(0, 0, 0);
-        const signedByText = `Signed by: ${status.signed_by}`;
+        const signedByText = `${status.status_type.charAt(0).toUpperCase() + status.status_type.slice(1)} by: ${status.signed_by}`;
         const textWidth = pdf.getTextWidth(signedByText);
         pdf.text(signedByText, 195 - textWidth, yPosition);
-        
         yPosition += 8;
       });
     }
