@@ -155,41 +155,6 @@ export async function generateReceiptPDF(
       });
     }
     
-    // Attached Document Section
-    if (letter.file_url && letter.file_name) {
-      yPosition += 5;
-      
-      // Check if we need a new page
-      if (yPosition > 240) {
-        pdf.addPage();
-        yPosition = 20;
-      }
-      
-      pdf.setFontSize(12);
-      pdf.setFont('helvetica', 'bold');
-      pdf.setTextColor(0, 0, 0);
-      pdf.text('ATTACHED DOCUMENT', 20, yPosition);
-      yPosition += 7;
-      
-      // Draw box for file info
-      pdf.setDrawColor(156, 175, 136);
-      pdf.setFillColor(223, 245, 225);
-      pdf.setLineWidth(0.5);
-      pdf.roundedRect(20, yPosition, 175, 20, 2, 2, 'FD');
-      
-      pdf.setFontSize(9);
-      pdf.setFont('helvetica', 'bold');
-      pdf.setTextColor(0, 69, 38);
-      pdf.text('File Name:', 25, yPosition + 6);
-      
-      pdf.setFont('helvetica', 'normal');
-      pdf.setTextColor(0, 0, 0);
-      const fileNameLines = pdf.splitTextToSize(letter.file_name, 140);
-      pdf.text(fileNameLines, 25, yPosition + 11);
-      
-      yPosition += 25;
-    }
-    
     // Footer
     const pageCount = pdf.getNumberOfPages();
     for (let i = 1; i <= pageCount; i++) {
