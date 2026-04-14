@@ -1,10 +1,12 @@
 import { Bell, User } from 'lucide-react';
+import { loadSettings } from './Settings';
 
 interface TopBarProps {
   onHome: () => void;
 }
 
 export default function TopBar({ onHome }: TopBarProps) {
+  const settings = loadSettings();
   const now = new Date();
   const dateStr = now.toLocaleDateString('en-PH', {
     weekday: 'long', year: 'numeric', month: 'long', day: 'numeric',
@@ -21,8 +23,8 @@ export default function TopBar({ onHome }: TopBarProps) {
           onClick={onHome}
           className="hidden sm:block text-left hover:opacity-80 transition-opacity"
         >
-          <p className="text-white text-xs font-bold leading-tight">Provincial Treasurer's Office</p>
-          <p className="text-xs leading-tight" style={{ color: '#9CAF88' }}>Province of Misamis Oriental</p>
+          <p className="text-white text-xs font-bold leading-tight">{settings.officeName}</p>
+          <p className="text-xs leading-tight" style={{ color: '#9CAF88' }}>{settings.province}</p>
         </button>
       </div>
 

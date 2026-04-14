@@ -13,8 +13,9 @@ import DocumentInfo from './components/DocumentInfo';
 import LandingPage from './components/LandingPage';
 import TopBar from './components/TopBar';
 import Archive from './components/Archive';
+import Settings from './components/Settings';
 
-type View = 'dashboard' | 'tracking' | 'document-tracking' | 'letter-view' | 'track' | 'handler' | 'receipt' | 'scanner' | 'library' | 'document-info' | 'archive';
+type View = 'dashboard' | 'tracking' | 'document-tracking' | 'letter-view' | 'track' | 'handler' | 'receipt' | 'scanner' | 'library' | 'document-info' | 'archive' | 'settings';
 
 function App() {
   const [showLanding, setShowLanding] = useState(true);
@@ -107,6 +108,7 @@ function App() {
         currentView={
           view === 'library' || view === 'document-info' || view === 'track' || view === 'handler' || view === 'receipt' ? 'tracking' :
           view === 'archive' ? 'archive' :
+          view === 'settings' ? 'settings' :
           view === 'dashboard' || view === 'tracking' || view === 'document-tracking' ? view : 
           'dashboard'
         } 
@@ -225,6 +227,8 @@ function App() {
             }}
           />
         )}
+
+        {view === 'settings' && <Settings />}
       </div>
     </div>
     )}

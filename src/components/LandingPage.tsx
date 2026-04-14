@@ -1,12 +1,18 @@
 import { FileText, QrCode, Library, ArrowRight, Shield, Clock, CheckCircle } from 'lucide-react';
 import logo3 from '../../images/LOGO3.jpg';
 import logo1 from '../../images/LOGO1.jpg';
+import { loadSettings } from './Settings';
 
 interface LandingPageProps {
   onEnter: () => void;
 }
 
 export default function LandingPage({ onEnter }: LandingPageProps) {
+  const settings = loadSettings();
+  const displayLogo1 = settings.logo1 || logo1;
+  const displayLogo2 = settings.logo2 || logo3;
+  const officeName = settings.officeName;
+  const province = settings.province;
   return (
     <div className="min-h-screen flex flex-col" style={{ backgroundColor: '#f8f9fa' }}>
 
@@ -16,21 +22,17 @@ export default function LandingPage({ onEnter }: LandingPageProps) {
           <div className="flex items-center gap-4">
             {/* Province Seal */}
             <div className="w-14 h-14 rounded-full overflow-hidden bg-white flex items-center justify-center flex-shrink-0 border-2 border-yellow-400">
-              <img
-                src={logo3}
-                alt="Province of Misamis Oriental Seal"
-                className="w-full h-full object-contain"
-              />
+              <img src={displayLogo2} alt="Seal" className="w-full h-full object-contain" />
             </div>
             <div>
               <p className="text-xs font-medium opacity-80 uppercase tracking-widest">Republic of the Philippines</p>
-              <p className="text-sm font-bold">Province of Misamis Oriental</p>
-              <p className="text-xs opacity-80">Provincial Capitol, Cagayan de Oro City</p>
+              <p className="text-sm font-bold">{province}</p>
+              <p className="text-xs opacity-80">{settings.address}</p>
             </div>
           </div>
           <div className="text-right hidden sm:block">
             <p className="text-xs opacity-70">Document Tracking System</p>
-            <p className="text-sm font-bold">Provincial Treasurer's Office</p>
+            <p className="text-sm font-bold">{officeName}</p>
           </div>
         </div>
       </header>
@@ -47,10 +49,10 @@ export default function LandingPage({ onEnter }: LandingPageProps) {
                 Document Tracking System
               </h1>
               <p className="text-lg font-semibold mb-1" style={{ color: '#DFF5E1' }}>
-                Provincial Treasurer's Office
+                {officeName}
               </p>
               <p className="text-sm mb-6 opacity-80">
-                Province of Misamis Oriental · Provincial Capitol
+                {province} · {settings.address}
               </p>
               <p className="text-sm opacity-90 mb-8 max-w-lg">
                 A digital system for tracking, managing, and monitoring official documents with QR code technology for efficient document routing and status updates.
@@ -71,18 +73,13 @@ export default function LandingPage({ onEnter }: LandingPageProps) {
             <div className="flex flex-col items-center gap-4">
               <div className="flex gap-6 items-center">
                 <div className="w-28 h-28 rounded-full overflow-hidden shadow-xl border-4 border-yellow-400 flex items-center justify-center bg-white">
-                  <img src={logo3} alt="Province of Misamis Oriental" className="w-full h-full object-cover" />
+                  <img src={displayLogo2} alt="Province Seal" className="w-full h-full object-cover" />
                 </div>
                 <div className="w-28 h-28 rounded-full overflow-hidden shadow-xl border-4 flex items-center justify-center bg-white" style={{ borderColor: '#9CAF88' }}>
-                  <img
-                    src={logo1}
-                    alt="Provincial Treasurer's Office"
-                    className="w-full h-full object-cover"
-                    style={{ filter: 'hue-rotate(200deg) saturate(1.5) brightness(0.95)' }}
-                  />
+                  <img src={displayLogo1} alt="Office Logo" className="w-full h-full object-cover" />
                 </div>
               </div>
-              <p className="text-xs opacity-70 text-center">Province of Misamis Oriental<br/>Provincial Treasurer's Office</p>
+              <p className="text-xs opacity-70 text-center">{province}<br/>{officeName}</p>
             </div>
           </div>
         </div>
