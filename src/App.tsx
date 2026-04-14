@@ -169,9 +169,10 @@ function App() {
               <h1 className="text-2xl font-bold" style={{ color: '#004526' }}>Create Document</h1>
               <p className="text-gray-600 text-sm mt-1">Create documents with QR codes</p>
             </div>
-
-            <div className="max-w-3xl">
-              <CreateLetter onLetterCreated={handleLetterCreated} />
+            <div className="flex justify-center">
+              <div className="w-full max-w-2xl">
+                <CreateLetter onLetterCreated={handleLetterCreated} />
+              </div>
             </div>
           </div>
         )}

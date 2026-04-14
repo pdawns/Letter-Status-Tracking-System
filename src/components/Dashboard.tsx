@@ -72,18 +72,18 @@ export default function Dashboard() {
           {/* Document Type Breakdown */}
           <div className="border-t pt-4">
             <h3 className="text-xs font-semibold text-gray-700 mb-3">Document Types</h3>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            <div className="grid grid-cols-3 md:grid-cols-6 gap-2">
               {Object.keys(documentTypes).length > 0 ? (
                 Object.entries(documentTypes)
                   .sort(([, a], [, b]) => b - a)
                   .map(([type, count]) => (
-                    <div key={type} className="rounded-lg p-3" style={{ backgroundColor: '#DFF5E1' }}>
-                      <p className="text-xs font-medium" style={{ color: '#004526' }}>{type}</p>
-                      <p className="text-xl font-bold mt-1" style={{ color: '#004526' }}>{count}</p>
+                    <div key={type} className="rounded-lg px-2 py-1.5" style={{ backgroundColor: '#DFF5E1' }}>
+                      <p className="text-[10px] font-medium capitalize" style={{ color: '#004526' }}>{type}</p>
+                      <p className="text-base font-bold mt-0.5" style={{ color: '#004526' }}>{count}</p>
                     </div>
                   ))
               ) : (
-                <div className="col-span-2 md:col-span-4 text-center py-3">
+                <div className="col-span-3 md:col-span-6 text-center py-3">
                   <p className="text-gray-500 text-xs">No documents yet</p>
                 </div>
               )}

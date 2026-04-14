@@ -12,8 +12,8 @@ export default function TopBar({ onHome }: TopBarProps) {
 
   return (
     <div
-      className="fixed top-0 left-56 right-0 z-40 flex items-center justify-between px-6 py-2 shadow-md"
-      style={{ backgroundColor: '#004526', height: '56px' }}
+      className="fixed top-0 right-0 z-40 flex items-center justify-between px-6 py-2 shadow-md"
+      style={{ backgroundColor: '#003d1f', height: '56px', borderBottomLeftRadius: '16px', left: '232px' }}
     >
       {/* Left — office name (clickable → dashboard) */}
       <div className="flex items-center gap-3">

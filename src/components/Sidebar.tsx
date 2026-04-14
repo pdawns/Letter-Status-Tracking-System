@@ -11,8 +11,8 @@ interface SidebarProps {
 export default function Sidebar({ currentView, onViewChange }: SidebarProps) {
   const menuItems = [
     { id: 'dashboard' as View, label: 'Dashboard', icon: LayoutDashboard },
-    { id: 'tracking' as View, label: 'Tracking System', icon: Search },
     { id: 'document-tracking' as View, label: 'Create Document', icon: FileText },
+    { id: 'tracking' as View, label: 'Tracking System', icon: Search },
     { id: 'archive' as View, label: 'Archive', icon: Archive },
   ];
 
