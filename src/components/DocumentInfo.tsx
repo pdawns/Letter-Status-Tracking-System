@@ -34,7 +34,10 @@ export default function DocumentInfo({ letterId, onBack }: DocumentInfoProps) {
     if (isOffice) {
       window.open(`https://docs.google.com/viewer?url=${encodeURIComponent(document.file_url)}&embedded=false`, '_blank');
     } else {
-      window.open(document.file_url, '_blank', 'noopener,noreferrer');
+      const inlineUrl = document.file_url.includes('/upload/')
+        ? document.file_url.replace('/upload/', '/upload/fl_inline/')
+        : document.file_url;
+      window.open(inlineUrl, '_blank', 'noopener,noreferrer');
     }
   };
 
