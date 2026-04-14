@@ -14,13 +14,11 @@ export default function DocumentInfo({ letterId, onBack }: DocumentInfoProps) {
   const [loading, setLoading] = useState(true);
   const [showNotify, setShowNotify] = useState(false);
 
-  useEffect(() => {
-    fetchDocument();
-  }, [letterId]);
+  useEffect(() => { fetchDocument(); }, [letterId]);
 
   const fetchDocument = async () => {
     try {
-      const data = getLetter(letterId);
+      const data = await getLetter(letterId);
       if (!data) throw new Error('Not found');
       setDocument(data);
     } catch (err) {
@@ -32,42 +30,29 @@ export default function DocumentInfo({ letterId, onBack }: DocumentInfoProps) {
 
   const viewDocument = () => {
     if (!document?.file_url) return;
-    const blob = dataUrlToBlob(document.file_url);
-    const blobUrl = URL.createObjectURL(blob);
-    window.open(blobUrl, '_blank', 'noopener,noreferrer');
-    setTimeout(() => URL.revokeObjectURL(blobUrl), 10000);
+    const isOffice = document.file_url.match(/\.(doc|docx|xls|xlsx|ppt|pptx)$/i);
+    if (isOffice) {
+      window.open(`https://docs.google.com/viewer?url=${encodeURIComponent(document.file_url)}&embedded=false`, '_blank');
+    } else {
+      window.open(document.file_url, '_blank', 'noopener,noreferrer');
+    }
   };
 
-  const downloadDocument = async () => {
+  const downloadDocument = () => {
     if (!document?.file_url) return;
-    const blob = dataUrlToBlob(document.file_url);
-    const blobUrl = URL.createObjectURL(blob);
     const link = window.document.createElement('a');
-    link.href = blobUrl;
+    link.href = document.file_url;
     link.download = document.file_name || 'document';
+    link.target = '_blank';
     window.document.body.appendChild(link);
     link.click();
     window.document.body.removeChild(link);
-    setTimeout(() => URL.revokeObjectURL(blobUrl), 1000);
-  };
-
-  // Convert base64 data URL to Blob for safe browser open/download
-  const dataUrlToBlob = (dataUrl: string): Blob => {
-    const [header, base64] = dataUrl.split(',');
-    const mime = header.match(/:(.*?);/)?.[1] || 'application/octet-stream';
-    const binary = atob(base64);
-    const bytes = new Uint8Array(binary.length);
-    for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
-    return new Blob([bytes], { type: mime });
   };
 
   if (loading) {
     return (
       <div className="flex items-center justify-center p-8">
-        <div className="text-center">
-          <Loader className="w-8 h-8 text-blue-600 animate-spin mx-auto mb-3" />
-          <p className="text-gray-600 text-sm">Loading document...</p>
-        </div>
+        <Loader className="w-8 h-8 animate-spin" style={{ color: '#004526' }} />
       </div>
     );
   }
@@ -75,12 +60,8 @@ export default function DocumentInfo({ letterId, onBack }: DocumentInfoProps) {
   if (!document) {
     return (
       <div className="p-6">
-        <button
-          onClick={onBack}
-          className="mb-4 flex items-center gap-2 text-blue-600 hover:text-blue-700 text-sm"
-        >
-          <ArrowLeft className="w-4 h-4" />
-          Back
+        <button onClick={onBack} className="mb-4 flex items-center gap-2 text-sm" style={{ color: '#004526' }}>
+          <ArrowLeft className="w-4 h-4" /> Back
         </button>
         <div className="bg-white rounded-lg shadow-lg p-6 text-center">
           <p className="text-gray-600">Document not found</p>
@@ -91,13 +72,8 @@ export default function DocumentInfo({ letterId, onBack }: DocumentInfoProps) {
 
   return (
     <div className="p-6">
-      <button
-        onClick={onBack}
-        className="mb-4 flex items-center gap-2 text-sm hover:opacity-80"
-        style={{ color: '#004526' }}
-      >
-        <ArrowLeft className="w-4 h-4" />
-        Back to Library
+      <button onClick={onBack} className="mb-4 flex items-center gap-2 text-sm hover:opacity-80" style={{ color: '#004526' }}>
+        <ArrowLeft className="w-4 h-4" /> Back to Library
       </button>
 
       <div className="bg-white rounded-lg shadow-lg overflow-hidden">
@@ -112,148 +88,84 @@ export default function DocumentInfo({ letterId, onBack }: DocumentInfoProps) {
           </div>
         </div>
 
-        {/* Document Information */}
         <div className="p-4">
           <h2 className="text-base font-semibold mb-3 flex items-center gap-2" style={{ color: '#004526' }}>
-            <FileText className="w-4 h-4" style={{ color: '#004526' }} />
-            Document Information
+            <FileText className="w-4 h-4" /> Document Information
           </h2>
 
           <div className="grid grid-cols-2 gap-3 mb-4">
             <div className="p-3 rounded-lg" style={{ backgroundColor: '#DFF5E1' }}>
-              <p className="text-xs text-gray-600 mb-1 flex items-center gap-1">
-                <Tag className="w-3 h-3" />
-                Document Type
-              </p>
-              <p className="text-sm font-medium capitalize" style={{ color: '#004526' }}>
-                {document.document_type || 'N/A'}
-              </p>
+              <p className="text-xs text-gray-600 mb-1 flex items-center gap-1"><Tag className="w-3 h-3" /> Document Type</p>
+              <p className="text-sm font-medium capitalize" style={{ color: '#004526' }}>{document.document_type || 'N/A'}</p>
             </div>
-
             <div className="p-3 rounded-lg" style={{ backgroundColor: '#DFF5E1' }}>
-              <p className="text-xs text-gray-600 mb-1 flex items-center gap-1">
-                <Calendar className="w-3 h-3" />
-                Created Date
-              </p>
+              <p className="text-xs text-gray-600 mb-1 flex items-center gap-1"><Calendar className="w-3 h-3" /> Created Date</p>
               <p className="text-sm font-medium" style={{ color: '#004526' }}>
-                {new Date(document.created_at).toLocaleDateString('en-US', {
-                  year: 'numeric',
-                  month: 'short',
-                  day: 'numeric',
-                })}
+                {new Date(document.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}
               </p>
             </div>
-
             <div className="p-3 rounded-lg col-span-2" style={{ backgroundColor: '#DFF5E1' }}>
               <p className="text-xs text-gray-600 mb-1">Reference Number</p>
               <p className="text-sm font-medium" style={{ color: '#004526' }}>{document.reference_number}</p>
             </div>
-
             {document.document_subject && (
               <div className="p-3 rounded-lg col-span-2" style={{ backgroundColor: '#DFF5E1' }}>
                 <p className="text-xs text-gray-600 mb-1">Subject</p>
                 <p className="text-sm font-medium" style={{ color: '#004526' }}>{document.document_subject}</p>
               </div>
             )}
-
-            {document.description && (
+            {document.sender_name && (
               <div className="p-3 rounded-lg col-span-2" style={{ backgroundColor: '#DFF5E1' }}>
-                <p className="text-xs text-gray-600 mb-1">Description</p>
-                <p className="text-sm" style={{ color: '#004526' }}>{document.description}</p>
+                <p className="text-xs text-gray-600 mb-1">Sender</p>
+                <p className="text-sm font-medium" style={{ color: '#004526' }}>
+                  {document.sender_name}{document.sender_office ? ` — ${document.sender_office}` : ''}
+                </p>
+                {document.sender_phone && <p className="text-xs text-gray-500 mt-0.5">📱 {document.sender_phone}</p>}
+                {document.sender_email && <p className="text-xs text-gray-500">✉️ {document.sender_email}</p>}
               </div>
             )}
-
           </div>
 
-          {/* Print Preview Section */}
-          <div className="border-t pt-4">
-            <div className="flex items-center justify-between mb-3">
-              <h3 className="text-base font-semibold flex items-center gap-2" style={{ color: '#004526' }}>
-                <Eye className="w-4 h-4" />
-                Print Preview
-              </h3>
-              {document.file_url && (
-                <div className="flex gap-2">
-                  <button
-                    onClick={viewDocument}
-                    className="flex items-center gap-1.5 text-white px-3 py-1.5 rounded-lg transition-colors text-xs"
-                    style={{ backgroundColor: '#004526' }}
-                    onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#9CAF88'}
-                    onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#004526'}
-                  >
-                    <Eye className="w-3.5 h-3.5" />
-                    Open
-                  </button>
-                  <button
-                    onClick={downloadDocument}
-                    className="flex items-center gap-1.5 text-white px-3 py-1.5 rounded-lg transition-colors text-xs"
-                    style={{ backgroundColor: '#004526' }}
-                    onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#9CAF88'}
-                    onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#004526'}
-                  >
-                    <Download className="w-3.5 h-3.5" />
-                    Download
-                  </button>
-                </div>
-              </div>
-              {(document.sender_phone || document.sender_email) && (
+          {/* Actions */}
+          {document.file_url && (
+            <div className="border-t pt-4">
+              <div className="flex flex-wrap gap-2">
                 <button
-                  onClick={() => setShowNotify(true)}
-                  className="flex items-center gap-1.5 text-white px-3 py-1.5 rounded-lg transition-colors text-xs mt-2"
-                  style={{ backgroundColor: '#9CAF88' }}
-                  onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#004526'}
-                  onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#9CAF88'}
+                  onClick={viewDocument}
+                  className="flex items-center gap-1.5 text-white px-3 py-1.5 rounded-lg transition-colors text-xs"
+                  style={{ backgroundColor: '#004526' }}
+                  onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#9CAF88'}
+                  onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#004526'}
                 >
-                  <Bell className="w-3.5 h-3.5" />
-                  Notify Sender
+                  <Eye className="w-3.5 h-3.5" /> View
                 </button>
-              )}
-            )}
-          </div>
-        </div>
-      </div>
-      {showNotify && document && <NotifySender letter={document} onClose={() => setShowNotify(false)} />}
-              )}
-            </div>
-
-            {/* File name badge */}
-            {document.file_name && (
-              <p className="text-xs text-gray-500 mb-2 flex items-center gap-1">
-                <FileText className="w-3 h-3" />
-                {document.file_name}
-              </p>
-            )}
-
-            {/* Preview frame */}
-            <div className="rounded-lg overflow-hidden border border-gray-200 shadow-inner bg-gray-200 p-3">
-              <div className="bg-white shadow-lg rounded mx-auto overflow-hidden" style={{ minHeight: '500px' }}>
-                {document.file_url ? (
-                  document.file_url.match(/\.(jpg|jpeg|png|gif|webp)$/i) || document.file_url.startsWith('data:image/') ? (
-                    <img
-                      src={document.file_url}
-                      alt={document.file_name || 'Document'}
-                      className="w-full h-auto object-contain"
-                    />
-                  ) : (
-                    <iframe
-                      src={document.file_url}
-                      className="w-full border-0"
-                      style={{ height: '600px' }}
-                      title="Print Preview"
-                    />
-                  )
-                ) : (
-                  <div className="flex flex-col items-center justify-center h-full py-16 text-gray-400">
-                    <FileText className="w-12 h-12 mb-3 opacity-30" />
-                    <p className="text-sm">No preview available</p>
-                    <p className="text-xs mt-1 opacity-70">The file could not be loaded for preview</p>
-                  </div>
+                <button
+                  onClick={downloadDocument}
+                  className="flex items-center gap-1.5 text-white px-3 py-1.5 rounded-lg transition-colors text-xs"
+                  style={{ backgroundColor: '#004526' }}
+                  onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#9CAF88'}
+                  onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#004526'}
+                >
+                  <Download className="w-3.5 h-3.5" /> Download
+                </button>
+                {(document.sender_phone || document.sender_email) && (
+                  <button
+                    onClick={() => setShowNotify(true)}
+                    className="flex items-center gap-1.5 text-white px-3 py-1.5 rounded-lg transition-colors text-xs"
+                    style={{ backgroundColor: '#9CAF88' }}
+                    onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#004526'}
+                    onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#9CAF88'}
+                  >
+                    <Bell className="w-3.5 h-3.5" /> Notify Sender
+                  </button>
                 )}
               </div>
             </div>
-          </div>
+          )}
         </div>
       </div>
+
+      {showNotify && <NotifySender letter={document} onClose={() => setShowNotify(false)} />}
     </div>
   );
 }
