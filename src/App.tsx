@@ -13,8 +13,9 @@ import DocumentInfo from './components/DocumentInfo';
 import LandingPage from './components/LandingPage';
 import TopBar from './components/TopBar';
 import Archive from './components/Archive';
+import Settings from './components/Settings';
 
-type View = 'dashboard' | 'tracking' | 'document-tracking' | 'letter-view' | 'track' | 'handler' | 'receipt' | 'scanner' | 'library' | 'document-info' | 'archive';
+type View = 'dashboard' | 'tracking' | 'document-tracking' | 'letter-view' | 'track' | 'handler' | 'receipt' | 'scanner' | 'library' | 'document-info' | 'archive' | 'settings';
 
 function App() {
   const [showLanding, setShowLanding] = useState(true);
@@ -107,6 +108,7 @@ function App() {
         currentView={
           view === 'library' || view === 'document-info' || view === 'track' || view === 'handler' || view === 'receipt' ? 'tracking' :
           view === 'archive' ? 'archive' :
+          view === 'settings' ? 'settings' :
           view === 'dashboard' || view === 'tracking' || view === 'document-tracking' ? view : 
           'dashboard'
         } 
@@ -169,9 +171,10 @@ function App() {
               <h1 className="text-2xl font-bold" style={{ color: '#004526' }}>Create Document</h1>
               <p className="text-gray-600 text-sm mt-1">Create documents with QR codes</p>
             </div>
-
-            <div className="max-w-3xl">
-              <CreateLetter onLetterCreated={handleLetterCreated} />
+            <div className="flex justify-center">
+              <div className="w-full max-w-2xl">
+                <CreateLetter onLetterCreated={handleLetterCreated} />
+              </div>
             </div>
           </div>
         )}
@@ -224,6 +227,8 @@ function App() {
             }}
           />
         )}
+
+        {view === 'settings' && <Settings />}
       </div>
     </div>
     )}
