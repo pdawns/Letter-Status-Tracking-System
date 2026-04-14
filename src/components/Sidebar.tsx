@@ -1,14 +1,16 @@
-import { LayoutDashboard, Search, FileText, Archive, Settings } from 'lucide-react';
+import { LayoutDashboard, Search, FileText, Archive, Settings, LogOut } from 'lucide-react';
 import logo1 from '../../images/LOGO1.jpg';
+import { logout } from '../lib/api';
 
 type View = 'dashboard' | 'tracking' | 'document-tracking' | 'archive' | 'settings';
 
 interface SidebarProps {
   currentView: View;
   onViewChange: (view: View) => void;
+  onLogout: () => void;
 }
 
-export default function Sidebar({ currentView, onViewChange }: SidebarProps) {
+export default function Sidebar({ currentView, onViewChange, onLogout }: SidebarProps) {
   const menuItems = [
     { id: 'dashboard' as View, label: 'Dashboard', icon: LayoutDashboard },
     { id: 'document-tracking' as View, label: 'Create Document', icon: FileText },
@@ -71,6 +73,21 @@ export default function Sidebar({ currentView, onViewChange }: SidebarProps) {
           })}
         </ul>
       </nav>
+
+      {/* User + Logout */}
+      <div className="p-3 border-t" style={{ borderColor: '#1a6b3c' }}>
+        <div className="text-xs text-green-300 mb-2 px-1 truncate">
+          {localStorage.getItem('dts_username') || 'staff'}
+        </div>
+        <button
+          onClick={async () => { await logout(); onLogout(); }}
+          className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-all text-white hover:bg-red-700"
+          style={{ fontWeight: 'bold' }}
+        >
+          <LogOut className="w-4 h-4 flex-shrink-0" />
+          <span>Logout</span>
+        </button>
+      </div>
     </div>
   );
 }

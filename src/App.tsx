@@ -14,10 +14,12 @@ import LandingPage from './components/LandingPage';
 import TopBar from './components/TopBar';
 import Archive from './components/Archive';
 import Settings from './components/Settings';
+import { getToken } from './lib/api';
 
 type View = 'dashboard' | 'tracking' | 'document-tracking' | 'letter-view' | 'track' | 'handler' | 'receipt' | 'scanner' | 'library' | 'document-info' | 'archive' | 'settings';
 
 function App() {
+  const [isLoggedIn, setIsLoggedIn] = useState(() => !!getToken());
   const [showLanding, setShowLanding] = useState(true);
   const [view, setView] = useState<View>('dashboard');
   const [currentLetterId, setCurrentLetterId] = useState<string>('');
@@ -101,8 +103,10 @@ function App() {
 
   return (
     <>
-    {showLanding && <LandingPage onEnter={() => setShowLanding(false)} />}
-    {!showLanding && (
+    {(!isLoggedIn || showLanding) && (
+      <LandingPage onEnter={() => { setIsLoggedIn(true); setShowLanding(false); }} />
+    )}
+    {isLoggedIn && !showLanding && (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-gray-100">
       <Sidebar 
         currentView={
@@ -112,7 +116,8 @@ function App() {
           view === 'dashboard' || view === 'tracking' || view === 'document-tracking' ? view : 
           'dashboard'
         } 
-        onViewChange={setView} 
+        onViewChange={setView}
+        onLogout={() => { setIsLoggedIn(false); setShowLanding(true); }}
       />
       <TopBar
         onHome={() => setView('dashboard')}
