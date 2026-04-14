@@ -132,25 +132,6 @@ export async function generateReceiptPDF(
 
     yPosition = Math.max(tableEndY, finalQrY + qrSize + 8) + 6;
     
-    // Signature section
-    const signatureStatuses = statuses;
-    
-    if (signatureStatuses.length > 0) {
-      signatureStatuses.forEach((status) => {
-        if (yPosition > 260) {
-          pdf.addPage();
-          yPosition = 20;
-        }
-        pdf.setFontSize(10);
-        pdf.setFont('helvetica', 'normal');
-        pdf.setTextColor(0, 0, 0);
-        const signedByText = `${status.status_type.charAt(0).toUpperCase() + status.status_type.slice(1)} by: ${status.signed_by}`;
-        const textWidth = pdf.getTextWidth(signedByText);
-        pdf.text(signedByText, 195 - textWidth, yPosition);
-        yPosition += 8;
-      });
-    }
-    
     // Footer
     const pageCount = pdf.getNumberOfPages();
     for (let i = 1; i <= pageCount; i++) {
