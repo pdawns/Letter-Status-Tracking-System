@@ -215,52 +215,6 @@ export default function Receipt({ letterId, onBack }: ReceiptProps) {
             </div>
           </div>
 
-          {/* Uploaded Document File Section */}
-          {letter.file_url && letter.file_name && (
-            <div className="mb-5 pb-4 border-b-2 border-gray-200 print:mb-4 print:pb-3 print:break-inside-avoid">
-              <h2 className="text-base font-bold text-gray-900 mb-3 print:text-sm flex items-center gap-2">
-                <Paperclip className="w-4 h-4" style={{ color: '#004526' }} />
-                Attached Document
-              </h2>
-              <div className="border-2 rounded-lg p-4 print:border print:p-3 print:bg-white" style={{ borderColor: '#9CAF88', backgroundColor: '#DFF5E1' }}>
-                <div className="flex items-start gap-3 print:gap-2">
-                  <div className="p-2 rounded-lg flex-shrink-0 print:p-1" style={{ backgroundColor: '#9CAF88' }}>
-                    <FileText className="w-6 h-6 print:w-5 print:h-5" style={{ color: '#004526' }} />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-[10px] font-semibold text-gray-500 uppercase tracking-wide mb-1 print:text-[9px]">
-                      File Name
-                    </p>
-                    <p className="text-sm font-bold text-gray-900 break-words mb-2 print:text-xs print:mb-1">
-                      {letter.file_name}
-                    </p>
-                    <p className="text-xs text-gray-600 mb-2 print:text-[10px] print:mb-1">
-                      This is the official document attached to this tracking receipt.
-                    </p>
-                    <button
-                      onClick={() => {
-                        const [header, base64] = letter.file_url!.split(',');
-                        const mime = header.match(/:(.*?);/)?.[1] || 'application/octet-stream';
-                        const binary = atob(base64);
-                        const bytes = new Uint8Array(binary.length);
-                        for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
-                        const blob = new Blob([bytes], { type: mime });
-                        const blobUrl = URL.createObjectURL(blob);
-                        window.open(blobUrl, '_blank', 'noopener,noreferrer');
-                        setTimeout(() => URL.revokeObjectURL(blobUrl), 10000);
-                      }}
-                      className="inline-flex items-center gap-2 hover:underline font-medium text-xs print:hidden"
-                      style={{ color: '#004526' }}
-                    >
-                      <ExternalLink className="w-3 h-3" />
-                      View Document
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-
           {/* Signature History Section - Only Noted Signatures */}
           <div className="mb-5 print:mb-4">
             <h2 className="text-base font-bold text-gray-900 mb-3 print:text-sm">Signature History</h2>
