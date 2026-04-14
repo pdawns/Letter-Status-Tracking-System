@@ -114,7 +114,10 @@ function App() {
         } 
         onViewChange={setView} 
       />
-      <TopBar onHome={() => setView('dashboard')} />
+      <TopBar
+        onHome={() => setView('dashboard')}
+        onNavigateToLetter={(id) => { setCurrentLetterId(id); setView('track'); }}
+      />
       <div className="ml-56 min-h-screen overflow-auto" style={{ paddingTop: '56px' }}>
         {showScanner && (
           <QRScanner

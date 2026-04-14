@@ -1,11 +1,13 @@
-import { Bell, User } from 'lucide-react';
+import { User } from 'lucide-react';
 import { loadSettings } from './Settings';
+import NotificationBell from './NotificationBell';
 
 interface TopBarProps {
   onHome: () => void;
+  onNavigateToLetter: (letterId: string) => void;
 }
 
-export default function TopBar({ onHome }: TopBarProps) {
+export default function TopBar({ onHome, onNavigateToLetter }: TopBarProps) {
   const settings = loadSettings();
   const now = new Date();
   const dateStr = now.toLocaleDateString('en-PH', {
@@ -36,9 +38,7 @@ export default function TopBar({ onHome }: TopBarProps) {
 
       {/* Right — icons */}
       <div className="flex items-center gap-3">
-        <button className="text-white hover:opacity-75 transition-opacity" title="Notifications">
-          <Bell className="w-5 h-5" />
-        </button>
+        <NotificationBell onNavigate={onNavigateToLetter} />
         <div className="flex items-center gap-2 bg-white bg-opacity-10 rounded-full px-3 py-1">
           <User className="w-4 h-4 text-white" />
           <span className="text-white text-xs font-medium hidden sm:inline">Staff</span>

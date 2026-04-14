@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { insertLetter, updateLetter, uploadFile as uploadFileToStorage } from '../lib/api';
-import { FileText, Upload } from 'lucide-react';
+import { FileText, Upload, CheckCircle2 } from 'lucide-react';
 
 interface CreateLetterProps {
   onLetterCreated: (letterId: string) => void;
@@ -17,6 +17,8 @@ export default function CreateLetter({ onLetterCreated }: CreateLetterProps) {
   const [error, setError] = useState('');
   const [fileWarning, setFileWarning] = useState('');
   const [showConfirm, setShowConfirm] = useState(false);
+  const [showSuccess, setShowSuccess] = useState(false);
+  const [createdRefNumber, setCreatedRefNumber] = useState('');
   // Sender info
   const [senderName, setSenderName] = useState('');
   const [senderOffice, setSenderOffice] = useState('');
@@ -104,7 +106,12 @@ export default function CreateLetter({ onLetterCreated }: CreateLetterProps) {
         }
       }
 
-      onLetterCreated(letter.id);
+      setCreatedRefNumber(letter.reference_number);
+      setShowSuccess(true);
+      setTimeout(() => {
+        setShowSuccess(false);
+        onLetterCreated(letter.id);
+      }, 2000);
     } catch (err) {
       console.error('Create document error:', err);
       const msg = (err as any)?.message || JSON.stringify(err);
@@ -331,6 +338,25 @@ export default function CreateLetter({ onLetterCreated }: CreateLetterProps) {
         </form>
       </div>
     </div>
+
+    {/* Success toast */}
+    {showSuccess && (
+      <div className="fixed inset-0 z-50 flex items-center justify-center pointer-events-none">
+        <div
+          className="flex flex-col items-center gap-3 bg-white rounded-2xl shadow-2xl px-8 py-6 animate-[fadeInScale_0.3s_ease-out]"
+          style={{ border: '2px solid #004526' }}
+        >
+          <div className="w-14 h-14 rounded-full flex items-center justify-center" style={{ backgroundColor: '#DFF5E1' }}>
+            <CheckCircle2 className="w-8 h-8" style={{ color: '#004526' }} />
+          </div>
+          <div className="text-center">
+            <p className="text-base font-bold" style={{ color: '#004526' }}>Document Created!</p>
+            <p className="text-sm text-gray-500 mt-0.5">{createdRefNumber}</p>
+          </div>
+          <p className="text-xs text-gray-400">Redirecting to document view...</p>
+        </div>
+      </div>
+    )}
 
     {showConfirm && (
       <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
