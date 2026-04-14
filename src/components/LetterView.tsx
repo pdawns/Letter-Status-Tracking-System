@@ -37,36 +37,25 @@ export default function LetterView({ letterId, onBack }: LetterViewProps) {
     window.print();
   };
 
-  // Convert base64 data URL to a Blob URL for safe browser opening/downloading
-  const dataUrlToBlob = (dataUrl: string): Blob => {
-    const [header, base64] = dataUrl.split(',');
-    const mime = header.match(/:(.*?);/)?.[1] || 'application/octet-stream';
-    const binary = atob(base64);
-    const bytes = new Uint8Array(binary.length);
-    for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
-    return new Blob([bytes], { type: mime });
-  };
-
   const handleViewDocument = () => {
     if (!letter?.file_url) return;
-    const blob = dataUrlToBlob(letter.file_url);
-    const blobUrl = URL.createObjectURL(blob);
-    window.open(blobUrl, '_blank', 'noopener,noreferrer');
-    // Revoke after a short delay to allow the tab to load
-    setTimeout(() => URL.revokeObjectURL(blobUrl), 10000);
+    const isOffice = letter.file_url.match(/\.(doc|docx|xls|xlsx|ppt|pptx)$/i);
+    if (isOffice) {
+      window.open(`https://docs.google.com/viewer?url=${encodeURIComponent(letter.file_url)}&embedded=false`, '_blank');
+    } else {
+      window.open(letter.file_url, '_blank', 'noopener,noreferrer');
+    }
   };
 
   const handleDownload = () => {
     if (!letter?.file_url) return;
-    const blob = dataUrlToBlob(letter.file_url);
-    const blobUrl = URL.createObjectURL(blob);
     const link = document.createElement('a');
-    link.href = blobUrl;
+    link.href = letter.file_url;
     link.download = letter.file_name || 'document';
+    link.target = '_blank';
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-    setTimeout(() => URL.revokeObjectURL(blobUrl), 1000);
   };
 
   if (loading) {
