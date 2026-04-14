@@ -11,6 +11,7 @@ import DocumentLibrary from './components/DocumentLibrary';
 import { Camera, Library } from 'lucide-react';
 import DocumentInfo from './components/DocumentInfo';
 import LandingPage from './components/LandingPage';
+import TopBar from './components/TopBar';
 import Archive from './components/Archive';
 
 type View = 'dashboard' | 'tracking' | 'document-tracking' | 'letter-view' | 'track' | 'handler' | 'receipt' | 'scanner' | 'library' | 'document-info' | 'archive';
@@ -111,8 +112,8 @@ function App() {
         } 
         onViewChange={setView} 
       />
-      
-      <div className="ml-56 min-h-screen overflow-auto">
+      <TopBar onHome={() => setView('dashboard')} />
+      <div className="ml-56 min-h-screen overflow-auto" style={{ paddingTop: '56px' }}>
         {showScanner && (
           <QRScanner
             onScanSuccess={handleQRScanSuccess}

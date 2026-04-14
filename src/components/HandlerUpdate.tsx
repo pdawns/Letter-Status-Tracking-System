@@ -37,10 +37,10 @@ export default function HandlerUpdate({ letterId, onBack }: HandlerUpdateProps) 
 
   const fetchLetter = async () => {
     try {
-      const letterData = getLetter(letterId);
+      const letterData = await getLetter(letterId);
       if (!letterData) throw new Error('Letter not found');
       setLetter(letterData);
-      const statusData = getStatusesForLetter(letterId);
+      const statusData = await getStatusesForLetter(letterId);
       setStatuses(statusData);
       setNoted(statusData.some((s) => s.status_type === 'noted'));
       setApproved(statusData.some((s) => s.status_type === 'approved'));

@@ -25,7 +25,7 @@ export default function TrackLetter({
 
   const fetchLetter = async () => {
     try {
-      const data = getLetter(letterId);
+      const data = await getLetter(letterId);
       if (!data) throw new Error('Not found');
       setLetter(data);
     } catch (err) {

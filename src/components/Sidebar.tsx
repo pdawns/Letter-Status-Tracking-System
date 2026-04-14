@@ -19,7 +19,10 @@ export default function Sidebar({ currentView, onViewChange }: SidebarProps) {
   return (
     <div className="w-56 text-white h-screen flex flex-col fixed left-0 top-0 overflow-y-auto" style={{ backgroundColor: '#004526', fontFamily: 'serif' }}>
       <div className="p-4 border-b border-opacity-20" style={{ borderColor: '#9CAF88' }}>
-        <div className="flex items-center gap-2">
+        <button
+          onClick={() => onViewChange('dashboard')}
+          className="flex items-center gap-2 hover:opacity-80 transition-opacity w-full text-left"
+        >
           <img
             src={logo1}
             alt="PTO Logo"
@@ -27,7 +30,7 @@ export default function Sidebar({ currentView, onViewChange }: SidebarProps) {
             style={{ filter: 'hue-rotate(200deg) saturate(1.5) brightness(0.95)' }}
           />
           <h1 className="text-lg font-bold">DTS</h1>
-        </div>
+        </button>
       </div>
 
       <nav className="flex-1 p-3 overflow-y-auto">

@@ -21,10 +21,10 @@ export default function Receipt({ letterId, onBack }: ReceiptProps) {
 
   const fetchData = async () => {
     try {
-      const letterData = getLetter(letterId);
+      const letterData = await getLetter(letterId);
       if (!letterData) throw new Error('Letter not found');
       setLetter(letterData);
-      setStatuses(getStatusesForLetter(letterId));
+      setStatuses(await getStatusesForLetter(letterId));
     } catch (err) {
       console.error('Error fetching data:', err);
     } finally {
