@@ -39,6 +39,7 @@ db.exec(`
     sender_office TEXT DEFAULT '',
     sender_phone TEXT DEFAULT '',
     sender_email TEXT DEFAULT '',
+    required_statuses TEXT DEFAULT 'noted,approved,reviewed',
     created_at TEXT DEFAULT (datetime('now'))
   );
   CREATE TABLE IF NOT EXISTS letter_statuses (
@@ -73,9 +74,9 @@ app.get('/api/letters/:id', (req, res) => {
 
 app.post('/api/letters', (req, res) => {
   const id = crypto.randomUUID();
-  const { reference_number, title, document_subject, document_type, handler_pin, description, sender_name, sender_office, sender_phone, sender_email } = req.body;
-  db.prepare('INSERT INTO letters (id, reference_number, title, document_subject, document_type, handler_pin, description, sender_name, sender_office, sender_phone, sender_email) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)')
-    .run(id, reference_number, title, document_subject || '', document_type || 'letter', handler_pin, description || '', sender_name || '', sender_office || '', sender_phone || '', sender_email || '');
+  const { reference_number, title, document_subject, document_type, handler_pin, description, sender_name, sender_office, sender_phone, sender_email, required_statuses } = req.body;
+  db.prepare('INSERT INTO letters (id, reference_number, title, document_subject, document_type, handler_pin, description, sender_name, sender_office, sender_phone, sender_email, required_statuses) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)')
+    .run(id, reference_number, title, document_subject || '', document_type || 'letter', handler_pin, description || '', sender_name || '', sender_office || '', sender_phone || '', sender_email || '', required_statuses || 'noted,approved,reviewed');
   res.json(db.prepare('SELECT * FROM letters WHERE id = ?').get(id));
 });
 

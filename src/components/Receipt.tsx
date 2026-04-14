@@ -73,10 +73,15 @@ export default function Receipt({ letterId, onBack }: ReceiptProps) {
     );
   }
 
+  const requiredList = (letter.required_statuses || 'noted,approved,reviewed').split(',').map(s => s.trim());
   const hasNoted = statuses.some((s) => s.status_type === 'noted');
   const hasReviewed = statuses.some((s) => s.status_type === 'reviewed');
   const hasApproved = statuses.some((s) => s.status_type === 'approved');
-  const allComplete = hasNoted && hasReviewed && hasApproved;
+  const allComplete = requiredList.every(r =>
+    (r === 'noted' && hasNoted) ||
+    (r === 'approved' && hasApproved) ||
+    (r === 'reviewed' && hasReviewed)
+  );
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-50 to-gray-100 p-3 py-4 print:bg-white">

@@ -148,9 +148,17 @@ export default function HandlerUpdate({ letterId, onBack }: HandlerUpdateProps) 
     </div>
   );
 
+  const requiredList = (letter.required_statuses || 'noted,approved,reviewed').split(',').map(s => s.trim());
   const existingNoted = statuses.find((s) => s.status_type === 'noted');
   const existingApproved = statuses.find((s) => s.status_type === 'approved');
   const existingReviewed = statuses.find((s) => s.status_type === 'reviewed');
+
+  // Completion: all required statuses are done
+  const isComplete = requiredList.every(r =>
+    (r === 'noted' && existingNoted) ||
+    (r === 'approved' && existingApproved) ||
+    (r === 'reviewed' && existingReviewed)
+  );
 
   return (
     <>
@@ -172,87 +180,90 @@ export default function HandlerUpdate({ letterId, onBack }: HandlerUpdateProps) 
 
           <form onSubmit={handleStatusUpdate} className="space-y-4">
             <div className="space-y-3 border-t pt-4">
-              <p className="text-xs font-medium text-gray-700 mb-3">
-                Check the boxes below as signers complete each status. Enter the signer's name and date.
-              </p>
-
-              {/* Noted */}
-              <div className="bg-gray-50 p-4 rounded-lg">
-                <div className="flex items-start gap-3">
-                  <input type="checkbox" id="noted" checked={noted} onChange={(e) => setNoted(e.target.checked)}
-                    disabled={!!existingNoted} className="mt-1 h-5 w-5 text-blue-600 rounded focus:ring-blue-500" />
-                  <div className="flex-1">
-                    <label htmlFor="noted" className="block font-medium text-gray-900 mb-1">Noted {existingNoted && '✓ Completed'}</label>
-                    <p className="text-xs text-gray-500 mb-2">Person who noted the letter</p>
-                    {existingNoted ? (
-                      <div className="text-sm text-gray-600">
-                        <p>Signed by: {existingNoted.signed_by}</p>
-                        <p>Date: {new Date(existingNoted.signed_at).toLocaleString()}</p>
-                        {existingNoted.notes && <p>Notes: {existingNoted.notes}</p>}
-                      </div>
-                    ) : noted && (
-                      <>
-                        <input type="text" value={notedBy} onChange={(e) => setNotedBy(e.target.value)}
-                          placeholder="Signed by (name)" className="w-full px-3 py-2 border border-gray-300 rounded-lg mb-2" required={noted} />
-                        <input type="text" value={notedNotes} onChange={(e) => setNotedNotes(e.target.value)}
-                          placeholder="Notes (optional)" className="w-full px-3 py-2 border border-gray-300 rounded-lg" />
-                      </>
-                    )}
-                  </div>
-                </div>
+              <div className="flex items-center justify-between mb-3">
+                <p className="text-xs font-medium text-gray-700">Check boxes as signers complete each status.</p>
+                <span className={`text-xs font-bold px-2 py-1 rounded-full ${isComplete ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'}`}>
+                  {isComplete ? '✓ Completed' : '⏳ In Progress'}
+                </span>
               </div>
 
-              {/* Reviewed */}
-              <div className="bg-gray-50 p-4 rounded-lg">
-                <div className="flex items-start gap-3">
-                  <input type="checkbox" id="reviewed" checked={reviewed} onChange={(e) => setReviewed(e.target.checked)}
-                    disabled={!!existingReviewed} className="mt-1 h-5 w-5 text-blue-600 rounded focus:ring-blue-500" />
-                  <div className="flex-1">
-                    <label htmlFor="reviewed" className="block font-medium text-gray-900 mb-1">Reviewed {existingReviewed && '✓ Completed'}</label>
-                    <p className="text-xs text-gray-500 mb-2">Person who reviewed the letter</p>
-                    {existingReviewed ? (
-                      <div className="text-sm text-gray-600">
-                        <p>Signed by: {existingReviewed.signed_by}</p>
-                        <p>Date: {new Date(existingReviewed.signed_at).toLocaleString()}</p>
-                        {existingReviewed.notes && <p>Notes: {existingReviewed.notes}</p>}
-                      </div>
-                    ) : reviewed && (
-                      <>
-                        <input type="text" value={reviewedBy} onChange={(e) => setReviewedBy(e.target.value)}
-                          placeholder="Signed by (name)" className="w-full px-3 py-2 border border-gray-300 rounded-lg mb-2" required={reviewed} />
-                        <input type="text" value={reviewedNotes} onChange={(e) => setReviewedNotes(e.target.value)}
-                          placeholder="Notes (optional)" className="w-full px-3 py-2 border border-gray-300 rounded-lg" />
-                      </>
-                    )}
+              {requiredList.includes('noted') && (
+                <div className="bg-gray-50 p-4 rounded-lg">
+                  <div className="flex items-start gap-3">
+                    <input type="checkbox" id="noted" checked={noted} onChange={(e) => setNoted(e.target.checked)}
+                      disabled={!!existingNoted} className="mt-1 h-5 w-5 rounded" />
+                    <div className="flex-1">
+                      <label htmlFor="noted" className="block font-medium text-gray-900 mb-1">Noted {existingNoted && '✓ Completed'}</label>
+                      {existingNoted ? (
+                        <div className="text-sm text-gray-600">
+                          <p>Signed by: {existingNoted.signed_by}</p>
+                          <p>Date: {new Date(existingNoted.signed_at).toLocaleString()}</p>
+                          {existingNoted.notes && <p>Notes: {existingNoted.notes}</p>}
+                        </div>
+                      ) : noted && (
+                        <>
+                          <input type="text" value={notedBy} onChange={(e) => setNotedBy(e.target.value)}
+                            placeholder="Signed by (name)" className="w-full px-3 py-2 border border-gray-300 rounded-lg mb-2" required={noted} />
+                          <input type="text" value={notedNotes} onChange={(e) => setNotedNotes(e.target.value)}
+                            placeholder="Notes (optional)" className="w-full px-3 py-2 border border-gray-300 rounded-lg" />
+                        </>
+                      )}
+                    </div>
                   </div>
                 </div>
-              </div>
+              )}
 
-              {/* Approved */}
-              <div className="bg-gray-50 p-4 rounded-lg">
-                <div className="flex items-start gap-3">
-                  <input type="checkbox" id="approved" checked={approved} onChange={(e) => setApproved(e.target.checked)}
-                    disabled={!!existingApproved} className="mt-1 h-5 w-5 text-blue-600 rounded focus:ring-blue-500" />
-                  <div className="flex-1">
-                    <label htmlFor="approved" className="block font-medium text-gray-900 mb-1">Approved {existingApproved && '✓ Completed'}</label>
-                    <p className="text-xs text-gray-500 mb-2">Person who approved the letter</p>
-                    {existingApproved ? (
-                      <div className="text-sm text-gray-600">
-                        <p>Signed by: {existingApproved.signed_by}</p>
-                        <p>Date: {new Date(existingApproved.signed_at).toLocaleString()}</p>
-                        {existingApproved.notes && <p>Notes: {existingApproved.notes}</p>}
-                      </div>
-                    ) : approved && (
-                      <>
-                        <input type="text" value={approvedBy} onChange={(e) => setApprovedBy(e.target.value)}
-                          placeholder="Signed by (name)" className="w-full px-3 py-2 border border-gray-300 rounded-lg mb-2" required={approved} />
-                        <input type="text" value={approvedNotes} onChange={(e) => setApprovedNotes(e.target.value)}
-                          placeholder="Notes (optional)" className="w-full px-3 py-2 border border-gray-300 rounded-lg" />
-                      </>
-                    )}
+              {requiredList.includes('approved') && (
+                <div className="bg-gray-50 p-4 rounded-lg">
+                  <div className="flex items-start gap-3">
+                    <input type="checkbox" id="approved" checked={approved} onChange={(e) => setApproved(e.target.checked)}
+                      disabled={!!existingApproved} className="mt-1 h-5 w-5 rounded" />
+                    <div className="flex-1">
+                      <label htmlFor="approved" className="block font-medium text-gray-900 mb-1">Approved {existingApproved && '✓ Completed'}</label>
+                      {existingApproved ? (
+                        <div className="text-sm text-gray-600">
+                          <p>Signed by: {existingApproved.signed_by}</p>
+                          <p>Date: {new Date(existingApproved.signed_at).toLocaleString()}</p>
+                          {existingApproved.notes && <p>Notes: {existingApproved.notes}</p>}
+                        </div>
+                      ) : approved && (
+                        <>
+                          <input type="text" value={approvedBy} onChange={(e) => setApprovedBy(e.target.value)}
+                            placeholder="Signed by (name)" className="w-full px-3 py-2 border border-gray-300 rounded-lg mb-2" required={approved} />
+                          <input type="text" value={approvedNotes} onChange={(e) => setApprovedNotes(e.target.value)}
+                            placeholder="Notes (optional)" className="w-full px-3 py-2 border border-gray-300 rounded-lg" />
+                        </>
+                      )}
+                    </div>
                   </div>
                 </div>
-              </div>
+              )}
+
+              {requiredList.includes('reviewed') && (
+                <div className="bg-gray-50 p-4 rounded-lg">
+                  <div className="flex items-start gap-3">
+                    <input type="checkbox" id="reviewed" checked={reviewed} onChange={(e) => setReviewed(e.target.checked)}
+                      disabled={!!existingReviewed} className="mt-1 h-5 w-5 rounded" />
+                    <div className="flex-1">
+                      <label htmlFor="reviewed" className="block font-medium text-gray-900 mb-1">Reviewed {existingReviewed && '✓ Completed'}</label>
+                      {existingReviewed ? (
+                        <div className="text-sm text-gray-600">
+                          <p>Signed by: {existingReviewed.signed_by}</p>
+                          <p>Date: {new Date(existingReviewed.signed_at).toLocaleString()}</p>
+                          {existingReviewed.notes && <p>Notes: {existingReviewed.notes}</p>}
+                        </div>
+                      ) : reviewed && (
+                        <>
+                          <input type="text" value={reviewedBy} onChange={(e) => setReviewedBy(e.target.value)}
+                            placeholder="Signed by (name)" className="w-full px-3 py-2 border border-gray-300 rounded-lg mb-2" required={reviewed} />
+                          <input type="text" value={reviewedNotes} onChange={(e) => setReviewedNotes(e.target.value)}
+                            placeholder="Notes (optional)" className="w-full px-3 py-2 border border-gray-300 rounded-lg" />
+                        </>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
 
             {error && <div className="bg-red-50 border border-red-200 text-red-700 px-3 py-2 rounded-lg text-xs">{error}</div>}

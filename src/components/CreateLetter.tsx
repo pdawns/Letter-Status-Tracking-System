@@ -22,6 +22,10 @@ export default function CreateLetter({ onLetterCreated }: CreateLetterProps) {
   const [senderOffice, setSenderOffice] = useState('');
   const [senderPhone, setSenderPhone] = useState('');
   const [senderEmail, setSenderEmail] = useState('');
+  // Required signatures
+  const [reqNoted, setReqNoted] = useState(true);
+  const [reqApproved, setReqApproved] = useState(true);
+  const [reqReviewed, setReqReviewed] = useState(true);
 
   const generateReferenceNumber = () => {
     const year = new Date().getFullYear();
@@ -87,6 +91,7 @@ export default function CreateLetter({ onLetterCreated }: CreateLetterProps) {
         sender_office: senderOffice,
         sender_phone: senderPhone,
         sender_email: senderEmail,
+        required_statuses: [reqNoted && 'noted', reqApproved && 'approved', reqReviewed && 'reviewed'].filter(Boolean).join(',') || 'noted',
       });
 
       if (file) {
@@ -262,6 +267,29 @@ export default function CreateLetter({ onLetterCreated }: CreateLetterProps) {
                   />
                 </div>
               </div>
+            </div>
+          </div>
+
+          {/* Required Signatures */}
+          <div className="border-t pt-4">
+            <p className="text-xs font-semibold text-gray-700 mb-3 uppercase tracking-wide">Required Signatures</p>
+            <p className="text-xs text-gray-500 mb-3">Select which signatures this document requires to be considered complete.</p>
+            <div className="flex flex-wrap gap-4">
+              {[
+                { label: 'Noted', value: reqNoted, setter: setReqNoted },
+                { label: 'Approved', value: reqApproved, setter: setReqApproved },
+                { label: 'Reviewed', value: reqReviewed, setter: setReqReviewed },
+              ].map(({ label, value, setter }) => (
+                <label key={label} className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={value}
+                    onChange={(e) => setter(e.target.checked)}
+                    className="w-4 h-4 rounded"
+                  />
+                  <span className="text-sm font-medium text-gray-700">{label}</span>
+                </label>
+              ))}
             </div>
           </div>
 
