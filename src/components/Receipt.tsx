@@ -4,6 +4,7 @@ import { getLetter, getStatusesForLetter } from '../lib/api';
 import { Letter, LetterStatus } from '../types';
 import { FileText, CheckCircle, Clock, Download, ArrowLeft, Paperclip, ExternalLink } from 'lucide-react';
 import { generateReceiptPDF, downloadPDF } from '../Generates/pdf';
+import { fixName } from '../lib/fixNames';
 
 interface ReceiptProps {
   letterId: string;
@@ -39,7 +40,10 @@ export default function Receipt({ letterId, onBack }: ReceiptProps) {
     
     setIsGeneratingPDF(true);
     try {
-      const pdf = await generateReceiptPDF(letter, statuses);
+      const pdf = await generateReceiptPDF(
+      letter,
+      statuses.map(s => ({ ...s, signed_by: fixName(s.signed_by), notes: fixName(s.notes) }))
+    );
       downloadPDF(pdf, `receipt-${letter.reference_number}.pdf`);
     } catch (error) {
       console.error('Error generating PDF:', error);
@@ -243,7 +247,7 @@ export default function Receipt({ letterId, onBack }: ReceiptProps) {
                           </h3>
                           <div className="space-y-1 text-xs print:text-[10px]">
                             <p className="text-gray-700 print:text-gray-900">
-                              <span className="font-semibold">Signed by:</span> {status.signed_by}
+                              <span className="font-semibold">Signed by:</span> {fixName(status.signed_by)}
                             </p>
                             <p className="text-gray-700 print:text-gray-900">
                               <span className="font-semibold">Date & Time:</span>{' '}
@@ -251,7 +255,7 @@ export default function Receipt({ letterId, onBack }: ReceiptProps) {
                             </p>
                             {status.notes && (
                               <p className="text-gray-700 print:text-gray-900">
-                                <span className="font-semibold">Notes:</span> {status.notes}
+                                <span className="font-semibold">Notes:</span> {fixName(status.notes)}
                               </p>
                             )}
                           </div>

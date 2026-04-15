@@ -3,6 +3,7 @@ import { getLetter, getStatusesForLetter, insertStatuses, createActionTicket, ge
 import { Letter, LetterStatus, ActionTicket } from '../types';
 import { Lock, CheckSquare, ArrowLeft, ChevronDown, Check, Ticket } from 'lucide-react';
 import ActionTicketModal from './ActionTicket';
+import { fixName } from '../lib/fixNames';
 
 interface HandlerUpdateProps {
   letterId: string;
@@ -11,7 +12,7 @@ interface HandlerUpdateProps {
 
 const SIR_RONALD = 'RONALD JAME D. VIOLON, CPA, REB, REA, MDMG';
 const SIR_LENMARK = 'Lenmark G. Benlot, Acting Assistant Provincial Treasurer';
-const MAAM_FLOR = 'Floramae Constantito, Acting Assistant Provincial Treasurer';
+const MAAM_FLOR = 'Floramae Constantino, Acting Assistant Provincial Treasurer';
 
 const ASSIGNEES = [SIR_LENMARK, MAAM_FLOR, 'Other Personnel'];
 
@@ -322,7 +323,7 @@ export default function HandlerUpdate({ letterId, onBack }: HandlerUpdateProps) 
                 <div className="text-xs text-gray-600 space-y-0.5">
                   <p>Approved by: <span className="font-medium">{approvalStatus.signed_by}</span></p>
                   <p>Date: {new Date(approvalStatus.signed_at).toLocaleString()}</p>
-                  {approvalStatus.notes && <p>Notes: {approvalStatus.notes}</p>}
+                  {approvalStatus.notes && <p>Notes: {fixName(approvalStatus.notes)}</p>}
                 </div>
                 {/* Show existing tickets */}
                 {actionTickets.length > 0 && (
@@ -338,7 +339,7 @@ export default function HandlerUpdate({ letterId, onBack }: HandlerUpdateProps) 
                         <span className="flex items-center gap-1.5">
                           <Ticket className="w-3.5 h-3.5" style={{ color: '#004526' }} />
                           <span className="font-medium">{t.ticket_number}</span>
-                          <span className="text-gray-500">→ {t.assigned_to}</span>
+                          <span className="text-gray-500">→ {fixName(t.assigned_to)}</span>
                         </span>
                         <span className={`px-1.5 py-0.5 rounded-full font-medium ${t.status === 'completed' ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'}`}>
                           {t.status === 'completed' ? '✓ Done' : '🖨 For Printing'}

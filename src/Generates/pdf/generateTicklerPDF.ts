@@ -52,7 +52,7 @@ export async function generateTicklerPDF(
    * If the value fits on the same line as the label → single row.
    * If it doesn't fit → label on its own row, value wraps into the next row(s).
    */
-  const fieldRow = (label: string, value = '') => {
+  const fieldRow = (label: string, value = '', valueColor: [number,number,number] = [0,0,0]) => {
     pdf.setFontSize(fs);
     pdf.setTextColor(0);
 
@@ -70,40 +70,44 @@ export async function generateTicklerPDF(
     const availW = maxTW - labelW;
 
     if (pdf.getTextWidth(value) <= availW) {
-      // fits on one row
       box(rowH);
       pdf.setFont('helvetica', 'bold');
+      pdf.setTextColor(0);
       pdf.text(label, lx + pad, midY(rowH));
       pdf.setFont('helvetica', 'normal');
+      pdf.setTextColor(...valueColor);
       pdf.text(value, lx + pad + labelW, midY(rowH));
+      pdf.setTextColor(0);
       y += rowH;
     } else {
-      // label row — bold label + as much of value as fits
       const lines = pdf.splitTextToSize(value, maxTW) as string[];
-      // first line: label + first value line (if fits after label)
       box(rowH);
       pdf.setFont('helvetica', 'bold');
+      pdf.setTextColor(0);
       pdf.text(label, lx + pad, midY(rowH));
-      // check if first wrapped line fits after label
       const firstLine = lines[0] || '';
       if (pdf.getTextWidth(firstLine) <= availW) {
         pdf.setFont('helvetica', 'normal');
+        pdf.setTextColor(...valueColor);
         pdf.text(firstLine, lx + pad + labelW, midY(rowH));
+        pdf.setTextColor(0);
         y += rowH;
-        // remaining lines each get their own row — indented
         for (let i = 1; i < lines.length; i++) {
           box(rowH);
           pdf.setFont('helvetica', 'normal');
+          pdf.setTextColor(...valueColor);
           pdf.text(lines[i], lx + pad + indent, midY(rowH));
+          pdf.setTextColor(0);
           y += rowH;
         }
       } else {
-        // label alone on first row, all value lines below — indented
         y += rowH;
         for (const line of lines) {
           box(rowH);
           pdf.setFont('helvetica', 'normal');
+          pdf.setTextColor(...valueColor);
           pdf.text(line, lx + pad + indent, midY(rowH));
+          pdf.setTextColor(0);
           y += rowH;
         }
       }
@@ -114,7 +118,7 @@ export async function generateTicklerPDF(
    * `totalRows` ruled rows. Wrapped text fills from the top with a small
    * left indent for cleaner appearance; remaining rows stay blank.
    */
-  const textBlock = (text: string, totalRows: number) => {
+  const textBlock = (text: string, totalRows: number, textColor: [number,number,number] = [0,0,0]) => {
     pdf.setFontSize(fs);
     const lines: string[] = text
       ? (pdf.splitTextToSize(text, maxTW - indent) as string[])
@@ -124,8 +128,9 @@ export async function generateTicklerPDF(
       if (i < lines.length) {
         pdf.setFont('helvetica', 'normal');
         pdf.setFontSize(fs);
-        pdf.setTextColor(0);
+        pdf.setTextColor(...textColor);
         pdf.text(lines[i], lx + pad + indent, midY(rowH));
+        pdf.setTextColor(0);
       }
       y += rowH;
     }
@@ -161,7 +166,7 @@ export async function generateTicklerPDF(
     .filter(Boolean).join(' — ');
   textBlock(subjectText, 5);
 
-  fieldRow('Assigned to:', ticket.assigned_to);
+  fieldRow('Assigned to:', ticket.assigned_to, [200, 0, 0]);
   fieldRow('Due Date/Deadline:', ticket.due_date
     ? new Date(ticket.due_date).toLocaleDateString('en-PH', {
         year: 'numeric', month: 'long', day: 'numeric',
@@ -170,7 +175,7 @@ export async function generateTicklerPDF(
 
   // Instruction: label row + 5 text rows
   fieldRow('Instruction:');
-  textBlock(ticket.action_notes || '', 5);
+  textBlock(ticket.action_notes || '', 5, [200, 0, 0]);
 
   // By + blank signature row
   fieldRow('By:', ticket.assigned_by);

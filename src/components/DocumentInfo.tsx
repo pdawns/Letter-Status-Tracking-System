@@ -4,6 +4,7 @@ import { Letter, ActionTicket } from '../types';
 import { ArrowLeft, FileText, Calendar, Tag, Download, Eye, Loader, Bell, Ticket } from 'lucide-react';
 import NotifySender from './NotifySender';
 import ActionTicketModal from './ActionTicket';
+import { fixName } from '../lib/fixNames';
 
 interface DocumentInfoProps {
   letterId: string;
@@ -89,12 +90,25 @@ export default function DocumentInfo({ letterId, onBack }: DocumentInfoProps) {
       <div className="bg-white rounded-lg shadow-lg overflow-hidden">
         {/* Header */}
         <div className="p-4 text-white" style={{ background: 'linear-gradient(to right, #004526, #9CAF88)' }}>
-          <div className="flex items-center gap-3">
-            <FileText className="w-8 h-8" />
-            <div>
-              <p className="text-xs opacity-90">{document.reference_number}</p>
-              <h1 className="text-xl font-bold">{document.title}</h1>
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <FileText className="w-8 h-8" />
+              <div>
+                <p className="text-xs opacity-90">{document.reference_number}</p>
+                <h1 className="text-xl font-bold">{document.title}</h1>
+              </div>
             </div>
+            {(document.sender_phone || document.sender_email) && (
+              <button
+                onClick={() => setShowNotify(true)}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors shrink-0"
+                style={{ backgroundColor: 'rgba(255,255,255,0.2)', color: '#fff', border: '1px solid rgba(255,255,255,0.4)' }}
+                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.35)'}
+                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.2)'}
+              >
+                <Bell className="w-3.5 h-3.5" /> Notify Sender
+              </button>
+            )}
           </div>
         </div>
 
@@ -152,7 +166,7 @@ export default function DocumentInfo({ letterId, onBack }: DocumentInfoProps) {
                   >
                     <div className="min-w-0">
                       <p className="font-semibold text-gray-800 text-xs">{t.ticket_number}</p>
-                      <p className="text-xs text-gray-500 truncate">Assigned to: {t.assigned_to}</p>
+                      <p className="text-xs text-gray-500 truncate">Assigned to: {fixName(t.assigned_to)}</p>
                       {t.due_date && <p className="text-xs text-gray-400">Due: {new Date(t.due_date).toLocaleDateString()}</p>}
                     </div>
                     <span className={`ml-2 shrink-0 text-xs font-medium px-2 py-0.5 rounded-full ${t.status === 'completed' ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'}`}>

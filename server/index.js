@@ -124,7 +124,13 @@ initSqlJs().then((SQL) => {
   `);
   // Migrate: add email_sent_at if missing
   try { db.run('ALTER TABLE letters ADD COLUMN email_sent_at TEXT DEFAULT NULL'); saveDb(); } catch (_) {}
-  // Migrate: add action_tickets table if missing
+  // Migrate: fix misspelled name Constantito → Constantino
+  try {
+    db.run(`UPDATE action_tickets SET assigned_to = REPLACE(assigned_to, 'Constantito', 'Constantino') WHERE assigned_to LIKE '%Constantito%'`);
+    db.run(`UPDATE letter_statuses SET notes = REPLACE(notes, 'Constantito', 'Constantino') WHERE notes LIKE '%Constantito%'`);
+    db.run(`UPDATE letter_statuses SET signed_by = REPLACE(signed_by, 'Constantito', 'Constantino') WHERE signed_by LIKE '%Constantito%'`);
+    saveDb();
+  } catch (_) {}
   try {
     db.run(`CREATE TABLE IF NOT EXISTS action_tickets (
       id TEXT PRIMARY KEY,

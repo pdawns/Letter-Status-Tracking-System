@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { ActionTicket as ActionTicketType, Letter } from '../types';
 import { Ticket, Download, X } from 'lucide-react';
 import { generateTicklerPDF, downloadTicklerPDF } from '../Generates/pdf';
+import { fixName } from '../lib/fixNames';
 
 interface ActionTicketProps {
   ticket: ActionTicketType;
@@ -57,7 +58,14 @@ export default function ActionTicket({ ticket, letter, onClose }: ActionTicketPr
   const handleDownload = async () => {
     setGenerating(true);
     try {
-      const pdf = await generateTicklerPDF(ticket, letter);
+      // pass a corrected ticket to the PDF generator
+      const fixedTicket = {
+        ...ticket,
+        assigned_to: fixName(ticket.assigned_to),
+        assigned_by: fixName(ticket.assigned_by),
+        action_notes: fixName(ticket.action_notes || ''),
+      };
+      const pdf = await generateTicklerPDF(fixedTicket, letter);
       downloadTicklerPDF(pdf, ticket.ticket_number);
     } catch (e) {
       console.error(e);
@@ -69,6 +77,11 @@ export default function ActionTicket({ ticket, letter, onClose }: ActionTicketPr
 
   const subjectFull = [letter.title, letter.document_subject, letter.description]
     .filter(Boolean).join(' — ');
+
+  // fix any legacy misspelling from DB
+  const assignedTo  = fixName(ticket.assigned_to);
+  const assignedBy  = fixName(ticket.assigned_by);
+  const actionNotes = fixName(ticket.action_notes || '');
 
   const dueFormatted = ticket.due_date
     ? new Date(ticket.due_date).toLocaleDateString('en-PH', { year: 'numeric', month: 'long', day: 'numeric' })
@@ -131,16 +144,16 @@ export default function ActionTicket({ ticket, letter, onClose }: ActionTicketPr
             <TextBlock text={subjectFull} total={7} />
 
             {/* Assigned to / Due date */}
-            <FieldRow label="Assigned to:" value={ticket.assigned_to} />
+            <FieldRow label="Assigned to:" value={assignedTo} />
             <FieldRow label="Due Date/Deadline:" value={dueFormatted} />
 
             {/* Instruction label row */}
             <FieldRow label="Instruction:" />
             {/* Instruction text flows into 7 blank lines */}
-            <TextBlock text={ticket.action_notes || ''} total={7} />
+            <TextBlock text={actionNotes} total={7} />
 
             {/* By + signature blank */}
-            <FieldRow label="By:" value={ticket.assigned_by} />
+            <FieldRow label="By:" value={assignedBy} />
             <div className="py-1 px-2 text-xs" style={{ minHeight: 22 }}>&nbsp;</div>
           </div>
 
