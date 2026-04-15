@@ -47,6 +47,11 @@ export default function NotifySender({ letter, onClose, onEmailSent }: NotifySen
     window.open(`sms:${phone}?body=${encodeURIComponent(message)}`, '_blank');
   };
 
+  const handleGoogleMessages = () => {
+    navigator.clipboard.writeText(message);
+    window.open('https://messages.google.com/web/conversations/new', '_blank');
+  };
+
   const handleEmail = async () => {
     const subject = encodeURIComponent(`${templates[selectedTemplate].label} - ${letter.reference_number}`);
     const body = encodeURIComponent(message);
@@ -59,13 +64,17 @@ export default function NotifySender({ letter, onClose, onEmailSent }: NotifySen
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-lg shadow-xl p-6 max-w-md w-full">
-        <div className="flex items-center justify-between mb-4">
+      <div className="bg-white rounded-lg shadow-xl w-full max-w-md flex flex-col max-h-[90vh]">
+        {/* Fixed header */}
+        <div className="flex items-center justify-between p-6 pb-4 shrink-0">
           <h2 className="text-base font-bold" style={{ color: '#004526' }}>Notify Sender</h2>
           <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
             <X className="w-5 h-5" />
           </button>
         </div>
+
+        {/* Scrollable content */}
+        <div className="overflow-y-auto px-6 pb-6 space-y-3">
 
         {/* Email already sent badge */}
         {letter.email_sent_at && (
@@ -142,6 +151,19 @@ export default function NotifySender({ letter, onClose, onEmailSent }: NotifySen
             </button>
           )}
 
+          {letter.sender_phone && (
+            <button
+              onClick={handleGoogleMessages}
+              className="w-full flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium text-white transition-colors"
+              style={{ backgroundColor: '#1A73E8' }}
+              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#1558B0'}
+              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#1A73E8'}
+            >
+              <MessageSquare className="w-4 h-4" />
+              Open Google Messages ({letter.sender_phone})
+            </button>
+          )}
+
           {letter.sender_email && (
             <button
               onClick={handleEmail}
@@ -154,8 +176,9 @@ export default function NotifySender({ letter, onClose, onEmailSent }: NotifySen
         </div>
 
         <p className="text-xs text-gray-400 mt-3 text-center">
-          SMS and Gmail options open your device's app with the message pre-filled.
+          SMS opens your default messaging app. Google Messages copies the message and opens the web app. Gmail opens with the message pre-filled.
         </p>
+        </div>{/* end scrollable */}
       </div>
     </div>
   );
