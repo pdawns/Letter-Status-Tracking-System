@@ -92,7 +92,7 @@ export default function Receipt({ letterId, onBack }: ReceiptProps) {
             className="flex items-center gap-2 text-green-600 hover:text-green-700 text-sm px-4 py-2 rounded-lg border border-green-600 hover:bg-green-50 transition-colors"
           >
             <ArrowLeft className="w-4 h-4" />
-            Back to Dashboard
+            Back to Document Library
           </button>
           
           <button

@@ -19,6 +19,13 @@ interface Notification {
   daysSinceCreated: number;
 }
 
+// email-sent notification type
+interface EmailNotification {
+  id: string; // letter.id + '_email'
+  letter: Letter;
+  sentAt: string;
+}
+
 // ── Helpers ──────────────────────────────────────────────
 
 const STALE_DAYS = 3;
@@ -279,26 +286,39 @@ interface Props {
 export default function NotificationBell({ onNavigate }: Props) {
   const [open, setOpen] = useState(false);
   const [all, setAll] = useState<Notification[]>([]);
+  const [emailNotifs, setEmailNotifs] = useState<EmailNotification[]>([]);
   const [dismissed, setDismissed] = useState<Set<string>>(getDismissed);
   const [loading, setLoading] = useState(false);
   const [selected, setSelected] = useState<Notification | null>(null);
+  const [selectedEmail, setSelectedEmail] = useState<EmailNotification | null>(null);
   const panelRef = useRef<HTMLDivElement>(null);
 
   const visible = all.filter((n) => !dismissed.has(n.id));
+  const visibleEmails = emailNotifs.filter((n) => !dismissed.has(n.id));
+  const totalVisible = visible.length + visibleEmails.length;
+
   const grouped = (['overdue', 'pending', 'new'] as Urgency[])
     .map((u) => ({ urgency: u, items: visible.filter((n) => n.urgency === u) }))
     .filter((g) => g.items.length > 0);
-
-  // ── Fetch ──────────────────────────────────────────────
 
   const fetchNotifications = async () => {
     setLoading(true);
     try {
       const letters = await getLetters();
       const results: Notification[] = [];
+      const emailResults: EmailNotification[] = [];
 
       await Promise.all(
         letters.map(async (letter) => {
+          // Track email-sent notifications
+          if (letter.email_sent_at) {
+            emailResults.push({
+              id: `${letter.id}_email`,
+              letter,
+              sentAt: letter.email_sent_at,
+            });
+          }
+
           const required = (letter.required_statuses || 'noted,approved,reviewed')
             .split(',').map((s) => s.trim()).filter(Boolean);
 
@@ -329,7 +349,12 @@ export default function NotificationBell({ onNavigate }: Props) {
         return parseUTC(b.letter.created_at).getTime() - parseUTC(a.letter.created_at).getTime();
       });
 
+      emailResults.sort((a, b) =>
+        parseUTC(b.sentAt).getTime() - parseUTC(a.sentAt).getTime()
+      );
+
       setAll(results);
+      setEmailNotifs(emailResults);
     } finally {
       setLoading(false);
     }
@@ -357,7 +382,7 @@ export default function NotificationBell({ onNavigate }: Props) {
   };
 
   const dismissAll = () => {
-    const next = new Set([...dismissed, ...all.map((n) => n.id)]);
+    const next = new Set([...dismissed, ...all.map((n) => n.id), ...emailNotifs.map((n) => n.id)]);
     setDismissed(next);
     saveDismissed(next);
   };
@@ -389,7 +414,7 @@ export default function NotificationBell({ onNavigate }: Props) {
               className="absolute -top-1.5 -right-1.5 flex items-center justify-center rounded-full text-white font-bold"
               style={{ backgroundColor: '#e53e3e', fontSize: '9px', minWidth: '16px', height: '16px', padding: '0 3px' }}
             >
-              {visible.length > 99 ? '99+' : visible.length}
+              {totalVisible > 99 ? '99+' : totalVisible}
             </span>
           )}
         </button>
@@ -407,12 +432,12 @@ export default function NotificationBell({ onNavigate }: Props) {
                 <span className="text-white text-sm font-semibold">Notifications</span>
                 {visible.length > 0 && (
                   <span className="text-xs rounded-full px-2 py-0.5 font-medium" style={{ backgroundColor: '#e53e3e', color: 'white' }}>
-                    {visible.length}
+                    {totalVisible}
                   </span>
                 )}
               </div>
               <div className="flex items-center gap-2">
-                {visible.length > 0 && (
+                {totalVisible > 0 && (
                   <button onClick={dismissAll} className="text-xs hover:opacity-75 transition-opacity" style={{ color: '#9CAF88' }}>
                     Mark all read
                   </button>
@@ -430,14 +455,60 @@ export default function NotificationBell({ onNavigate }: Props) {
                   <div className="w-4 h-4 border-2 border-gray-300 border-t-green-600 rounded-full animate-spin" />
                   Loading...
                 </div>
-              ) : visible.length === 0 ? (
+              ) : visible.length === 0 && visibleEmails.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-12 gap-3">
                   <CheckCircle className="w-10 h-10" style={{ color: '#9CAF88' }} />
                   <p className="text-sm font-medium text-gray-500">All caught up</p>
                   <p className="text-xs text-gray-400">No pending documents</p>
                 </div>
               ) : (
-                grouped.map(({ urgency, items }) => (
+                <>
+                  {/* Email sent notifications section */}
+                  {visibleEmails.length > 0 && (
+                    <div>
+                      <div className="flex items-center gap-2 px-4 py-2 sticky top-0 bg-gray-50 border-b border-gray-100">
+                        <Mail className="w-3.5 h-3.5 text-blue-500" />
+                        <span className="text-xs font-semibold uppercase tracking-wide text-blue-600">Email Sent</span>
+                        <span className="ml-auto text-xs text-gray-400">{visibleEmails.length}</span>
+                      </div>
+                      {visibleEmails.map((en) => (
+                        <div key={en.id} className="relative group border-b border-gray-100 last:border-0">
+                          <button
+                            onClick={() => { setSelectedEmail(en); setOpen(false); }}
+                            className="w-full text-left px-4 py-3 hover:bg-gray-50 transition-colors pr-10"
+                          >
+                            <div className="flex items-start gap-3">
+                              <div className="mt-0.5 p-1.5 rounded-lg flex-shrink-0" style={{ backgroundColor: '#EFF6FF' }}>
+                                <Mail className="w-4 h-4 text-blue-500" />
+                              </div>
+                              <div className="min-w-0 flex-1">
+                                <div className="flex items-center justify-between gap-1">
+                                  <p className="text-xs font-semibold truncate" style={{ color: '#004526' }}>
+                                    {en.letter.reference_number}
+                                  </p>
+                                  <span className="text-xs text-gray-400 flex-shrink-0">{timeAgo(en.sentAt)}</span>
+                                </div>
+                                <p className="text-xs text-gray-600 truncate mt-0.5">{en.letter.title}</p>
+                                <p className="text-xs text-blue-500 mt-1">
+                                  ✓ Email sent to {en.letter.sender_email || en.letter.sender_name || 'sender'}
+                                </p>
+                              </div>
+                            </div>
+                          </button>
+                          <button
+                            onClick={(e) => dismiss(e, en.id)}
+                            className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity text-gray-400 hover:text-gray-600"
+                            title="Dismiss"
+                          >
+                            <X className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Document status notifications */}
+                  {grouped.map(({ urgency, items }) => (
                   <div key={urgency}>
                     {/* Group label */}
                     <div className="flex items-center gap-2 px-4 py-2 sticky top-0 bg-gray-50 border-b border-gray-100">
@@ -504,14 +575,15 @@ export default function NotificationBell({ onNavigate }: Props) {
                     })}
                   </div>
                 ))
+              }
+                </>
               )}
             </div>
 
             {/* Footer */}
-            {visible.length > 0 && (
+            {totalVisible > 0 && (
               <div className="px-4 py-2 border-t border-gray-100 flex-shrink-0 text-center">
                 <p className="text-xs text-gray-400">
-                  {all.length - visible.length > 0 ? `${all.length - visible.length} dismissed · ` : ''}
                   Click a notification to view details
                 </p>
               </div>
@@ -528,6 +600,109 @@ export default function NotificationBell({ onNavigate }: Props) {
           onNavigate={(id) => { setSelected(null); onNavigate(id); }}
           onDismiss={(id) => { dismissById(id); setSelected(null); }}
         />
+      )}
+
+      {/* Email sent detail modal */}
+      {selectedEmail && (
+        <div
+          className="fixed inset-0 z-[60] flex items-center justify-center p-4"
+          style={{ backgroundColor: 'rgba(0,0,0,0.45)' }}
+          onClick={() => setSelectedEmail(null)}
+        >
+          <div
+            className="bg-white rounded-2xl shadow-2xl w-full max-w-md flex flex-col overflow-hidden"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header */}
+            <div className="flex items-center justify-between px-5 py-4" style={{ backgroundColor: '#003d1f' }}>
+              <div className="flex items-center gap-2">
+                <div className="p-1.5 rounded-lg" style={{ backgroundColor: '#EFF6FF' }}>
+                  <Mail className="w-4 h-4 text-blue-500" />
+                </div>
+                <div>
+                  <p className="text-white text-sm font-semibold">{selectedEmail.letter.reference_number}</p>
+                  <p className="text-xs" style={{ color: '#9CAF88' }}>Email Sent · {timeAgo(selectedEmail.sentAt)}</p>
+                </div>
+              </div>
+              <button onClick={() => setSelectedEmail(null)} className="text-white hover:opacity-75">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Body */}
+            <div className="px-5 py-4 space-y-4">
+              {/* Status banner */}
+              <div className="rounded-lg px-3 py-2 flex items-center gap-2" style={{ backgroundColor: '#EFF6FF', border: '1px solid #BFDBFE' }}>
+                <CheckCircle className="w-4 h-4 text-blue-500 flex-shrink-0" />
+                <p className="text-xs font-medium text-blue-700">
+                  Email notification was sent to the sender on {formatDate(selectedEmail.sentAt)}.
+                </p>
+              </div>
+
+              {/* Document info */}
+              <div>
+                <p className="text-xs text-gray-400 uppercase tracking-wide mb-1">Document</p>
+                <p className="text-sm font-semibold text-gray-800">{selectedEmail.letter.title}</p>
+                {selectedEmail.letter.document_type && (
+                  <span className="inline-block mt-1 text-xs rounded-full px-2 py-0.5 font-medium capitalize" style={{ backgroundColor: '#DFF5E1', color: '#004526' }}>
+                    {selectedEmail.letter.document_type}
+                  </span>
+                )}
+              </div>
+
+              {/* Recipient info */}
+              <div>
+                <p className="text-xs text-gray-400 uppercase tracking-wide mb-2">Sent To</p>
+                <div className="space-y-1.5">
+                  {selectedEmail.letter.sender_name && (
+                    <div className="flex items-center gap-2 text-xs text-gray-600">
+                      <User className="w-3.5 h-3.5 text-gray-400 flex-shrink-0" />
+                      {selectedEmail.letter.sender_name}
+                    </div>
+                  )}
+                  {selectedEmail.letter.sender_office && (
+                    <div className="flex items-center gap-2 text-xs text-gray-600">
+                      <Building2 className="w-3.5 h-3.5 text-gray-400 flex-shrink-0" />
+                      {selectedEmail.letter.sender_office}
+                    </div>
+                  )}
+                  {selectedEmail.letter.sender_email && (
+                    <div className="flex items-center gap-2 text-xs text-gray-600">
+                      <Mail className="w-3.5 h-3.5 text-gray-400 flex-shrink-0" />
+                      {selectedEmail.letter.sender_email}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Email message preview */}
+              <div>
+                <p className="text-xs text-gray-400 uppercase tracking-wide mb-1">Message Sent</p>
+                <div className="bg-gray-50 rounded-lg p-3 text-xs text-gray-600 whitespace-pre-wrap border border-gray-200 leading-relaxed" style={{ maxHeight: '140px', overflowY: 'auto' }}>
+                  {`Good day${selectedEmail.letter.sender_name ? `, ${selectedEmail.letter.sender_name}` : ''}!\n\nThis is to inform you that your document titled "${selectedEmail.letter.title}" (Reference No: ${selectedEmail.letter.reference_number}) has been officially received by the Provincial Treasurer's Office, Province of Misamis Oriental on ${new Date(selectedEmail.letter.created_at).toLocaleDateString('en-PH', { year: 'numeric', month: 'long', day: 'numeric' })}.\n\nThank you.\n\n- Provincial Treasurer's Office\n  Province of Misamis Oriental`}
+                </div>
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div className="px-5 py-4 border-t border-gray-100 flex gap-3">
+              <button
+                onClick={() => { dismissById(selectedEmail.id); setSelectedEmail(null); }}
+                className="flex-1 text-sm py-2 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 transition-colors"
+              >
+                Dismiss
+              </button>
+              <button
+                onClick={() => { setSelectedEmail(null); onNavigate(selectedEmail.letter.id); }}
+                className="flex-1 text-sm py-2 rounded-lg text-white font-medium flex items-center justify-center gap-2 transition-opacity hover:opacity-90"
+                style={{ backgroundColor: '#003d1f' }}
+              >
+                View Document
+                <ArrowRight className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </>
   );

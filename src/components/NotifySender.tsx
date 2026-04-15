@@ -1,13 +1,15 @@
 import { useState } from 'react';
 import { Letter } from '../types';
 import { MessageSquare, Mail, Copy, X, CheckCircle } from 'lucide-react';
+import { markEmailSent } from '../lib/api';
 
 interface NotifySenderProps {
   letter: Letter;
   onClose: () => void;
+  onEmailSent?: (updatedLetter: Letter) => void;
 }
 
-export default function NotifySender({ letter, onClose }: NotifySenderProps) {
+export default function NotifySender({ letter, onClose, onEmailSent }: NotifySenderProps) {
   const [copied, setCopied] = useState(false);
 
   const date = new Date(letter.created_at).toLocaleDateString('en-PH', {
@@ -28,11 +30,15 @@ export default function NotifySender({ letter, onClose }: NotifySenderProps) {
     window.open(`sms:${phone}?body=${encoded}`, '_blank');
   };
 
-  const handleEmail = () => {
+  const handleEmail = async () => {
     const subject = encodeURIComponent(`Document Received - ${letter.reference_number}`);
     const body = encodeURIComponent(message);
     const email = letter.sender_email || '';
     window.open(`https://mail.google.com/mail/?view=cm&to=${email}&su=${subject}&body=${body}`, '_blank');
+    try {
+      const updated = await markEmailSent(letter.id);
+      onEmailSent?.(updated);
+    } catch (_) {}
   };
 
   return (
@@ -44,6 +50,14 @@ export default function NotifySender({ letter, onClose }: NotifySenderProps) {
             <X className="w-5 h-5" />
           </button>
         </div>
+
+        {/* Email already sent badge */}
+        {letter.email_sent_at && (
+          <div className="mb-3 flex items-center gap-2 text-xs rounded-lg px-3 py-2" style={{ backgroundColor: '#DFF5E1', color: '#004526' }}>
+            <CheckCircle className="w-3.5 h-3.5 flex-shrink-0" />
+            Email already sent on {new Date(letter.email_sent_at).toLocaleDateString('en-PH', { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+          </div>
+        )}
 
         {/* Message Preview */}
         <div className="bg-gray-50 rounded-lg p-3 mb-4 text-xs text-gray-700 whitespace-pre-wrap border border-gray-200">

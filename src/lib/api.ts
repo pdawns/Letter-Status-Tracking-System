@@ -108,3 +108,11 @@ export const archiveLetter = async (id: string): Promise<void> => {
 export const unarchiveLetter = async (id: string): Promise<void> => {
   await fetch(`${BASE}/letters/${id}/unarchive`, { method: 'PATCH', headers: authHeaders() });
 };
+
+export const markEmailSent = async (id: string): Promise<Letter> => {
+  const res = await fetch(`${BASE}/letters/${id}/email-sent`, {
+    method: 'PATCH',
+    headers: authHeaders(),
+  });
+  return res.json();
+};

@@ -87,6 +87,7 @@ initSqlJs().then((SQL) => {
       sender_phone TEXT DEFAULT '',
       sender_email TEXT DEFAULT '',
       required_statuses TEXT DEFAULT 'noted,approved,reviewed',
+      email_sent_at TEXT DEFAULT NULL,
       created_at TEXT DEFAULT (datetime('now'))
     );
     CREATE TABLE IF NOT EXISTS letter_statuses (
@@ -103,6 +104,8 @@ initSqlJs().then((SQL) => {
       created_at TEXT DEFAULT (datetime('now'))
     );
   `);
+  // Migrate: add email_sent_at if missing
+  try { db.run('ALTER TABLE letters ADD COLUMN email_sent_at TEXT DEFAULT NULL'); saveDb(); } catch (_) {}
   saveDb();
   console.log('Database ready.');
 
@@ -195,6 +198,13 @@ initSqlJs().then((SQL) => {
   app.patch('/api/letters/:id/unarchive', requireAuth, (req, res) => {
     run('UPDATE letters SET archived = 0, archived_at = NULL WHERE id = ?', [req.params.id]);
     res.json({ success: true });
+  });
+
+  // ── Email sent tracking ───────────────────────────────────
+  app.patch('/api/letters/:id/email-sent', requireAuth, (req, res) => {
+    run('UPDATE letters SET email_sent_at = ? WHERE id = ?', [now(), req.params.id]);
+    const letter = get('SELECT * FROM letters WHERE id = ?', [req.params.id]);
+    res.json(letter);
   });
 
   // ── Upload ────────────────────────────────────────────────

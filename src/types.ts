@@ -16,6 +16,7 @@ export interface Letter {
   sender_phone?: string;
   sender_email?: string;
   required_statuses?: string; // comma-separated: 'noted,approved,reviewed'
+  email_sent_at?: string | null;
 }
 
 export interface LetterStatus {

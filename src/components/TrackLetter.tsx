@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { getLetter } from '../lib/api';
+import { getLetter, getStatusesForLetter } from '../lib/api';
 import { Letter } from '../types';
 import { FileText, User, Eye, ArrowLeft } from 'lucide-react';
 
@@ -27,6 +27,19 @@ export default function TrackLetter({
     try {
       const data = await getLetter(letterId);
       if (!data) throw new Error('Not found');
+
+      // Check if all required statuses are completed — if so, skip role selection
+      const required = (data.required_statuses || 'noted,approved,reviewed')
+        .split(',').map((s) => s.trim()).filter(Boolean);
+      const statuses = await getStatusesForLetter(letterId);
+      const completed = statuses.map((s) => s.status_type);
+      const allDone = required.every((r) => completed.includes(r as any));
+
+      if (allDone) {
+        onReceiverSelected();
+        return;
+      }
+
       setLetter(data);
     } catch (err) {
       console.error('Error fetching letter:', err);

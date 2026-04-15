@@ -216,7 +216,7 @@ function App() {
         )}
 
         {view === 'receipt' && currentLetterId && (
-          <Receipt letterId={currentLetterId} onBack={handleBackToTrack} />
+          <Receipt letterId={currentLetterId} onBack={handleBackToLibrary} />
         )}
 
         {view === 'library' && (
