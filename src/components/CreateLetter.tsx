@@ -4,9 +4,10 @@ import { FileText, Upload, CheckCircle2 } from 'lucide-react';
 
 interface CreateLetterProps {
   onLetterCreated: (letterId: string) => void;
+  onToast?: (message: string, type: 'success' | 'error') => void;
 }
 
-export default function CreateLetter({ onLetterCreated }: CreateLetterProps) {
+export default function CreateLetter({ onLetterCreated, onToast }: CreateLetterProps) {
   const [documentType, setDocumentType] = useState('letter');
   const [otherDocumentType, setOtherDocumentType] = useState('');
   const [title, setTitle] = useState('');
@@ -122,6 +123,7 @@ export default function CreateLetter({ onLetterCreated }: CreateLetterProps) {
       }
 
       setCreatedRefNumber(letter.reference_number);
+      onToast?.(`Document created: ${letter.reference_number}`, 'success');
       setShowSuccess(true);
       setTimeout(() => {
         setShowSuccess(false);

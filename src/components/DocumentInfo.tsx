@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
-import { getLetter } from '../lib/api';
-import { Letter } from '../types';
-import { ArrowLeft, FileText, Calendar, Tag, Download, Eye, Loader, Bell } from 'lucide-react';
+import { getLetter, getActionTickets } from '../lib/api';
+import { Letter, ActionTicket } from '../types';
+import { ArrowLeft, FileText, Calendar, Tag, Download, Eye, Loader, Bell, Ticket } from 'lucide-react';
 import NotifySender from './NotifySender';
+import ActionTicketModal from './ActionTicket';
 
 interface DocumentInfoProps {
   letterId: string;
@@ -13,6 +14,8 @@ export default function DocumentInfo({ letterId, onBack }: DocumentInfoProps) {
   const [document, setDocument] = useState<Letter | null>(null);
   const [loading, setLoading] = useState(true);
   const [showNotify, setShowNotify] = useState(false);
+  const [actionTickets, setActionTickets] = useState<ActionTicket[]>([]);
+  const [previewTicket, setPreviewTicket] = useState<ActionTicket | null>(null);
 
   useEffect(() => { fetchDocument(); }, [letterId]);
 
@@ -21,6 +24,10 @@ export default function DocumentInfo({ letterId, onBack }: DocumentInfoProps) {
       const data = await getLetter(letterId);
       if (!data) throw new Error('Not found');
       setDocument(data);
+      try {
+        const tickets = await getActionTickets(letterId);
+        setActionTickets(Array.isArray(tickets) ? tickets : []);
+      } catch { setActionTickets([]); }
     } catch (err) {
       console.error('Error fetching document:', err);
     } finally {
@@ -129,6 +136,34 @@ export default function DocumentInfo({ letterId, onBack }: DocumentInfoProps) {
             )}
           </div>
 
+          {/* Action Tickets */}
+          {actionTickets.length > 0 && (
+            <div className="border-t pt-4 mt-2">
+              <h2 className="text-base font-semibold mb-3 flex items-center gap-2" style={{ color: '#004526' }}>
+                <Ticket className="w-4 h-4" /> Action Tickler Slips
+              </h2>
+              <div className="space-y-2">
+                {actionTickets.map(t => (
+                  <button
+                    key={t.id}
+                    onClick={() => setPreviewTicket(t)}
+                    className="w-full flex items-center justify-between px-3 py-2.5 rounded-lg border-2 text-sm hover:bg-green-50 transition-colors text-left"
+                    style={{ borderColor: '#9CAF88' }}
+                  >
+                    <div className="min-w-0">
+                      <p className="font-semibold text-gray-800 text-xs">{t.ticket_number}</p>
+                      <p className="text-xs text-gray-500 truncate">Assigned to: {t.assigned_to}</p>
+                      {t.due_date && <p className="text-xs text-gray-400">Due: {new Date(t.due_date).toLocaleDateString()}</p>}
+                    </div>
+                    <span className={`ml-2 shrink-0 text-xs font-medium px-2 py-0.5 rounded-full ${t.status === 'completed' ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'}`}>
+                      {t.status === 'completed' ? '✓ Done' : '🖨 For Printing'}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
           {/* Actions */}
           {document.file_url && (
             <div className="border-t pt-4">
@@ -169,6 +204,9 @@ export default function DocumentInfo({ letterId, onBack }: DocumentInfoProps) {
       </div>
 
       {showNotify && <NotifySender letter={document} onClose={() => setShowNotify(false)} />}
+      {previewTicket && document && (
+        <ActionTicketModal ticket={previewTicket} letter={document} onClose={() => setPreviewTicket(null)} />
+      )}
     </div>
   );
 }

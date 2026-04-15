@@ -109,9 +109,37 @@ initSqlJs().then((SQL) => {
       user_id TEXT NOT NULL,
       created_at TEXT DEFAULT (datetime('now'))
     );
+    CREATE TABLE IF NOT EXISTS action_tickets (
+      id TEXT PRIMARY KEY,
+      letter_id TEXT NOT NULL,
+      ticket_number TEXT UNIQUE NOT NULL,
+      assigned_by TEXT NOT NULL,
+      assigned_to TEXT NOT NULL,
+      action_notes TEXT DEFAULT '',
+      due_date TEXT DEFAULT NULL,
+      status TEXT DEFAULT 'pending',
+      created_at TEXT DEFAULT (datetime('now')),
+      completed_at TEXT DEFAULT NULL
+    );
   `);
   // Migrate: add email_sent_at if missing
   try { db.run('ALTER TABLE letters ADD COLUMN email_sent_at TEXT DEFAULT NULL'); saveDb(); } catch (_) {}
+  // Migrate: add action_tickets table if missing
+  try {
+    db.run(`CREATE TABLE IF NOT EXISTS action_tickets (
+      id TEXT PRIMARY KEY,
+      letter_id TEXT NOT NULL,
+      ticket_number TEXT UNIQUE NOT NULL,
+      assigned_by TEXT NOT NULL,
+      assigned_to TEXT NOT NULL,
+      action_notes TEXT DEFAULT '',
+      due_date TEXT DEFAULT NULL,
+      status TEXT DEFAULT 'pending',
+      created_at TEXT DEFAULT (datetime('now')),
+      completed_at TEXT DEFAULT NULL
+    )`);
+    saveDb();
+  } catch (_) {}
   saveDb();
   console.log('Database ready.');
 
@@ -248,6 +276,33 @@ initSqlJs().then((SQL) => {
       );
     }
     res.json(all('SELECT * FROM letter_statuses WHERE letter_id = ? ORDER BY signed_at ASC', [req.params.id]));
+  });
+
+  // ── Action Tickets ────────────────────────────────────────
+  app.get('/api/letters/:id/action-tickets', requireAuth, (req, res) => {
+    res.json(all('SELECT * FROM action_tickets WHERE letter_id = ? ORDER BY created_at DESC', [req.params.id]));
+  });
+
+  app.post('/api/letters/:id/action-tickets', requireAuth, (req, res) => {
+    const { assigned_by, assigned_to, action_notes, due_date } = req.body;
+    if (!assigned_by || !assigned_to) return res.status(400).json({ error: 'assigned_by and assigned_to are required' });
+    const id = crypto.randomUUID();
+    const year = new Date().getFullYear();
+    const countRow = all('SELECT COUNT(*) as cnt FROM action_tickets');
+    const seq = (countRow[0]?.cnt ?? 0) + 1;
+    const ticket_number = `ACT-${year}-${String(seq).padStart(4, '0')}`;
+    run(
+      'INSERT INTO action_tickets (id, letter_id, ticket_number, assigned_by, assigned_to, action_notes, due_date, status, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+      [id, req.params.id, ticket_number, assigned_by, assigned_to, action_notes || '', due_date || null, 'pending', now()]
+    );
+    res.json(get('SELECT * FROM action_tickets WHERE id = ?', [id]));
+  });
+
+  app.patch('/api/action-tickets/:id/complete', requireAuth, (req, res) => {
+    run('UPDATE action_tickets SET status = ?, completed_at = ? WHERE id = ?', ['completed', now(), req.params.id]);
+    const ticket = get('SELECT * FROM action_tickets WHERE id = ?', [req.params.id]);
+    if (!ticket) return res.status(404).json({ error: 'Not found' });
+    res.json(ticket);
   });
 
   app.listen(PORT, '0.0.0.0', () => console.log(`DTS Server running on port ${PORT}`));

@@ -118,3 +118,30 @@ export const markEmailSent = async (id: string): Promise<Letter> => {
   });
   return res.json();
 };
+
+// ── Action Tickets ────────────────────────────────────────
+
+export const getActionTickets = async (letterId: string): Promise<import('../types').ActionTicket[]> => {
+  const res = await fetch(`${BASE}/letters/${letterId}/action-tickets`, { headers: authHeaders() });
+  return res.json();
+};
+
+export const createActionTicket = async (
+  letterId: string,
+  data: { assigned_by: string; assigned_to: string; action_notes?: string; due_date?: string }
+): Promise<import('../types').ActionTicket> => {
+  const res = await fetch(`${BASE}/letters/${letterId}/action-tickets`, {
+    method: 'POST',
+    headers: authHeaders(),
+    body: JSON.stringify(data),
+  });
+  return res.json();
+};
+
+export const completeActionTicket = async (ticketId: string): Promise<import('../types').ActionTicket> => {
+  const res = await fetch(`${BASE}/action-tickets/${ticketId}/complete`, {
+    method: 'PATCH',
+    headers: authHeaders(),
+  });
+  return res.json();
+};

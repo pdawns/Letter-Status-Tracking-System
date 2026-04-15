@@ -29,6 +29,7 @@ function App() {
   const [showScanner, setShowScanner] = useState(false);
   const [previousView, setPreviousView] = useState<View | null>(null);
   const [role, setRole] = useState<string>(() => getRole());
+  const [libraryStatusFilter, setLibraryStatusFilter] = useState<'pending' | 'completed' | undefined>(undefined);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -145,7 +146,13 @@ function App() {
         )}
 
         {view === 'dashboard' && (
-          <Dashboard />
+          <Dashboard
+            onStatusFilter={(filter) => {
+              setLibraryStatusFilter(filter);
+              setPreviousView('dashboard');
+              setView('library');
+            }}
+          />
         )}
 
         {view === 'tracking' && (
@@ -194,7 +201,7 @@ function App() {
             </div>
             <div className="flex justify-center">
               <div className="w-full max-w-2xl">
-                <CreateLetter onLetterCreated={handleLetterCreated} />
+                <CreateLetter onLetterCreated={handleLetterCreated} onToast={(msg, type) => setToast({ message: msg, type })} />
               </div>
             </div>
           </div>
@@ -227,7 +234,11 @@ function App() {
           <DocumentLibrary
             onDocumentSelected={handleDocumentSelected}
             onViewDocumentInfo={handleViewDocumentInfo}
-            onBack={handleBackToHome}
+            onBack={() => {
+              setLibraryStatusFilter(undefined);
+              handleBackToHome();
+            }}
+            statusFilter={libraryStatusFilter}
           />
         )}
 

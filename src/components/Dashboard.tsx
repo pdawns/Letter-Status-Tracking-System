@@ -6,7 +6,11 @@ interface DocumentTypeCount {
   [key: string]: number;
 }
 
-export default function Dashboard() {
+interface DashboardProps {
+  onStatusFilter?: (filter: 'pending' | 'completed') => void;
+}
+
+export default function Dashboard({ onStatusFilter }: DashboardProps) {
   const [stats, setStats] = useState({
     total: 0,
     pending: 0,
@@ -95,16 +99,21 @@ export default function Dashboard() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {smallStatCards.map((stat) => {
             const Icon = stat.icon;
+            const isClickable = stat.label === 'Pending' || stat.label === 'Completed';
 
             return (
               <div
                 key={stat.label}
-                className="bg-white rounded-lg shadow-md p-4 hover:shadow-lg transition-shadow"
+                onClick={isClickable && onStatusFilter ? () => onStatusFilter(stat.label.toLowerCase() as 'pending' | 'completed') : undefined}
+                className={`bg-white rounded-lg shadow-md p-4 hover:shadow-lg transition-shadow ${isClickable && onStatusFilter ? 'cursor-pointer hover:ring-2 hover:ring-green-300' : ''}`}
               >
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-gray-600 text-xs font-medium">{stat.label}</p>
                     <p className="text-2xl font-bold text-gray-900 mt-1">{stat.value}</p>
+                    {isClickable && onStatusFilter && (
+                      <p className="text-xs mt-1" style={{ color: '#9CAF88' }}>Click to view</p>
+                    )}
                   </div>
                   <div className="p-2 rounded-full" style={{ backgroundColor: '#DFF5E1' }}>
                     <Icon className="w-5 h-5" style={{ color: stat.color }} />

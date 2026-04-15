@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { getLetters, archiveLetter } from '../lib/api';
+import { getLetters, archiveLetter, getStatusesForLetter } from '../lib/api';
 import { Letter } from '../types';
 import { Search, FileText, Download, Eye, ArrowLeft, Filter, Info, Archive } from 'lucide-react';
 
@@ -7,9 +7,10 @@ interface DocumentLibraryProps {
   onDocumentSelected: (letterId: string) => void;
   onViewDocumentInfo: (letterId: string) => void;
   onBack: () => void;
+  statusFilter?: 'pending' | 'completed';
 }
 
-export default function DocumentLibrary({ onDocumentSelected, onViewDocumentInfo, onBack }: DocumentLibraryProps) {
+export default function DocumentLibrary({ onDocumentSelected, onViewDocumentInfo, onBack, statusFilter }: DocumentLibraryProps) {
   const [documents, setDocuments] = useState<Letter[]>([]);
   const [filteredDocuments, setFilteredDocuments] = useState<Letter[]>([]);
   const [loading, setLoading] = useState(true);
@@ -18,6 +19,8 @@ export default function DocumentLibrary({ onDocumentSelected, onViewDocumentInfo
   const [sortOrder, setSortOrder] = useState('desc');
   const [archivingId, setArchivingId] = useState<string | null>(null);
   const [confirmArchive, setConfirmArchive] = useState<Letter | null>(null);
+  const [completedIds, setCompletedIds] = useState<Set<string>>(new Set());
+  const [localStatusFilter, setLocalStatusFilter] = useState<string>(statusFilter ?? 'all');
 
   useEffect(() => {
     fetchDocuments();
@@ -33,12 +36,25 @@ export default function DocumentLibrary({ onDocumentSelected, onViewDocumentInfo
 
   useEffect(() => {
     filterDocuments();
-  }, [documents, searchQuery, typeFilter, sortOrder]);
+  }, [documents, searchQuery, typeFilter, sortOrder, completedIds, localStatusFilter]);
 
   const fetchDocuments = async () => {
     try {
       const data = await getLetters();
       setDocuments(data);
+      // Load statuses to determine completed/pending
+      const statusResults = await Promise.all(data.map((l) => getStatusesForLetter(l.id)));
+      const ids = new Set<string>();
+      data.forEach((l, i) => {
+        const s = statusResults[i];
+        const hasReview = s.some(x => x.status_type === 'for review' || x.status_type === 'reviewed');
+        const hasApproval = s.some(x => x.status_type === 'for approval' || x.status_type === 'approved');
+        // Completed = both review and approval done
+        if (hasReview && hasApproval) ids.add(l.id);
+        // Fallback for old docs: if they have any status and no review/approval required
+        else if (s.length > 0 && !hasReview && !hasApproval) ids.add(l.id);
+      });
+      setCompletedIds(ids);
     } catch (err) {
       console.error('Error fetching documents:', err);
     } finally {
@@ -48,6 +64,12 @@ export default function DocumentLibrary({ onDocumentSelected, onViewDocumentInfo
 
   const filterDocuments = () => {
     let filtered = documents;
+
+    if (localStatusFilter === 'completed') {
+      filtered = filtered.filter((doc) => completedIds.has(doc.id));
+    } else if (localStatusFilter === 'pending') {
+      filtered = filtered.filter((doc) => !completedIds.has(doc.id));
+    }
 
     if (typeFilter !== 'all') {
       filtered = filtered.filter((doc) => doc.document_type === typeFilter);
@@ -114,7 +136,9 @@ export default function DocumentLibrary({ onDocumentSelected, onViewDocumentInfo
         <div className="bg-white rounded-lg shadow-lg p-5">
           <div className="flex items-center gap-2 mb-4">
             <FileText className="w-6 h-6" style={{ color: '#004526' }} />
-            <h1 className="text-2xl font-bold" style={{ color: '#004526' }}>Document Library</h1>
+            <h1 className="text-2xl font-bold" style={{ color: '#004526' }}>
+              {localStatusFilter === 'pending' ? 'Pending Documents' : localStatusFilter === 'completed' ? 'Completed Documents' : 'Document Library'}
+            </h1>
           </div>
 
           <div className="space-y-3 mb-4">
@@ -143,6 +167,15 @@ export default function DocumentLibrary({ onDocumentSelected, onViewDocumentInfo
                 <option value="report">Reports</option>
                 <option value="disbursement_voucher">Disbursement Voucher</option>
                 <option value="other">Other</option>
+              </select>
+              <select
+                value={localStatusFilter}
+                onChange={(e) => setLocalStatusFilter(e.target.value)}
+                className="px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:border-transparent"
+              >
+                <option value="all">All Status</option>
+                <option value="pending">Pending</option>
+                <option value="completed">Completed</option>
               </select>
               <select
                 value={sortOrder}
@@ -197,6 +230,15 @@ export default function DocumentLibrary({ onDocumentSelected, onViewDocumentInfo
                         <span className="inline-block bg-gray-100 text-gray-800 text-xs px-2 py-0.5 rounded">
                           {new Date(doc.created_at).toLocaleDateString()}
                         </span>
+                        {completedIds.has(doc.id) ? (
+                          <span className="inline-block text-xs px-2 py-0.5 rounded bg-green-100 text-green-700 font-medium">
+                            Completed
+                          </span>
+                        ) : (
+                          <span className="inline-block text-xs px-2 py-0.5 rounded bg-yellow-100 text-yellow-700 font-medium">
+                            Pending
+                          </span>
+                        )}
                       </div>
                     </div>
 
