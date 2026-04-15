@@ -86,13 +86,11 @@ function NotificationDetail({
   onNavigate: (id: string) => void;
   onDismiss: (id: string) => void;
 }) {
-  const { letter, pendingStatuses, completedStatuses, urgency } = notification;
+  const { letter, completedStatuses, urgency } = notification;
   const colors = URGENCY_COLORS[urgency];
 
   const required = (letter.required_statuses || 'noted,approved,reviewed')
     .split(',').map((s) => s.trim()).filter(Boolean);
-
-  const completedTypes = completedStatuses.map((s) => s.status_type);
 
   return (
     <div
@@ -207,9 +205,36 @@ function NotificationDetail({
           <div className="px-5 py-3 border-t border-gray-100">
             <p className="text-xs text-gray-400 uppercase tracking-wide mb-3">Signature Progress</p>
             <div className="space-y-2">
-              {required.map((status) => {
-                const done = completedTypes.includes(status as any);
-                const completedEntry = completedStatuses.find((s) => s.status_type === status);
+              {required.filter((s) => s !== 'noted').map((status) => {
+                // DB stores 'for approval' / 'for review' OR 'approved' / 'reviewed'
+                const dbVariants: Record<string, string[]> = {
+                  approved: ['approved', 'for approval'],
+                  reviewed: ['reviewed', 'for review'],
+                };
+                const variants = dbVariants[status] ?? [status];
+                const done = completedStatuses.some((c) => variants.includes(c.status_type));
+                const completedEntry = completedStatuses.find((c) => variants.includes(c.status_type));
+
+                // Label mapping — pending vs done
+                const pendingLabel: Record<string, string> = {
+                  approved: 'For Approval',
+                  reviewed: 'For Review',
+                };
+                const doneLabel: Record<string, string> = {
+                  approved: 'Approved',
+                  reviewed: 'Reviewed',
+                };
+                const label = done
+                  ? (doneLabel[status] ?? status.charAt(0).toUpperCase() + status.slice(1))
+                  : (pendingLabel[status] ?? status.charAt(0).toUpperCase() + status.slice(1));
+
+                // Signer hint
+                const signerHint: Record<string, string> = {
+                  approved: 'Sir Ronald',
+                  reviewed: 'Sir Lenmark / Maam Floramae',
+                };
+                const hint = signerHint[status];
+
                 return (
                   <div key={status} className="flex items-start gap-3">
                     <div
@@ -223,12 +248,15 @@ function NotificationDetail({
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between">
-                        <span className="text-xs font-medium capitalize text-gray-700">{status}</span>
+                        <span className="text-xs font-medium text-gray-700">{label}</span>
                         {done
-                          ? <span className="text-xs text-green-600 font-medium">Completed</span>
-                          : <span className="text-xs text-red-500 font-medium">Pending</span>
+                          ? <span className="text-xs font-medium" style={{ color: '#16a34a' }}>{doneLabel[status] ?? 'Completed'}</span>
+                          : <span className="text-xs font-medium" style={{ color: '#DC2626' }}>Pending</span>
                         }
                       </div>
+                      {!done && hint && (
+                        <p className="text-xs text-gray-400 mt-0.5">Awaiting: {hint}</p>
+                      )}
                       {done && completedEntry && (
                         <p className="text-xs text-gray-400 mt-0.5">
                           by {completedEntry.signed_by} · {timeAgo(completedEntry.signed_at)}
@@ -244,21 +272,33 @@ function NotificationDetail({
             </div>
 
             {/* Progress bar */}
-            <div className="mt-3">
-              <div className="flex justify-between text-xs text-gray-400 mb-1">
-                <span>{completedStatuses.length} of {required.length} completed</span>
-                <span>{Math.round((completedStatuses.length / required.length) * 100)}%</span>
-              </div>
-              <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
-                <div
-                  className="h-full rounded-full transition-all"
-                  style={{
-                    width: `${(completedStatuses.length / required.length) * 100}%`,
-                    backgroundColor: '#004526',
-                  }}
-                />
-              </div>
-            </div>
+            {(() => {
+              const filteredRequired = required.filter((s) => s !== 'noted');
+              const dbVariants: Record<string, string[]> = {
+                approved: ['approved', 'for approval'],
+                reviewed: ['reviewed', 'for review'],
+              };
+              const filteredCompleted = filteredRequired.filter((s) =>
+                completedStatuses.some((c) => (dbVariants[s] ?? [s]).includes(c.status_type))
+              );
+              const pct = filteredRequired.length > 0
+                ? Math.round((filteredCompleted.length / filteredRequired.length) * 100)
+                : 100;
+              return (
+                <div className="mt-3">
+                  <div className="flex justify-between text-xs text-gray-400 mb-1">
+                    <span>{filteredCompleted.length} of {filteredRequired.length} completed</span>
+                    <span>{pct}%</span>
+                  </div>
+                  <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                    <div
+                      className="h-full rounded-full transition-all"
+                      style={{ width: `${pct}%`, backgroundColor: '#004526' }}
+                    />
+                  </div>
+                </div>
+              );
+            })()}
           </div>
         </div>
 
@@ -536,7 +576,7 @@ export default function NotificationBell({ onNavigate }: Props) {
 
                     {/* Items */}
                     {items.map((notif) => {
-                      const { id, letter, pendingStatuses, urgency: u, completedStatuses: cs } = notif;
+                      const { id, letter, urgency: u, completedStatuses: cs } = notif;
                       const required = (letter.required_statuses || 'noted,approved,reviewed')
                         .split(',').map((s) => s.trim()).filter(Boolean);
                       return (
@@ -559,14 +599,30 @@ export default function NotificationBell({ onNavigate }: Props) {
                                 <p className="text-xs text-gray-600 truncate mt-0.5">{letter.title}</p>
                                 {/* Mini progress */}
                                 <div className="flex items-center gap-1.5 mt-1.5">
-                                  {required.map((s) => {
-                                    const done = cs.some((c) => c.status_type === s);
+                                  {required.filter((s) => s !== 'noted').map((s) => {
+                                    const dbVariants: Record<string, string[]> = {
+                                      approved: ['approved', 'for approval'],
+                                      reviewed: ['reviewed', 'for review'],
+                                    };
+                                    const variants = dbVariants[s] ?? [s];
+                                    const done = cs.some((c) => variants.includes(c.status_type));
+                                    const miniPending: Record<string, string> = {
+                                      approved: 'For Approval',
+                                      reviewed: 'For Review',
+                                    };
+                                    const miniDone: Record<string, string> = {
+                                      approved: 'Approved',
+                                      reviewed: 'Reviewed',
+                                    };
+                                    const label = done
+                                      ? (miniDone[s] ?? s.charAt(0).toUpperCase() + s.slice(1))
+                                      : (miniPending[s] ?? s.charAt(0).toUpperCase() + s.slice(1));
                                     return (
                                       <div key={s} className="flex items-center gap-0.5">
                                         <div className="w-1.5 h-1.5 rounded-full"
                                           style={{ backgroundColor: done ? '#16a34a' : '#DC2626' }} />
-                                        <span className="text-xs capitalize" style={{ color: done ? '#16a34a' : '#DC2626' }}>
-                                          {s}
+                                        <span className="text-xs" style={{ color: done ? '#16a34a' : '#DC2626' }}>
+                                          {label}
                                         </span>
                                       </div>
                                     );
