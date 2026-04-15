@@ -20,6 +20,12 @@ cloudinary.config({
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 500 * 1024 * 1024 } });
 const DB_PATH = path.join(__dirname, 'dts.db');
 
+// ── Users ─────────────────────────────────────────────────
+const USERS = {
+  staff:  { password: 'password', role: 'staff' },
+  staff1: { password: 'password', role: 'receiver' },
+};
+
 // ── sql.js helpers ────────────────────────────────────────
 let db;
 
@@ -127,11 +133,6 @@ initSqlJs().then((SQL) => {
   app.get('/health', (req, res) => res.json({ status: 'ok' }));
 
   // ── Auth ──────────────────────────────────────────────────
-  const USERS = {
-    staff:    { password: 'password',    role: 'staff' },
-    staff1:   { password: 'password',    role: 'receiver' },
-  };
-
   app.post('/api/login', (req, res) => {
     const { username, password } = req.body;
     if (!username || !password) return res.status(400).json({ error: 'Missing credentials' });

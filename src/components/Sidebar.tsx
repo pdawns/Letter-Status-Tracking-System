@@ -1,4 +1,4 @@
-import { LayoutDashboard, Search, FileText, Archive, Settings, LogOut, Send } from 'lucide-react';
+import { LayoutDashboard, Search, FileText, Archive, Settings, LogOut } from 'lucide-react';
 import logo1 from '../../images/LOGO1.jpg';
 
 type View = 'dashboard' | 'tracking' | 'document-tracking' | 'archive' | 'settings' | 'send-document';
@@ -21,11 +21,10 @@ export default function Sidebar({ currentView, onViewChange, onLogout, role = 's
 
   const receiverMenuItems = [
     { id: 'dashboard' as View, label: 'Dashboard', icon: LayoutDashboard },
-    { id: 'tracking' as View, label: 'Receive Document', icon: Search },
-    { id: 'send-document' as View, label: 'Send Document', icon: Send },
+    { id: 'tracking' as View, label: 'Tracking System', icon: Search },
   ];
 
-  const menuItems = role === 'receiver' ? receiverMenuItems : staffMenuItems;
+  const menuItems = staffMenuItems;
 
   return (
     <div className="w-56 text-white h-screen flex flex-col fixed left-0 top-0 overflow-y-auto" style={{ backgroundColor: '#004526', fontFamily: 'serif' }}>

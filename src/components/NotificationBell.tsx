@@ -310,7 +310,8 @@ export default function NotificationBell({ onNavigate }: Props) {
 
       await Promise.all(
         letters.map(async (letter) => {
-          // Track email-sent notifications
+          const statuses = await getStatusesForLetter(letter.id);
+
           if (letter.email_sent_at) {
             emailResults.push({
               id: `${letter.id}_email`,
@@ -322,7 +323,6 @@ export default function NotificationBell({ onNavigate }: Props) {
           const required = (letter.required_statuses || 'noted,approved,reviewed')
             .split(',').map((s) => s.trim()).filter(Boolean);
 
-          const statuses = await getStatusesForLetter(letter.id);
           const signed = statuses.map((s) => s.status_type);
           const pending = required.filter((r) => !signed.includes(r as any));
 
@@ -575,7 +575,6 @@ export default function NotificationBell({ onNavigate }: Props) {
                     })}
                   </div>
                 ))
-              }
                 </>
               )}
             </div>

@@ -19,6 +19,8 @@ export default function CreateLetter({ onLetterCreated }: CreateLetterProps) {
   const [showConfirm, setShowConfirm] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
   const [createdRefNumber, setCreatedRefNumber] = useState('');
+  // Document direction
+  const [documentDirection, setDocumentDirection] = useState<'sending' | 'receiving' | ''>('');
   // Sender info
   const [senderName, setSenderName] = useState('');
   const [senderOffice, setSenderOffice] = useState('');
@@ -62,6 +64,10 @@ export default function CreateLetter({ onLetterCreated }: CreateLetterProps) {
     e.preventDefault();
     setError('');
 
+    if (!documentDirection) {
+      setError('Please select whether this document is for sending or receiving');
+      return;
+    }
     if (!title || !pin || !file) {
       setError('Please fill in all required fields and select a document');
       return;
@@ -98,10 +104,10 @@ export default function CreateLetter({ onLetterCreated }: CreateLetterProps) {
         document_subject: subject,
         document_type: documentType === 'other' ? otherDocumentType.trim() : documentType,
         handler_pin: pin,
-        sender_name: senderName,
-        sender_office: senderOffice,
-        sender_phone: senderPhone,
-        sender_email: senderEmail,
+        sender_name: documentDirection === 'receiving' ? senderName : '',
+        sender_office: documentDirection === 'receiving' ? senderOffice : '',
+        sender_phone: documentDirection === 'receiving' ? senderPhone : '',
+        sender_email: documentDirection === 'receiving' ? senderEmail : '',
         required_statuses: [reqApproval && 'for approval', reqReview && 'for review', reqOther && reqOtherText.trim()].filter(Boolean).join(',') || '',
       });
 
@@ -235,7 +241,36 @@ export default function CreateLetter({ onLetterCreated }: CreateLetterProps) {
             )}
           </div>
 
-          {/* Sender Information */}
+          {/* Document Direction */}
+          <div className="border-t pt-4">
+            <p className="text-xs font-semibold text-gray-700 mb-3 uppercase tracking-wide">
+              This document is... <span className="text-red-500">*</span>
+            </p>
+            <div className="flex gap-3">
+              {[
+                { value: 'sending', label: 'For Sending', desc: 'You are sending this document out' },
+                { value: 'receiving', label: 'For Receiving', desc: 'You received this document' },
+              ].map(({ value, label, desc }) => (
+                <button
+                  key={value}
+                  type="button"
+                  onClick={() => setDocumentDirection(value as 'sending' | 'receiving')}
+                  className="flex-1 flex flex-col items-center gap-1 px-4 py-3 rounded-lg border-2 text-sm font-medium transition-all duration-150"
+                  style={{
+                    borderColor: documentDirection === value ? '#004526' : '#d1d5db',
+                    backgroundColor: documentDirection === value ? '#f0f7f0' : '#fff',
+                    color: documentDirection === value ? '#004526' : '#374151',
+                  }}
+                >
+                  <span className="font-semibold">{label}</span>
+                  <span className="text-xs font-normal" style={{ color: documentDirection === value ? '#004526' : '#9ca3af' }}>{desc}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Sender Information — only shown when receiving */}
+          {documentDirection === 'receiving' && (
           <div className="border-t pt-4">
             <p className="text-xs font-semibold text-gray-700 mb-3 uppercase tracking-wide">Sender Information (Optional)</p>
             <div className="space-y-3">
@@ -285,6 +320,7 @@ export default function CreateLetter({ onLetterCreated }: CreateLetterProps) {
               </div>
             </div>
           </div>
+          )}
 
           {/* Required Actions */}
           <div className="border-t pt-4">

@@ -34,6 +34,7 @@ export default function LandingPage({ onEnter }: LandingPageProps) {
       const data = await login(username.trim(), password);
       localStorage.setItem('dts_token', data.token);
       localStorage.setItem('dts_username', data.username);
+      localStorage.setItem('dts_role', data.role);
       onEnter();
     } catch {
       setError('Invalid username or password');

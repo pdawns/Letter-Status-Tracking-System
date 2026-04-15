@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { Send, Search } from 'lucide-react';
-import { getLetter, insertStatuses } from '../lib/api';
+import { Send, Search, FileText, Building2, User } from 'lucide-react';
+import { getLetters, insertStatuses } from '../lib/api';
 import { Letter } from '../types';
 
 export default function SendDocument() {
@@ -11,6 +11,7 @@ export default function SendDocument() {
   const [recipientOffice, setRecipientOffice] = useState('');
   const [notes, setNotes] = useState('');
   const [loading, setLoading] = useState(false);
+  const [sending, setSending] = useState(false);
   const [success, setSuccess] = useState(false);
 
   const handleSearch = async (e: React.FormEvent) => {
@@ -20,14 +21,10 @@ export default function SendDocument() {
     setSuccess(false);
     setLoading(true);
     try {
-      // Search by reference number via all letters
-      const res = await fetch(`/api/letters?ref=${encodeURIComponent(refNumber.trim())}`, {
-        headers: { Authorization: `Bearer ${localStorage.getItem('dts_token')}` },
-      });
-      const letters: Letter[] = await res.json();
-      const found = Array.isArray(letters)
-        ? letters.find((l) => l.reference_number.toLowerCase() === refNumber.trim().toLowerCase())
-        : null;
+      const letters = await getLetters();
+      const found = letters.find(
+        (l) => l.reference_number.toLowerCase() === refNumber.trim().toLowerCase()
+      );
       if (found) {
         setLetter(found);
       } else {
@@ -43,14 +40,15 @@ export default function SendDocument() {
   const handleSend = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!letter) return;
-    setLoading(true);
+    setSending(true);
     try {
+      const sender = localStorage.getItem('dts_username') || 'staff1';
       await insertStatuses([
         {
           letter_id: letter.id,
           status_type: 'noted',
-          signed_by: `${recipientName} (${recipientOffice}) — Sent by: ${localStorage.getItem('dts_username') || 'receiver'}`,
-          notes: notes || 'Document sent',
+          signed_by: `Sent by: ${sender} → ${recipientName} (${recipientOffice})`,
+          notes: notes || 'Document forwarded/sent',
         },
       ]);
       setSuccess(true);
@@ -59,10 +57,8 @@ export default function SendDocument() {
       setRecipientName('');
       setRecipientOffice('');
       setNotes('');
-    } catch {
-      // handle silently
     } finally {
-      setLoading(false);
+      setSending(false);
     }
   };
 
@@ -84,61 +80,90 @@ export default function SendDocument() {
         <input
           type="text"
           value={refNumber}
-          onChange={(e) => setRefNumber(e.target.value)}
-          placeholder="Reference number (e.g. DTS-2026-001)"
+          onChange={(e) => { setRefNumber(e.target.value); setNotFound(false); }}
+          placeholder="Enter reference number (e.g. DTS-2026-001)"
           className="flex-1 px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2"
+          style={{ focusRingColor: '#004526' } as React.CSSProperties}
           required
         />
         <button
           type="submit"
           disabled={loading}
-          className="flex items-center gap-1 px-4 py-2 text-sm font-semibold text-white rounded-lg disabled:opacity-60"
+          className="flex items-center gap-1 px-4 py-2 text-sm font-semibold text-white rounded-lg disabled:opacity-60 transition-colors"
           style={{ backgroundColor: '#004526' }}
         >
-          <Search className="w-4 h-4" /> Search
+          {loading
+            ? <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+            : <><Search className="w-4 h-4" /> Search</>
+          }
         </button>
       </form>
 
       {notFound && (
-        <p className="text-sm text-red-600">No document found with that reference number.</p>
+        <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-red-600 text-sm">
+          No document found with reference number "<span className="font-medium">{refNumber}</span>".
+        </div>
       )}
 
       {letter && (
-        <div className="bg-white rounded-xl shadow p-5 border border-gray-100">
-          <div className="mb-4">
-            <p className="text-xs text-gray-500">Reference</p>
-            <p className="font-semibold text-sm" style={{ color: '#004526' }}>{letter.reference_number}</p>
-            <p className="text-sm text-gray-700 mt-1">{letter.title}</p>
-            {letter.sender_office && (
-              <p className="text-xs text-gray-500 mt-1">From: {letter.sender_office}</p>
-            )}
+        <div className="bg-white rounded-xl shadow-md border border-gray-100 overflow-hidden">
+          {/* Document info header */}
+          <div className="px-5 py-4 border-b border-gray-100" style={{ backgroundColor: '#f9fdf9' }}>
+            <div className="flex items-start gap-3">
+              <div className="p-2 rounded-lg mt-0.5" style={{ backgroundColor: '#DFF5E1' }}>
+                <FileText className="w-5 h-5" style={{ color: '#004526' }} />
+              </div>
+              <div>
+                <p className="text-xs text-gray-400 uppercase tracking-wide">Reference</p>
+                <p className="font-bold text-sm" style={{ color: '#004526' }}>{letter.reference_number}</p>
+                <p className="text-sm text-gray-700 mt-0.5">{letter.title}</p>
+                {letter.document_type && (
+                  <span className="inline-block mt-1 text-xs rounded-full px-2 py-0.5 font-medium capitalize" style={{ backgroundColor: '#DFF5E1', color: '#004526' }}>
+                    {letter.document_type}
+                  </span>
+                )}
+                {letter.sender_office && (
+                  <p className="text-xs text-gray-500 mt-1 flex items-center gap-1">
+                    <Building2 className="w-3 h-3" /> {letter.sender_office}
+                  </p>
+                )}
+              </div>
+            </div>
           </div>
 
-          <form onSubmit={handleSend} className="space-y-3">
+          {/* Send form */}
+          <form onSubmit={handleSend} className="px-5 py-4 space-y-3">
+            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Send To</p>
             <div>
               <label className="block text-xs font-medium text-gray-700 mb-1">Recipient Name</label>
-              <input
-                type="text"
-                value={recipientName}
-                onChange={(e) => setRecipientName(e.target.value)}
-                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2"
-                placeholder="Full name of recipient"
-                required
-              />
+              <div className="relative">
+                <User className="absolute left-3 top-2.5 w-4 h-4 text-gray-400" />
+                <input
+                  type="text"
+                  value={recipientName}
+                  onChange={(e) => setRecipientName(e.target.value)}
+                  className="w-full pl-9 pr-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2"
+                  placeholder="Full name of recipient"
+                  required
+                />
+              </div>
             </div>
             <div>
-              <label className="block text-xs font-medium text-gray-700 mb-1">Recipient Office / Department</label>
-              <input
-                type="text"
-                value={recipientOffice}
-                onChange={(e) => setRecipientOffice(e.target.value)}
-                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2"
-                placeholder="Office or department"
-                required
-              />
+              <label className="block text-xs font-medium text-gray-700 mb-1">Office / Department</label>
+              <div className="relative">
+                <Building2 className="absolute left-3 top-2.5 w-4 h-4 text-gray-400" />
+                <input
+                  type="text"
+                  value={recipientOffice}
+                  onChange={(e) => setRecipientOffice(e.target.value)}
+                  className="w-full pl-9 pr-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2"
+                  placeholder="Office or department"
+                  required
+                />
+              </div>
             </div>
             <div>
-              <label className="block text-xs font-medium text-gray-700 mb-1">Notes (optional)</label>
+              <label className="block text-xs font-medium text-gray-700 mb-1">Notes <span className="text-gray-400 font-normal">(optional)</span></label>
               <textarea
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
@@ -149,15 +174,14 @@ export default function SendDocument() {
             </div>
             <button
               type="submit"
-              disabled={loading}
-              className="w-full flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-semibold text-white disabled:opacity-60"
+              disabled={sending}
+              className="w-full flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-semibold text-white disabled:opacity-60 transition-colors"
               style={{ backgroundColor: '#004526' }}
             >
-              {loading ? (
-                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-              ) : (
-                <><Send className="w-4 h-4" /> Confirm Send</>
-              )}
+              {sending
+                ? <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                : <><Send className="w-4 h-4" /> Confirm Send</>
+              }
             </button>
           </form>
         </div>

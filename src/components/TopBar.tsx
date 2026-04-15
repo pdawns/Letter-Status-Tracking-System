@@ -9,6 +9,7 @@ interface TopBarProps {
 
 export default function TopBar({ onHome, onNavigateToLetter }: TopBarProps) {
   const settings = loadSettings();
+  const username = localStorage.getItem('dts_username') || 'staff';
   const now = new Date();
   const dateStr = now.toLocaleDateString('en-PH', {
     weekday: 'long', year: 'numeric', month: 'long', day: 'numeric',
@@ -41,7 +42,9 @@ export default function TopBar({ onHome, onNavigateToLetter }: TopBarProps) {
         <NotificationBell onNavigate={onNavigateToLetter} />
         <div className="flex items-center gap-2 bg-white bg-opacity-10 rounded-full px-3 py-1">
           <User className="w-4 h-4 text-white" />
-          <span className="text-white text-xs font-medium hidden sm:inline">Staff</span>
+          <span className="text-white text-xs font-medium hidden sm:inline capitalize">
+            Staff
+          </span>
         </div>
       </div>
     </div>
