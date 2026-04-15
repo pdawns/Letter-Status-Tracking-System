@@ -189,8 +189,27 @@ export default function Receipt({ letterId, onBack }: ReceiptProps) {
 
                   <div className="print:break-inside-avoid">
                     <p className="text-[10px] font-semibold text-gray-500 uppercase tracking-wide mb-1">Created Date</p>
-                    <p className="text-gray-900 text-sm print:text-xs">{new Date(letter.created_at).toLocaleString()}</p>
+                    <p className="text-gray-900 text-sm print:text-xs">{new Date(letter.created_at).toLocaleDateString()}</p>
                   </div>
+
+                  {letter.document_direction === 'sending' && (
+                    <div className="print:break-inside-avoid">
+                      <p className="text-[10px] font-semibold text-gray-500 uppercase tracking-wide mb-1">Date Sent</p>
+                      <p className="text-gray-900 text-sm print:text-xs">
+                        {new Date(letter.sent_at || letter.created_at).toLocaleString()}
+                      </p>
+                    </div>
+                  )}
+
+                  {letter.document_direction === 'receiving' && (() => {
+                    const reviewStatus = statuses.find(s => s.status_type === 'for review' || s.status_type === 'reviewed');
+                    return reviewStatus ? (
+                      <div className="print:break-inside-avoid">
+                        <p className="text-[10px] font-semibold text-gray-500 uppercase tracking-wide mb-1">Date Received</p>
+                        <p className="text-gray-900 text-sm print:text-xs">{new Date(reviewStatus.signed_at).toLocaleString()}</p>
+                      </div>
+                    ) : null;
+                  })()}
                 </div>
               </div>
 

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import { getLetter, getActionTickets } from '../lib/api';
-import { Letter, ActionTicket } from '../types';
+import { getLetter, getActionTickets, getStatusesForLetter } from '../lib/api';
+import { Letter, ActionTicket, LetterStatus } from '../types';
 import { ArrowLeft, FileText, Calendar, Tag, Download, Eye, Loader, Bell, Ticket } from 'lucide-react';
 import NotifySender from './NotifySender';
 import ActionTicketModal from './ActionTicket';
@@ -17,6 +17,7 @@ export default function DocumentInfo({ letterId, onBack }: DocumentInfoProps) {
   const [showNotify, setShowNotify] = useState(false);
   const [actionTickets, setActionTickets] = useState<ActionTicket[]>([]);
   const [previewTicket, setPreviewTicket] = useState<ActionTicket | null>(null);
+  const [statuses, setStatuses] = useState<LetterStatus[]>([]);
 
   useEffect(() => { fetchDocument(); }, [letterId]);
 
@@ -29,6 +30,10 @@ export default function DocumentInfo({ letterId, onBack }: DocumentInfoProps) {
         const tickets = await getActionTickets(letterId);
         setActionTickets(Array.isArray(tickets) ? tickets : []);
       } catch { setActionTickets([]); }
+      try {
+        const s = await getStatusesForLetter(letterId);
+        setStatuses(Array.isArray(s) ? s : []);
+      } catch { setStatuses([]); }
     } catch (err) {
       console.error('Error fetching document:', err);
     } finally {
@@ -128,6 +133,31 @@ export default function DocumentInfo({ letterId, onBack }: DocumentInfoProps) {
                 {new Date(document.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}
               </p>
             </div>
+            {document.document_direction === 'sending' && (
+              <div className="p-3 rounded-lg col-span-2" style={{ backgroundColor: '#DFF5E1' }}>
+                <p className="text-xs text-gray-600 mb-1 flex items-center gap-1"><Calendar className="w-3 h-3" /> Date Sent</p>
+                <p className="text-sm font-medium" style={{ color: '#004526' }}>
+                  {new Date(document.sent_at || document.created_at).toLocaleString()}
+                </p>
+                <p className="text-xs mt-1.5" style={{ color: '#004526' }}>
+                  <span className="font-semibold">📤 Sent by</span> Provincial Treasurer's Office
+                </p>
+              </div>
+            )}
+            {document.document_direction === 'receiving' && (() => {
+              const reviewStatus = statuses.find(s => s.status_type === 'for review' || s.status_type === 'reviewed');
+              return reviewStatus ? (
+                <div className="p-3 rounded-lg col-span-2" style={{ backgroundColor: '#DFF5E1' }}>
+                  <p className="text-xs text-gray-600 mb-1 flex items-center gap-1"><Calendar className="w-3 h-3" /> Date Received</p>
+                  <p className="text-sm font-medium" style={{ color: '#004526' }}>
+                    {new Date(reviewStatus.signed_at).toLocaleString()}
+                  </p>
+                  <p className="text-xs mt-1.5" style={{ color: '#004526' }}>
+                    <span className="font-semibold">✓ Reviewed by</span> {reviewStatus.signed_by}
+                  </p>
+                </div>
+              ) : null;
+            })()}
             <div className="p-3 rounded-lg col-span-2" style={{ backgroundColor: '#DFF5E1' }}>
               <p className="text-xs text-gray-600 mb-1">Reference Number</p>
               <p className="text-sm font-medium" style={{ color: '#004526' }}>{document.reference_number}</p>

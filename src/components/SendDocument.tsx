@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Send, Search, FileText, Building2, User } from 'lucide-react';
-import { getLetters, insertStatuses } from '../lib/api';
+import { getLetters, insertStatuses, updateLetter } from '../lib/api';
 import { Letter } from '../types';
 
 export default function SendDocument() {
@@ -42,15 +42,18 @@ export default function SendDocument() {
     if (!letter) return;
     setSending(true);
     try {
-      const sender = localStorage.getItem('dts_username') || 'staff1';
+      const sender = localStorage.getItem('dts_username') || 'staff';
+      const senderLabel = sender === 'staff' ? "Provincial Treasurer's Office" : sender;
       await insertStatuses([
         {
           letter_id: letter.id,
           status_type: 'noted',
-          signed_by: `Sent by: ${sender} → ${recipientName} (${recipientOffice})`,
+          signed_by: `Sent by: ${senderLabel} → ${recipientName} (${recipientOffice})`,
           notes: notes || 'Document forwarded/sent',
         },
       ]);
+      // Record the sent timestamp on the letter
+      await updateLetter(letter.id, { sent_at: new Date().toISOString() });
       setSuccess(true);
       setLetter(null);
       setRefNumber('');

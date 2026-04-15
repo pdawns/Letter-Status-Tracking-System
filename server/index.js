@@ -6,6 +6,7 @@ const fs = require('fs');
 const crypto = require('crypto');
 require('dotenv').config({ path: path.join(__dirname, '../.env') });
 const cloudinary = require('cloudinary').v2;
+const nodemailer = require('nodemailer');
 const initSqlJs = require('sql.js');
 
 const app = express();
@@ -124,7 +125,18 @@ initSqlJs().then((SQL) => {
   `);
   // Migrate: add email_sent_at if missing
   try { db.run('ALTER TABLE letters ADD COLUMN email_sent_at TEXT DEFAULT NULL'); saveDb(); } catch (_) {}
-  // Migrate: fix misspelled name Constantito → Constantino
+  // Migrate: add document_direction, sent_at, received_at if missing
+  try { db.run('ALTER TABLE letters ADD COLUMN document_direction TEXT DEFAULT NULL'); saveDb(); } catch (_) {}
+  try { db.run('ALTER TABLE letters ADD COLUMN sent_at TEXT DEFAULT NULL'); saveDb(); } catch (_) {}
+  try { db.run('ALTER TABLE letters ADD COLUMN received_at TEXT DEFAULT NULL'); saveDb(); } catch (_) {}
+  // Backfill document_direction for existing records based on sender_name
+  try {
+    db.run(`UPDATE letters SET document_direction = 'receiving', received_at = created_at WHERE document_direction IS NULL AND sender_name IS NOT NULL AND sender_name != ''`);
+    db.run(`UPDATE letters SET document_direction = 'sending', sent_at = created_at WHERE document_direction IS NULL`);
+    // Also fix any sending records that have direction but missing sent_at
+    db.run(`UPDATE letters SET sent_at = created_at WHERE document_direction = 'sending' AND sent_at IS NULL`);
+    saveDb();
+  } catch (_) {}  // Migrate: fix misspelled name Constantito → Constantino
   try {
     db.run(`UPDATE action_tickets SET assigned_to = REPLACE(assigned_to, 'Constantito', 'Constantino') WHERE assigned_to LIKE '%Constantito%'`);
     db.run(`UPDATE letter_statuses SET notes = REPLACE(notes, 'Constantito', 'Constantino') WHERE notes LIKE '%Constantito%'`);
@@ -201,10 +213,12 @@ initSqlJs().then((SQL) => {
 
   app.post('/api/letters', requireAuth, (req, res) => {
     const id = crypto.randomUUID();
-    const { reference_number, title, document_subject, document_type, handler_pin, description, sender_name, sender_office, sender_phone, sender_email, required_statuses } = req.body;
+    const { reference_number, title, document_subject, document_type, handler_pin, description, sender_name, sender_office, sender_phone, sender_email, required_statuses, document_direction } = req.body;
+    const sent_at = document_direction === 'sending' ? now() : null;
+    const received_at = document_direction === 'receiving' ? now() : null;
     run(
-      'INSERT INTO letters (id, reference_number, title, document_subject, document_type, handler_pin, description, sender_name, sender_office, sender_phone, sender_email, required_statuses, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
-      [id, reference_number, title, document_subject || '', document_type || 'letter', handler_pin, description || '', sender_name || '', sender_office || '', sender_phone || '', sender_email || '', required_statuses || 'noted,approved,reviewed', now()]
+      'INSERT INTO letters (id, reference_number, title, document_subject, document_type, handler_pin, description, sender_name, sender_office, sender_phone, sender_email, required_statuses, document_direction, sent_at, received_at, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+      [id, reference_number, title, document_subject || '', document_type || 'letter', handler_pin, description || '', sender_name || '', sender_office || '', sender_phone || '', sender_email || '', required_statuses || 'noted,approved,reviewed', document_direction || null, sent_at, received_at, now()]
     );
     res.json(get('SELECT * FROM letters WHERE id = ?', [id]));
   });
@@ -212,7 +226,7 @@ initSqlJs().then((SQL) => {
   app.patch('/api/letters/:id', requireAuth, (req, res) => {
     try {
       const fields = req.body;
-      const allowed = ['file_url', 'file_name', 'title', 'description', 'handler_pin', 'document_type', 'document_subject', 'sender_name', 'sender_office', 'sender_phone', 'sender_email', 'required_statuses'];
+      const allowed = ['file_url', 'file_name', 'title', 'description', 'handler_pin', 'document_type', 'document_subject', 'sender_name', 'sender_office', 'sender_phone', 'sender_email', 'required_statuses', 'document_direction', 'sent_at', 'received_at'];
       const updates = Object.keys(fields).filter(k => allowed.includes(k));
       if (updates.length === 0) return res.status(400).json({ error: 'No valid fields to update' });
       const setClauses = updates.map(k => `${k} = ?`).join(', ');
@@ -248,6 +262,44 @@ initSqlJs().then((SQL) => {
     run('UPDATE letters SET email_sent_at = ? WHERE id = ?', [now(), req.params.id]);
     const letter = get('SELECT * FROM letters WHERE id = ?', [req.params.id]);
     res.json(letter);
+  });
+
+  // ── Send email via SMTP ───────────────────────────────────
+  app.post('/api/send-email', requireAuth, async (req, res) => {
+    const { to, subject, body, letterId } = req.body;
+    if (!to || !subject || !body) return res.status(400).json({ error: 'Missing required fields' });
+
+    const emailUser = process.env.EMAIL_USER;
+    const emailPass = process.env.EMAIL_PASS;
+    const emailName = process.env.EMAIL_FROM_NAME || "Provincial Treasurer's Office";
+
+    if (!emailUser || !emailPass) {
+      return res.status(503).json({ error: 'Email not configured. Please set EMAIL_USER and EMAIL_PASS in .env' });
+    }
+
+    try {
+      const transporter = nodemailer.createTransport({
+        service: 'gmail',
+        auth: { user: emailUser, pass: emailPass },
+      });
+
+      await transporter.sendMail({
+        from: `"${emailName}" <${emailUser}>`,
+        to,
+        subject,
+        text: body,
+      });
+
+      // Mark email as sent on the letter
+      if (letterId) {
+        run('UPDATE letters SET email_sent_at = ? WHERE id = ?', [now(), letterId]);
+      }
+
+      res.json({ success: true });
+    } catch (err) {
+      console.error('Email send error:', err);
+      res.status(500).json({ error: err.message || 'Failed to send email' });
+    }
   });
 
   // ── Upload ────────────────────────────────────────────────

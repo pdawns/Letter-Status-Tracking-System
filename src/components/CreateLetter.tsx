@@ -110,6 +110,7 @@ export default function CreateLetter({ onLetterCreated, onToast }: CreateLetterP
         sender_phone: documentDirection === 'receiving' ? senderPhone : '',
         sender_email: documentDirection === 'receiving' ? senderEmail : '',
         required_statuses: [reqApproval && 'for approval', reqReview && 'for review', reqOther && reqOtherText.trim()].filter(Boolean).join(',') || '',
+        document_direction: documentDirection || undefined,
       });
 
       if (file) {

@@ -116,7 +116,14 @@ export async function generateReceiptPDF(
     if (letter.document_type) drawTableRow('Document Type', letter.document_type.toUpperCase());
     if (letter.document_subject) drawTableRow('Subject', letter.document_subject);
     if (letter.description) drawTableRow('Description', letter.description);
-    drawTableRow('Created Date', new Date(letter.created_at).toLocaleString());
+    drawTableRow('Created Date', new Date(letter.created_at).toLocaleDateString());
+    if (letter.document_direction === 'sending') {
+      drawTableRow('Date Sent', new Date(letter.sent_at || letter.created_at).toLocaleString());
+    }
+    if (letter.document_direction === 'receiving') {
+      const reviewStatus = statuses.find(s => s.status_type === 'for review' || s.status_type === 'reviewed');
+      if (reviewStatus) drawTableRow('Date Received', new Date(reviewStatus.signed_at).toLocaleString());
+    }
 
     const tableEndY = currentY;
 

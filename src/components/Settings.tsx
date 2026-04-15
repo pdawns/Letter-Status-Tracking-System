@@ -7,6 +7,7 @@ interface AppSettings {
   officeName: string;
   province: string;
   address: string;
+  email: string;
   logo1: string; // base64
   logo2: string; // base64
   primaryColor: string;
@@ -20,6 +21,7 @@ const defaultSettings: AppSettings = {
   officeName: "Provincial Treasurer's Office",
   province: 'Province of Misamis Oriental',
   address: 'Provincial Capitol, Cagayan de Oro City',
+  email: import.meta.env.VITE_OFFICE_EMAIL || 'pto.misamisoriental@gmail.com',
   logo1: '',
   logo2: '',
   primaryColor: '#004526',
@@ -119,6 +121,11 @@ export default function Settings() {
             <div>
               <label className="block text-xs font-medium text-gray-700 mb-1">Address</label>
               <input type="text" value={settings.address} onChange={(e) => update('address', e.target.value)}
+                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:border-transparent" />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-700 mb-1">Office Email</label>
+              <input type="email" value={settings.email} onChange={(e) => update('email', e.target.value)}
                 className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:border-transparent" />
             </div>
 

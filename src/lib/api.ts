@@ -119,6 +119,23 @@ export const markEmailSent = async (id: string): Promise<Letter> => {
   return res.json();
 };
 
+export const sendEmail = async (params: {
+  to: string;
+  subject: string;
+  body: string;
+  letterId?: string;
+}): Promise<void> => {
+  const res = await fetch(`${BASE}/send-email`, {
+    method: 'POST',
+    headers: authHeaders(),
+    body: JSON.stringify(params),
+  });
+  if (!res.ok) {
+    const err = await res.json();
+    throw new Error(err.error || 'Failed to send email');
+  }
+};
+
 // ── Action Tickets ────────────────────────────────────────
 
 export const getActionTickets = async (letterId: string): Promise<import('../types').ActionTicket[]> => {

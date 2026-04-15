@@ -53,16 +53,15 @@ export default function NotifySender({ letter, onClose, onEmailSent }: NotifySen
   };
 
   const handleEmail = async () => {
-    const subject = encodeURIComponent(`${templates[selectedTemplate].label} - ${letter.reference_number}`);
-    const body = encodeURIComponent(message);
-    window.open(`https://mail.google.com/mail/?view=cm&to=${letter.sender_email || ''}&su=${subject}&body=${body}`, '_blank');
+    const subject = `${templates[selectedTemplate].label} - ${letter.reference_number}`;
+    const encodedSubject = encodeURIComponent(subject);
+    const encodedBody = encodeURIComponent(message);
+    window.open(`https://mail.google.com/mail/?view=cm&to=${letter.sender_email || ''}&su=${encodedSubject}&body=${encodedBody}`, '_blank');
     try {
       const updated = await markEmailSent(letter.id);
       onEmailSent?.(updated);
     } catch (_) {}
-  };
-
-  return (
+  };  return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-lg shadow-xl w-full max-w-md flex flex-col max-h-[90vh]">
         {/* Fixed header */}

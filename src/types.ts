@@ -17,6 +17,9 @@ export interface Letter {
   sender_email?: string;
   required_statuses?: string; // comma-separated: 'noted,approved,reviewed'
   email_sent_at?: string | null;
+  document_direction?: 'sending' | 'receiving' | null;
+  sent_at?: string | null;
+  received_at?: string | null;
 }
 
 export interface LetterStatus {
