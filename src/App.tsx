@@ -14,10 +14,11 @@ import LandingPage from './components/LandingPage';
 import TopBar from './components/TopBar';
 import Archive from './components/Archive';
 import Settings from './components/Settings';
-import { getToken, logout } from './lib/api';
+import SendDocument from './components/SendDocument';
+import { getToken, getRole, logout } from './lib/api';
 import Toast from './components/Toast';
 
-type View = 'dashboard' | 'tracking' | 'document-tracking' | 'letter-view' | 'track' | 'handler' | 'receipt' | 'scanner' | 'library' | 'document-info' | 'archive' | 'settings';
+type View = 'dashboard' | 'tracking' | 'document-tracking' | 'letter-view' | 'track' | 'handler' | 'receipt' | 'scanner' | 'library' | 'document-info' | 'archive' | 'settings' | 'send-document';
 
 function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(() => !!getToken());
@@ -27,6 +28,7 @@ function App() {
   const [currentLetterId, setCurrentLetterId] = useState<string>('');
   const [showScanner, setShowScanner] = useState(false);
   const [previousView, setPreviousView] = useState<View | null>(null);
+  const [role, setRole] = useState<string>(() => getRole());
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -113,7 +115,7 @@ function App() {
       />
     )}
     {(!isLoggedIn || showLanding) && (
-      <LandingPage onEnter={() => { setIsLoggedIn(true); setShowLanding(false); setToast({ message: `Welcome back, ${localStorage.getItem('dts_username') || 'staff'}!`, type: 'success' }); }} />
+      <LandingPage onEnter={() => { setIsLoggedIn(true); setShowLanding(false); setRole(getRole()); setToast({ message: `Welcome back, ${localStorage.getItem('dts_username') || 'staff'}!`, type: 'success' }); }} />
     )}
     {isLoggedIn && !showLanding && (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-gray-100">
@@ -122,11 +124,13 @@ function App() {
           view === 'library' || view === 'document-info' || view === 'track' || view === 'handler' || view === 'receipt' ? 'tracking' :
           view === 'archive' ? 'archive' :
           view === 'settings' ? 'settings' :
+          view === 'send-document' ? 'send-document' :
           view === 'dashboard' || view === 'tracking' || view === 'document-tracking' ? view : 
           'dashboard'
         } 
         onViewChange={setView}
-        onLogout={async () => { await logout(); setIsLoggedIn(false); setShowLanding(true); setToast({ message: 'You have been logged out. See you next time!', type: 'success' }); }}
+        role={role}
+        onLogout={async () => { await logout(); setIsLoggedIn(false); setShowLanding(true); setRole('staff'); setToast({ message: 'You have been logged out. See you next time!', type: 'success' }); }}
       />
       <TopBar
         onHome={() => setView('dashboard')}
@@ -246,6 +250,8 @@ function App() {
         )}
 
         {view === 'settings' && <Settings />}
+
+        {view === 'send-document' && <SendDocument />}
       </div>
     </div>
     )}

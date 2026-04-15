@@ -1,22 +1,31 @@
-import { LayoutDashboard, Search, FileText, Archive, Settings, LogOut } from 'lucide-react';
+import { LayoutDashboard, Search, FileText, Archive, Settings, LogOut, Send } from 'lucide-react';
 import logo1 from '../../images/LOGO1.jpg';
 
-type View = 'dashboard' | 'tracking' | 'document-tracking' | 'archive' | 'settings';
+type View = 'dashboard' | 'tracking' | 'document-tracking' | 'archive' | 'settings' | 'send-document';
 
 interface SidebarProps {
   currentView: View;
   onViewChange: (view: View) => void;
   onLogout: () => void;
+  role?: string;
 }
 
-export default function Sidebar({ currentView, onViewChange, onLogout }: SidebarProps) {
-  const menuItems = [
+export default function Sidebar({ currentView, onViewChange, onLogout, role = 'staff' }: SidebarProps) {
+  const staffMenuItems = [
     { id: 'dashboard' as View, label: 'Dashboard', icon: LayoutDashboard },
     { id: 'document-tracking' as View, label: 'Create Document', icon: FileText },
     { id: 'tracking' as View, label: 'Tracking System', icon: Search },
     { id: 'archive' as View, label: 'Archive', icon: Archive },
     { id: 'settings' as View, label: 'Settings', icon: Settings },
   ];
+
+  const receiverMenuItems = [
+    { id: 'dashboard' as View, label: 'Dashboard', icon: LayoutDashboard },
+    { id: 'tracking' as View, label: 'Receive Document', icon: Search },
+    { id: 'send-document' as View, label: 'Send Document', icon: Send },
+  ];
+
+  const menuItems = role === 'receiver' ? receiverMenuItems : staffMenuItems;
 
   return (
     <div className="w-56 text-white h-screen flex flex-col fixed left-0 top-0 overflow-y-auto" style={{ backgroundColor: '#004526', fontFamily: 'serif' }}>

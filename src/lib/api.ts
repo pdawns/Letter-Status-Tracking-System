@@ -5,13 +5,14 @@ const BASE = 'http://localhost:3001/api';
 // ── Auth helpers ──────────────────────────────────────────
 
 export const getToken = (): string | null => localStorage.getItem('dts_token');
+export const getRole = (): string => localStorage.getItem('dts_role') || 'staff';
 
 const authHeaders = (): Record<string, string> => {
   const token = getToken();
   return token ? { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' } : { 'Content-Type': 'application/json' };
 };
 
-export const login = async (username: string, password: string): Promise<{ token: string; username: string }> => {
+export const login = async (username: string, password: string): Promise<{ token: string; username: string; role: string }> => {
   const res = await fetch(`${BASE}/login`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -25,6 +26,7 @@ export const logout = async (): Promise<void> => {
   await fetch(`${BASE}/logout`, { method: 'POST', headers: authHeaders() });
   localStorage.removeItem('dts_token');
   localStorage.removeItem('dts_username');
+  localStorage.removeItem('dts_role');
 };
 
 // ── Letters ──────────────────────────────────────────────

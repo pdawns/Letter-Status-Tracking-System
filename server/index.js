@@ -113,8 +113,10 @@ initSqlJs().then((SQL) => {
   function requireAuth(req, res, next) {
     const token = req.headers['authorization']?.replace('Bearer ', '');
     if (!token) return res.status(401).json({ error: 'Unauthorized' });
-    const session = get('SELECT token FROM sessions WHERE token = ?', [token]);
+    const session = get('SELECT token, user_id FROM sessions WHERE token = ?', [token]);
     if (!session) return res.status(401).json({ error: 'Unauthorized' });
+    req.userId = session.user_id;
+    req.userRole = USERS[session.user_id]?.role || 'staff';
     next();
   }
 
@@ -125,14 +127,20 @@ initSqlJs().then((SQL) => {
   app.get('/health', (req, res) => res.json({ status: 'ok' }));
 
   // ── Auth ──────────────────────────────────────────────────
+  const USERS = {
+    staff:    { password: 'password',    role: 'staff' },
+    staff1:   { password: 'password',    role: 'receiver' },
+  };
+
   app.post('/api/login', (req, res) => {
     const { username, password } = req.body;
     if (!username || !password) return res.status(400).json({ error: 'Missing credentials' });
-    if (username !== 'staff' || password !== 'password')
+    const user = USERS[username];
+    if (!user || user.password !== password)
       return res.status(401).json({ error: 'Invalid username or password' });
     const token = crypto.randomBytes(32).toString('hex');
-    run('INSERT OR REPLACE INTO sessions (token, user_id, created_at) VALUES (?, ?, ?)', [token, 'staff', now()]);
-    res.json({ token, username: 'staff' });
+    run('INSERT OR REPLACE INTO sessions (token, user_id, created_at) VALUES (?, ?, ?)', [token, username, now()]);
+    res.json({ token, username, role: user.role });
   });
 
   app.post('/api/logout', (req, res) => {
