@@ -1,6 +1,5 @@
 import { LayoutDashboard, Search, FileText, Archive, Settings, LogOut } from 'lucide-react';
 import logo1 from '../../images/LOGO1.jpg';
-import { logout } from '../lib/api';
 
 type View = 'dashboard' | 'tracking' | 'document-tracking' | 'archive' | 'settings';
 
@@ -80,9 +79,11 @@ export default function Sidebar({ currentView, onViewChange, onLogout }: Sidebar
           {localStorage.getItem('dts_username') || 'staff'}
         </div>
         <button
-          onClick={async () => { await logout(); onLogout(); }}
-          className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-all text-white hover:bg-red-700"
+          onClick={() => onLogout()}
+          className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-all text-white"
           style={{ fontWeight: 'bold' }}
+          onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#9CAF88'}
+          onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
         >
           <LogOut className="w-4 h-4 flex-shrink-0" />
           <span>Logout</span>

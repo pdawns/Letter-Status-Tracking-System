@@ -14,13 +14,15 @@ import LandingPage from './components/LandingPage';
 import TopBar from './components/TopBar';
 import Archive from './components/Archive';
 import Settings from './components/Settings';
-import { getToken } from './lib/api';
+import { getToken, logout } from './lib/api';
+import Toast from './components/Toast';
 
 type View = 'dashboard' | 'tracking' | 'document-tracking' | 'letter-view' | 'track' | 'handler' | 'receipt' | 'scanner' | 'library' | 'document-info' | 'archive' | 'settings';
 
 function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(() => !!getToken());
-  const [showLanding, setShowLanding] = useState(true);
+  const [showLanding, setShowLanding] = useState(() => !getToken());
+  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
   const [view, setView] = useState<View>('dashboard');
   const [currentLetterId, setCurrentLetterId] = useState<string>('');
   const [showScanner, setShowScanner] = useState(false);
@@ -103,8 +105,15 @@ function App() {
 
   return (
     <>
+    {toast && (
+      <Toast
+        message={toast.message}
+        type={toast.type}
+        onClose={() => setToast(null)}
+      />
+    )}
     {(!isLoggedIn || showLanding) && (
-      <LandingPage onEnter={() => { setIsLoggedIn(true); setShowLanding(false); }} />
+      <LandingPage onEnter={() => { setIsLoggedIn(true); setShowLanding(false); setToast({ message: `Welcome back, ${localStorage.getItem('dts_username') || 'staff'}!`, type: 'success' }); }} />
     )}
     {isLoggedIn && !showLanding && (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-gray-100">
@@ -117,7 +126,7 @@ function App() {
           'dashboard'
         } 
         onViewChange={setView}
-        onLogout={() => { setIsLoggedIn(false); setShowLanding(true); }}
+        onLogout={async () => { await logout(); setIsLoggedIn(false); setShowLanding(true); setToast({ message: 'You have been logged out. See you next time!', type: 'success' }); }}
       />
       <TopBar
         onHome={() => setView('dashboard')}
