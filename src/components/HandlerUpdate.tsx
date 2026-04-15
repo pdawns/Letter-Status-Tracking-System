@@ -1,7 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { getLetter, getStatusesForLetter, insertStatuses } from '../lib/api';
 import { Letter, LetterStatus } from '../types';
-import { Lock, CheckSquare, ArrowLeft } from 'lucide-react';
+import { Lock, CheckSquare, ArrowLeft, ChevronDown, Check } from 'lucide-react';
 
 interface HandlerUpdateProps {
   letterId: string;
@@ -15,25 +15,32 @@ export default function HandlerUpdate({ letterId, onBack }: HandlerUpdateProps) 
   const [authenticated, setAuthenticated] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-
-  const [noted, setNoted] = useState(false);
-  const [approved, setApproved] = useState(false);
-  const [reviewed, setReviewed] = useState(false);
-
-  const [notedBy, setNotedBy] = useState('');
-  const [approvedBy, setApprovedBy] = useState('');
-  const [reviewedBy, setReviewedBy] = useState('');
-
-  const [notedNotes, setNotedNotes] = useState('');
-  const [approvedNotes, setApprovedNotes] = useState('');
-  const [reviewedNotes, setReviewedNotes] = useState('');
-
   const [saving, setSaving] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
-  const [pendingUpdates, setPendingUpdates] = useState<Array<{ status_type: 'noted' | 'approved' | 'reviewed'; signed_by: string; notes: string }>>([]);
+  const [dropdownOpen, setDropdownOpen] = useState<string | null>(null);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  const REVIEWERS = [
+    'Lenmark G. Benlot, Acting Assistant Provincial Treasurer',
+    'Floramae Constantito, Acting Assistant Provincial Treasurer',
+  ];
+
+  // Dynamic per-status state: { [statusType]: { checked, signedBy, notes } }
+  const [statusState, setStatusState] = useState<Record<string, { checked: boolean; signedBy: string; notes: string }>>({});
+  const [pendingUpdates, setPendingUpdates] = useState<Array<{ status_type: string; signed_by: string; notes: string }>>([]);
 
   useEffect(() => { fetchLetter(); }, [letterId]);
+
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+        setDropdownOpen(null);
+      }
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, []);
 
   const fetchLetter = async () => {
     try {
@@ -42,9 +49,20 @@ export default function HandlerUpdate({ letterId, onBack }: HandlerUpdateProps) 
       setLetter(letterData);
       const statusData = await getStatusesForLetter(letterId);
       setStatuses(statusData);
-      setNoted(statusData.some((s) => s.status_type === 'noted'));
-      setApproved(statusData.some((s) => s.status_type === 'approved'));
-      setReviewed(statusData.some((s) => s.status_type === 'reviewed'));
+
+      // Init state for each required status
+      const required = (letterData.required_statuses || '').split(',').map((s: string) => s.trim()).filter(Boolean);
+      const init: Record<string, { checked: boolean; signedBy: string; notes: string }> = {};
+      required.forEach((r: string) => {
+        const existing = statusData.some((s) => s.status_type === r);
+        const isApproval = r === 'for approval' || r === 'approved';
+        init[r] = {
+          checked: existing,
+          signedBy: isApproval ? 'RONALD JAME D. VIOLON, CPA, REB, REA, MDMG' : '',
+          notes: '',
+        };
+      });
+      setStatusState(init);
     } catch (err) {
       console.error('Error fetching letter:', err);
       setError('Failed to load letter');
@@ -68,13 +86,13 @@ export default function HandlerUpdate({ letterId, onBack }: HandlerUpdateProps) 
     e.preventDefault();
     setError('');
 
-    const updates: Array<{ status_type: 'noted' | 'approved' | 'reviewed'; signed_by: string; notes: string }> = [];
-    if (noted && notedBy && !statuses.some((s) => s.status_type === 'noted'))
-      updates.push({ status_type: 'noted', signed_by: notedBy, notes: notedNotes });
-    if (approved && approvedBy && !statuses.some((s) => s.status_type === 'approved'))
-      updates.push({ status_type: 'approved', signed_by: approvedBy, notes: approvedNotes });
-    if (reviewed && reviewedBy && !statuses.some((s) => s.status_type === 'reviewed'))
-      updates.push({ status_type: 'reviewed', signed_by: reviewedBy, notes: reviewedNotes });
+    const updates: Array<{ status_type: string; signed_by: string; notes: string }> = [];
+    Object.entries(statusState).forEach(([type, val]) => {
+      const alreadyDone = statuses.some((s) => s.status_type === type);
+      if (val.checked && val.signedBy.trim() && !alreadyDone) {
+        updates.push({ status_type: type, signed_by: val.signedBy.trim(), notes: val.notes });
+      }
+    });
 
     if (updates.length === 0) { setError('No new status updates to save'); return; }
     setPendingUpdates(updates);
@@ -93,6 +111,10 @@ export default function HandlerUpdate({ letterId, onBack }: HandlerUpdateProps) 
     } finally {
       setSaving(false);
     }
+  };
+
+  const updateStatus = (type: string, field: 'checked' | 'signedBy' | 'notes', value: boolean | string) => {
+    setStatusState((prev) => ({ ...prev, [type]: { ...prev[type], [field]: value } }));
   };
 
   if (loading) return (
@@ -148,17 +170,8 @@ export default function HandlerUpdate({ letterId, onBack }: HandlerUpdateProps) 
     </div>
   );
 
-  const requiredList = (letter.required_statuses || 'noted,approved,reviewed').split(',').map(s => s.trim());
-  const existingNoted = statuses.find((s) => s.status_type === 'noted');
-  const existingApproved = statuses.find((s) => s.status_type === 'approved');
-  const existingReviewed = statuses.find((s) => s.status_type === 'reviewed');
-
-  // Completion: all required statuses are done
-  const isComplete = requiredList.every(r =>
-    (r === 'noted' && existingNoted) ||
-    (r === 'approved' && existingApproved) ||
-    (r === 'reviewed' && existingReviewed)
-  );
+  const requiredList = (letter.required_statuses || '').split(',').map((s: string) => s.trim()).filter(Boolean);
+  const isComplete = requiredList.every((r) => statuses.some((s) => s.status_type === r));
 
   return (
     <>
@@ -181,89 +194,140 @@ export default function HandlerUpdate({ letterId, onBack }: HandlerUpdateProps) 
           <form onSubmit={handleStatusUpdate} className="space-y-4">
             <div className="space-y-3 border-t pt-4">
               <div className="flex items-center justify-between mb-3">
-                <p className="text-xs font-medium text-gray-700">Check boxes as signers complete each status.</p>
+                <p className="text-xs font-medium text-gray-700">Select completed actions and fill in signer details.</p>
                 <span className={`text-xs font-bold px-2 py-1 rounded-full ${isComplete ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'}`}>
                   {isComplete ? '✓ Completed' : '⏳ In Progress'}
                 </span>
               </div>
 
-              {requiredList.includes('noted') && (
-                <div className="bg-gray-50 p-4 rounded-lg">
-                  <div className="flex items-start gap-3">
-                    <input type="checkbox" id="noted" checked={noted} onChange={(e) => setNoted(e.target.checked)}
-                      disabled={!!existingNoted} className="mt-1 h-5 w-5 rounded" />
-                    <div className="flex-1">
-                      <label htmlFor="noted" className="block font-medium text-gray-900 mb-1">Noted {existingNoted && '✓ Completed'}</label>
-                      {existingNoted ? (
-                        <div className="text-sm text-gray-600">
-                          <p>Signed by: {existingNoted.signed_by}</p>
-                          <p>Date: {new Date(existingNoted.signed_at).toLocaleString()}</p>
-                          {existingNoted.notes && <p>Notes: {existingNoted.notes}</p>}
-                        </div>
-                      ) : noted && (
-                        <>
-                          <input type="text" value={notedBy} onChange={(e) => setNotedBy(e.target.value)}
-                            placeholder="Signed by (name)" className="w-full px-3 py-2 border border-gray-300 rounded-lg mb-2" required={noted} />
-                          <input type="text" value={notedNotes} onChange={(e) => setNotedNotes(e.target.value)}
-                            placeholder="Notes (optional)" className="w-full px-3 py-2 border border-gray-300 rounded-lg" />
-                        </>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              )}
+              {/* Render in order: for approval/approved first, for review second, others last */}
+              {[
+                ...requiredList.filter(r => r === 'for approval' || r === 'approved'),
+                ...requiredList.filter(r => r === 'for review' || r === 'reviewed'),
+                ...requiredList.filter(r => r !== 'for approval' && r !== 'approved' && r !== 'for review' && r !== 'reviewed'),
+              ].map((statusType) => {
+                const existing = statuses.find((s) => s.status_type === statusType);
+                const state = statusState[statusType] ?? { checked: false, signedBy: '', notes: '' };
+                // 'noted' and any non-standard types are treated as "Others"
+                const isOthers = statusType === 'noted' || (statusType !== 'for approval' && statusType !== 'approved' && statusType !== 'for review' && statusType !== 'reviewed');
+                const label = isOthers
+                  ? statusType !== 'noted' ? statusType.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ') : ''
+                  : statusType.split(' ').map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
 
-              {requiredList.includes('approved') && (
-                <div className="bg-gray-50 p-4 rounded-lg">
-                  <div className="flex items-start gap-3">
-                    <input type="checkbox" id="approved" checked={approved} onChange={(e) => setApproved(e.target.checked)}
-                      disabled={!!existingApproved} className="mt-1 h-5 w-5 rounded" />
-                    <div className="flex-1">
-                      <label htmlFor="approved" className="block font-medium text-gray-900 mb-1">Approved {existingApproved && '✓ Completed'}</label>
-                      {existingApproved ? (
-                        <div className="text-sm text-gray-600">
-                          <p>Signed by: {existingApproved.signed_by}</p>
-                          <p>Date: {new Date(existingApproved.signed_at).toLocaleString()}</p>
-                          {existingApproved.notes && <p>Notes: {existingApproved.notes}</p>}
-                        </div>
-                      ) : approved && (
-                        <>
-                          <input type="text" value={approvedBy} onChange={(e) => setApprovedBy(e.target.value)}
-                            placeholder="Signed by (name)" className="w-full px-3 py-2 border border-gray-300 rounded-lg mb-2" required={approved} />
-                          <input type="text" value={approvedNotes} onChange={(e) => setApprovedNotes(e.target.value)}
-                            placeholder="Notes (optional)" className="w-full px-3 py-2 border border-gray-300 rounded-lg" />
-                        </>
+                return (
+                  <div key={statusType} className="rounded-lg border-2 p-4 transition-all"
+                    style={{ borderColor: existing ? '#9CAF88' : state.checked ? '#9CAF88' : '#e5e7eb', backgroundColor: existing ? '#f0faf0' : '#f9fafb' }}>
+                    <div className="flex items-center gap-3 mb-2">
+                      {/* Pill toggle */}
+                      <button
+                        type="button"
+                        disabled={!!existing}
+                        onClick={() => {
+                          if (!existing) {
+                            const newChecked = !state.checked;
+                            const autoSignedBy = (statusType === 'for approval' || statusType === 'approved') && newChecked
+                              ? 'RONALD JAME D. VIOLON, CPA, REB, REA, MDMG'
+                              : (statusType === 'for approval' || statusType === 'approved') && !newChecked ? '' : state.signedBy;
+                            setStatusState((prev) => ({
+                              ...prev,
+                              [statusType]: { ...prev[statusType], checked: newChecked, signedBy: autoSignedBy },
+                            }));
+                          }
+                        }}
+                        className="flex items-center gap-2 px-4 py-2 rounded-full border-2 text-sm font-medium transition-all duration-150 select-none"
+                        style={{
+                          borderColor: (existing || state.checked) ? '#9CAF88' : '#d1d5db',
+                          backgroundColor: (existing || state.checked) ? '#9CAF88' : '#fff',
+                          color: (existing || state.checked) ? '#fff' : '#374151',
+                          cursor: existing ? 'default' : 'pointer',
+                          opacity: existing ? 0.85 : 1,
+                        }}
+                      >
+                        <span className="w-4 h-4 rounded-full border-2 flex items-center justify-center flex-shrink-0"
+                          style={{
+                            borderColor: (existing || state.checked) ? '#fff' : '#9ca3af',
+                            backgroundColor: (existing || state.checked) ? '#fff' : 'transparent',
+                          }}>
+                          {(existing || state.checked) && (
+                            <span className="w-2 h-2 rounded-full" style={{ backgroundColor: '#9CAF88' }} />
+                          )}
+                        </span>
+                        {isOthers ? 'Others' : label}
+                      </button>
+                      {isOthers && label && (
+                        <span className="text-sm font-medium text-gray-500 italic">{label}</span>
                       )}
+                      {existing && <span className="text-xs text-green-700 font-medium">✓ Completed</span>}
                     </div>
-                  </div>
-                </div>
-              )}
 
-              {requiredList.includes('reviewed') && (
-                <div className="bg-gray-50 p-4 rounded-lg">
-                  <div className="flex items-start gap-3">
-                    <input type="checkbox" id="reviewed" checked={reviewed} onChange={(e) => setReviewed(e.target.checked)}
-                      disabled={!!existingReviewed} className="mt-1 h-5 w-5 rounded" />
-                    <div className="flex-1">
-                      <label htmlFor="reviewed" className="block font-medium text-gray-900 mb-1">Reviewed {existingReviewed && '✓ Completed'}</label>
-                      {existingReviewed ? (
-                        <div className="text-sm text-gray-600">
-                          <p>Signed by: {existingReviewed.signed_by}</p>
-                          <p>Date: {new Date(existingReviewed.signed_at).toLocaleString()}</p>
-                          {existingReviewed.notes && <p>Notes: {existingReviewed.notes}</p>}
-                        </div>
-                      ) : reviewed && (
-                        <>
-                          <input type="text" value={reviewedBy} onChange={(e) => setReviewedBy(e.target.value)}
-                            placeholder="Signed by (name)" className="w-full px-3 py-2 border border-gray-300 rounded-lg mb-2" required={reviewed} />
-                          <input type="text" value={reviewedNotes} onChange={(e) => setReviewedNotes(e.target.value)}
-                            placeholder="Notes (optional)" className="w-full px-3 py-2 border border-gray-300 rounded-lg" />
-                        </>
-                      )}
-                    </div>
+                    {existing ? (
+                      <div className="text-sm text-gray-600 ml-1 space-y-0.5">
+                        <p>Signed by: <span className="font-medium">{existing.signed_by}</span></p>
+                        <p>Date: {new Date(existing.signed_at).toLocaleString()}</p>
+                        {existing.notes && <p>Notes: {existing.notes}</p>}
+                      </div>
+                    ) : state.checked && (
+                      <div className="mt-2 space-y-2">
+                        {(statusType === 'for approval' || statusType === 'approved') ? (
+                          <div className="px-3 py-2 text-sm border border-gray-200 rounded-lg bg-gray-50 text-gray-700 font-medium">
+                            RONALD JAME D. VIOLON, CPA, REB, REA, MDMG
+                          </div>
+                        ) : (statusType === 'for review' || statusType === 'reviewed') ? (
+                          <div className="relative" ref={dropdownRef}>
+                            <button
+                              type="button"
+                              onClick={() => setDropdownOpen(dropdownOpen === statusType ? null : statusType)}
+                              className="w-full flex items-center justify-between px-4 py-2.5 text-sm border-2 rounded-xl transition-all"
+                              style={{
+                                borderColor: state.signedBy ? '#9CAF88' : '#e5e7eb',
+                                backgroundColor: '#fff',
+                                color: state.signedBy ? '#374151' : '#9ca3af',
+                              }}
+                            >
+                              <span className="truncate">{state.signedBy || 'Select reviewer...'}</span>
+                              <ChevronDown
+                                className="w-4 h-4 flex-shrink-0 ml-2 transition-transform"
+                                style={{
+                                  color: '#9CAF88',
+                                  transform: dropdownOpen === statusType ? 'rotate(180deg)' : 'rotate(0deg)',
+                                }}
+                              />
+                            </button>
+                            {dropdownOpen === statusType && (
+                              <div className="absolute z-20 w-full mt-1 bg-white rounded-xl shadow-lg border border-gray-100 overflow-hidden">
+                                {REVIEWERS.map((name) => (
+                                  <button
+                                    key={name}
+                                    type="button"
+                                    onClick={() => {
+                                      updateStatus(statusType, 'signedBy', name);
+                                      setDropdownOpen(null);
+                                    }}
+                                    className="w-full flex items-center justify-between px-4 py-3 text-sm text-left hover:bg-green-50 transition-colors"
+                                    style={{ color: state.signedBy === name ? '#004526' : '#374151' }}
+                                  >
+                                    <span>{name}</span>
+                                    {state.signedBy === name && <Check className="w-4 h-4 flex-shrink-0" style={{ color: '#9CAF88' }} />}
+                                  </button>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        ) : (
+                          <input type="text" value={state.signedBy}
+                            onChange={(e) => updateStatus(statusType, 'signedBy', e.target.value)}
+                            placeholder="Signed by (name)" required
+                            className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:border-transparent" />
+                        )}
+                        <input type="text" value={state.notes}
+                          onChange={(e) => updateStatus(statusType, 'notes', e.target.value)}
+                          placeholder="Notes (optional)"
+                          className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:border-transparent" />
+                      </div>
+                    )}
                   </div>
-                </div>
-              )}
+                );
+              })}
             </div>
 
             {error && <div className="bg-red-50 border border-red-200 text-red-700 px-3 py-2 rounded-lg text-xs">{error}</div>}
@@ -280,7 +344,6 @@ export default function HandlerUpdate({ letterId, onBack }: HandlerUpdateProps) 
       </div>
     </div>
 
-    {/* Confirm Save Modal */}
     {showConfirm && (
       <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
         <div className="bg-white rounded-lg shadow-xl p-6 max-w-sm w-full">
@@ -289,8 +352,8 @@ export default function HandlerUpdate({ letterId, onBack }: HandlerUpdateProps) 
           <ul className="mb-4 space-y-1">
             {pendingUpdates.map((u) => (
               <li key={u.status_type} className="text-sm flex items-center gap-2">
-                <span className="inline-block w-2 h-2 rounded-full" style={{ backgroundColor: '#004526' }}></span>
-                <span className="capitalize font-medium">{u.status_type}</span> — {u.signed_by}
+                <span className="inline-block w-2 h-2 rounded-full" style={{ backgroundColor: '#9CAF88' }}></span>
+                <span className="font-medium capitalize">{u.status_type}</span> — {u.signed_by}
               </li>
             ))}
           </ul>
@@ -303,7 +366,6 @@ export default function HandlerUpdate({ letterId, onBack }: HandlerUpdateProps) 
       </div>
     )}
 
-    {/* Success Modal */}
     {showSuccess && (
       <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
         <div className="bg-white rounded-lg shadow-xl p-6 max-w-sm w-full text-center">

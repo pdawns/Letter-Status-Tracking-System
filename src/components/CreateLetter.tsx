@@ -24,10 +24,11 @@ export default function CreateLetter({ onLetterCreated }: CreateLetterProps) {
   const [senderOffice, setSenderOffice] = useState('');
   const [senderPhone, setSenderPhone] = useState('');
   const [senderEmail, setSenderEmail] = useState('');
-  // Required signatures
-  const [reqNoted, setReqNoted] = useState(true);
-  const [reqApproved, setReqApproved] = useState(true);
-  const [reqReviewed, setReqReviewed] = useState(true);
+  // Required actions
+  const [reqApproval, setReqApproval] = useState(false);
+  const [reqReview, setReqReview] = useState(false);
+  const [reqOther, setReqOther] = useState(false);
+  const [reqOtherText, setReqOtherText] = useState('');
 
   const generateReferenceNumber = () => {
     const year = new Date().getFullYear();
@@ -73,6 +74,14 @@ export default function CreateLetter({ onLetterCreated }: CreateLetterProps) {
       setError('PIN must be at least 4 characters');
       return;
     }
+    if (!reqApproval && !reqReview && !reqOther) {
+      setError('Please select at least one required action');
+      return;
+    }
+    if (reqOther && !reqOtherText.trim()) {
+      setError('Please specify the "Other" required action');
+      return;
+    }
 
     setShowConfirm(true);
   };
@@ -93,7 +102,7 @@ export default function CreateLetter({ onLetterCreated }: CreateLetterProps) {
         sender_office: senderOffice,
         sender_phone: senderPhone,
         sender_email: senderEmail,
-        required_statuses: [reqNoted && 'noted', reqApproved && 'approved', reqReviewed && 'reviewed'].filter(Boolean).join(',') || 'noted',
+        required_statuses: [reqApproval && 'for approval', reqReview && 'for review', reqOther && reqOtherText.trim()].filter(Boolean).join(',') || '',
       });
 
       if (file) {
@@ -191,7 +200,7 @@ export default function CreateLetter({ onLetterCreated }: CreateLetterProps) {
               onChange={(e) => setSubject(e.target.value)}
               rows={2}
               className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:border-transparent"
-              placeholder="Brief subject or summary of the document..."
+              placeholder="Purpose of the document..."
             />
           </div>
 
@@ -277,27 +286,55 @@ export default function CreateLetter({ onLetterCreated }: CreateLetterProps) {
             </div>
           </div>
 
-          {/* Required Signatures */}
+          {/* Required Actions */}
           <div className="border-t pt-4">
-            <p className="text-xs font-semibold text-gray-700 mb-3 uppercase tracking-wide">Required Signatures</p>
-            <p className="text-xs text-gray-500 mb-3">Select which signatures this document requires to be considered complete.</p>
-            <div className="flex flex-wrap gap-4">
+            <p className="text-xs font-semibold text-gray-700 mb-3 uppercase tracking-wide">Required Actions <span className="text-red-500">*</span></p>
+            <p className="text-xs text-gray-500 mb-3">Select which actions this document requires to be considered complete.</p>
+            <div className="flex flex-wrap gap-2">
               {[
-                { label: 'Noted', value: reqNoted, setter: setReqNoted },
-                { label: 'Approved', value: reqApproved, setter: setReqApproved },
-                { label: 'Reviewed', value: reqReviewed, setter: setReqReviewed },
-              ].map(({ label, value, setter }) => (
-                <label key={label} className="flex items-center gap-2 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={value}
-                    onChange={(e) => setter(e.target.checked)}
-                    className="w-4 h-4 rounded"
-                  />
-                  <span className="text-sm font-medium text-gray-700">{label}</span>
-                </label>
+                { label: 'For Approval', checked: reqApproval, toggle: () => setReqApproval(v => !v) },
+                { label: 'For Review', checked: reqReview, toggle: () => setReqReview(v => !v) },
+                {
+                  label: 'Other',
+                  checked: reqOther,
+                  toggle: () => { setReqOther(v => { if (v) setReqOtherText(''); return !v; }); }
+                },
+              ].map(({ label, checked, toggle }) => (
+                <button
+                  key={label}
+                  type="button"
+                  onClick={toggle}
+                  className="flex items-center gap-2 px-4 py-2 rounded-full border-2 text-sm font-medium transition-all duration-150 select-none"
+                  style={{
+                    borderColor: checked ? '#9CAF88' : '#d1d5db',
+                    backgroundColor: checked ? '#9CAF88' : '#fff',
+                    color: checked ? '#fff' : '#374151',
+                  }}
+                >
+                  <span
+                    className="w-4 h-4 rounded-full border-2 flex items-center justify-center flex-shrink-0"
+                    style={{
+                      borderColor: checked ? '#fff' : '#9ca3af',
+                      backgroundColor: checked ? '#fff' : 'transparent',
+                    }}
+                  >
+                    {checked && (
+                      <span className="w-2 h-2 rounded-full" style={{ backgroundColor: '#9CAF88' }} />
+                    )}
+                  </span>
+                  {label}
+                </button>
               ))}
             </div>
+            {reqOther && (
+              <input
+                type="text"
+                value={reqOtherText}
+                onChange={(e) => setReqOtherText(e.target.value)}
+                className="w-full mt-3 px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:border-transparent"
+                placeholder="Specify required action..."
+              />
+            )}
           </div>
 
           <div>
