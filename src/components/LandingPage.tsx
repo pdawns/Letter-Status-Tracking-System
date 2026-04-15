@@ -98,16 +98,19 @@ export default function LandingPage({ onEnter }: LandingPageProps) {
             </div>
 
             {/* Logos */}
-            <div className="flex flex-col items-center gap-4">
-              <div className="flex gap-6 items-center">
+            <div className="flex gap-6 items-start">
+              <div className="flex flex-col items-center gap-2">
                 <div className="w-28 h-28 rounded-full overflow-hidden shadow-xl border-4 border-yellow-400 flex items-center justify-center bg-white">
                   <img src={displayLogo2} alt="Province Seal" className="w-full h-full object-cover" />
                 </div>
+                <p className="text-xs opacity-70 text-center w-28">{province}</p>
+              </div>
+              <div className="flex flex-col items-center gap-2">
                 <div className="w-28 h-28 rounded-full overflow-hidden shadow-xl border-4 flex items-center justify-center bg-white" style={{ borderColor: '#9CAF88' }}>
                   <img src={displayLogo1} alt="Office Logo" className="w-full h-full object-cover" />
                 </div>
+                <p className="text-xs opacity-70 text-center w-28">{officeName}</p>
               </div>
-              <p className="text-xs opacity-70 text-center">{province}<br/>{officeName}</p>
             </div>
           </div>
         </div>

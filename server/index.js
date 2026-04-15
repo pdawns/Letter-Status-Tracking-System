@@ -164,9 +164,21 @@ initSqlJs().then((SQL) => {
   });
 
   app.patch('/api/letters/:id', requireAuth, (req, res) => {
-    const { file_url, file_name } = req.body;
-    run('UPDATE letters SET file_url = ?, file_name = ? WHERE id = ?', [file_url, file_name, req.params.id]);
-    res.json(get('SELECT * FROM letters WHERE id = ?', [req.params.id]));
+    try {
+      const fields = req.body;
+      const allowed = ['file_url', 'file_name', 'title', 'description', 'handler_pin', 'document_type', 'document_subject', 'sender_name', 'sender_office', 'sender_phone', 'sender_email', 'required_statuses'];
+      const updates = Object.keys(fields).filter(k => allowed.includes(k));
+      if (updates.length === 0) return res.status(400).json({ error: 'No valid fields to update' });
+      const setClauses = updates.map(k => `${k} = ?`).join(', ');
+      const values = updates.map(k => fields[k] ?? null);
+      run(`UPDATE letters SET ${setClauses} WHERE id = ?`, [...values, req.params.id]);
+      const letter = get('SELECT * FROM letters WHERE id = ?', [req.params.id]);
+      if (!letter) return res.status(404).json({ error: 'Not found' });
+      res.json(letter);
+    } catch (err) {
+      console.error('PATCH /api/letters/:id error:', err);
+      res.status(500).json({ error: err.message || 'Update failed' });
+    }
   });
 
   app.delete('/api/letters/:id', requireAuth, (req, res) => {
