@@ -89,8 +89,11 @@ function NotificationDetail({
   const { letter, completedStatuses, urgency } = notification;
   const colors = URGENCY_COLORS[urgency];
 
-  const required = (letter.required_statuses || 'noted,approved,reviewed')
-    .split(',').map((s) => s.trim()).filter(Boolean);
+  const _normalizeStatus: Record<string, string> = { 'for approval': 'approved', 'for review': 'reviewed' };
+  const required = [...new Set(
+    (letter.required_statuses || 'noted,approved,reviewed')
+      .split(',').map((s) => _normalizeStatus[s.trim()] ?? s.trim()).filter(Boolean)
+  )];
 
   return (
     <div
@@ -206,12 +209,21 @@ function NotificationDetail({
             <p className="text-xs text-gray-400 uppercase tracking-wide mb-3">Signature Progress</p>
             <div className="space-y-2">
               {required.filter((s) => s !== 'noted').map((status) => {
-                // DB stores 'for approval' / 'for review' OR 'approved' / 'reviewed'
-                const dbVariants: Record<string, string[]> = {
-                  approved: ['approved', 'for approval'],
-                  reviewed: ['reviewed', 'for review'],
+                // Normalize: 'for approval' → 'approved', 'for review' → 'reviewed'
+                const normalize: Record<string, string> = {
+                  'for approval': 'approved',
+                  'for review': 'reviewed',
                 };
-                const variants = dbVariants[status] ?? [status];
+                const key = normalize[status] ?? status;
+
+                // All DB variants that count as "done" for this status
+                const allVariants = ['approved', 'for approval', 'reviewed', 'for review'];
+                const variants = key === 'approved'
+                  ? ['approved', 'for approval']
+                  : key === 'reviewed'
+                    ? ['reviewed', 'for review']
+                    : [key];
+
                 const done = completedStatuses.some((c) => variants.includes(c.status_type));
                 const completedEntry = completedStatuses.find((c) => variants.includes(c.status_type));
 
@@ -225,15 +237,16 @@ function NotificationDetail({
                   reviewed: 'Reviewed',
                 };
                 const label = done
-                  ? (doneLabel[status] ?? status.charAt(0).toUpperCase() + status.slice(1))
-                  : (pendingLabel[status] ?? status.charAt(0).toUpperCase() + status.slice(1));
+                  ? (doneLabel[key] ?? key.charAt(0).toUpperCase() + key.slice(1))
+                  : (pendingLabel[key] ?? key.charAt(0).toUpperCase() + key.slice(1));
 
                 // Signer hint
                 const signerHint: Record<string, string> = {
                   approved: 'Sir Ronald',
                   reviewed: 'Sir Lenmark / Maam Floramae',
                 };
-                const hint = signerHint[status];
+                const hint = signerHint[key];
+                void allVariants; // suppress unused warning
 
                 return (
                   <div key={status} className="flex items-start gap-3">
@@ -273,13 +286,16 @@ function NotificationDetail({
 
             {/* Progress bar */}
             {(() => {
-              const filteredRequired = required.filter((s) => s !== 'noted');
-              const dbVariants: Record<string, string[]> = {
-                approved: ['approved', 'for approval'],
-                reviewed: ['reviewed', 'for review'],
-              };
-              const filteredCompleted = filteredRequired.filter((s) =>
-                completedStatuses.some((c) => (dbVariants[s] ?? [s]).includes(c.status_type))
+              const normalize: Record<string, string> = { 'for approval': 'approved', 'for review': 'reviewed' };
+              const filteredRequired = required
+                .filter((s) => s !== 'noted')
+                .map((s) => normalize[s] ?? s)
+                .filter((s, i, arr) => arr.indexOf(s) === i); // dedupe
+              const getVariants = (k: string) =>
+                k === 'approved' ? ['approved', 'for approval'] :
+                k === 'reviewed' ? ['reviewed', 'for review'] : [k];
+              const filteredCompleted = filteredRequired.filter((k) =>
+                completedStatuses.some((c) => getVariants(k).includes(c.status_type))
               );
               const pct = filteredRequired.length > 0
                 ? Math.round((filteredCompleted.length / filteredRequired.length) * 100)
@@ -577,8 +593,11 @@ export default function NotificationBell({ onNavigate }: Props) {
                     {/* Items */}
                     {items.map((notif) => {
                       const { id, letter, urgency: u, completedStatuses: cs } = notif;
-                      const required = (letter.required_statuses || 'noted,approved,reviewed')
-                        .split(',').map((s) => s.trim()).filter(Boolean);
+                      const _normalize: Record<string, string> = { 'for approval': 'approved', 'for review': 'reviewed', 'noted': 'noted' };
+                      const required = [...new Set(
+                        (letter.required_statuses || 'noted,approved,reviewed')
+                          .split(',').map((s) => _normalize[s.trim()] ?? s.trim()).filter(Boolean)
+                      )];
                       return (
                         <div key={id} className="relative group border-b border-gray-100 last:border-0">
                           <button
@@ -600,11 +619,16 @@ export default function NotificationBell({ onNavigate }: Props) {
                                 {/* Mini progress */}
                                 <div className="flex items-center gap-1.5 mt-1.5">
                                   {required.filter((s) => s !== 'noted').map((s) => {
-                                    const dbVariants: Record<string, string[]> = {
-                                      approved: ['approved', 'for approval'],
-                                      reviewed: ['reviewed', 'for review'],
+                                    const normalize: Record<string, string> = {
+                                      'for approval': 'approved',
+                                      'for review': 'reviewed',
                                     };
-                                    const variants = dbVariants[s] ?? [s];
+                                    const key = normalize[s] ?? s;
+                                    const variants = key === 'approved'
+                                      ? ['approved', 'for approval']
+                                      : key === 'reviewed'
+                                        ? ['reviewed', 'for review']
+                                        : [key];
                                     const done = cs.some((c) => variants.includes(c.status_type));
                                     const miniPending: Record<string, string> = {
                                       approved: 'For Approval',
@@ -615,8 +639,8 @@ export default function NotificationBell({ onNavigate }: Props) {
                                       reviewed: 'Reviewed',
                                     };
                                     const label = done
-                                      ? (miniDone[s] ?? s.charAt(0).toUpperCase() + s.slice(1))
-                                      : (miniPending[s] ?? s.charAt(0).toUpperCase() + s.slice(1));
+                                      ? (miniDone[key] ?? key.charAt(0).toUpperCase() + key.slice(1))
+                                      : (miniPending[key] ?? key.charAt(0).toUpperCase() + key.slice(1));
                                     return (
                                       <div key={s} className="flex items-center gap-0.5">
                                         <div className="w-1.5 h-1.5 rounded-full"
