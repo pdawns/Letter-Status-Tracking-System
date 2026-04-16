@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
-import { Settings as SettingsIcon, Building2, Palette, Cloud, Info, Upload, Check, ClipboardList, RefreshCw, Search } from 'lucide-react';
-import { getAllActivityLogs, ActivityLog } from '../lib/api';
+import { Settings as SettingsIcon, Building2, Palette, Cloud, Info, Upload, Check, ClipboardList, RefreshCw, Search, KeyRound } from 'lucide-react';
+import { getAllActivityLogs, ActivityLog, changePassword } from '../lib/api';
 
 const STORAGE_KEY = 'dts_settings';
 
@@ -43,7 +43,7 @@ function saveSettings(s: AppSettings) {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(s));
 }
 
-type Tab = 'office' | 'theme' | 'cloudinary' | 'about' | 'activitylog';
+type Tab = 'office' | 'theme' | 'cloudinary' | 'about' | 'activitylog' | 'password';
 
 export default function Settings() {
   const [tab, setTab] = useState<Tab>('office');
@@ -57,6 +57,14 @@ export default function Settings() {
   const [logsLoading, setLogsLoading] = useState(false);
   const [actionFilter, setActionFilter] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
+
+  // Change Password state
+  const [pwCurrent, setPwCurrent] = useState('');
+  const [pwNew, setPwNew] = useState('');
+  const [pwConfirm, setPwConfirm] = useState('');
+  const [pwError, setPwError] = useState('');
+  const [pwSuccess, setPwSuccess] = useState(false);
+  const [pwLoading, setPwLoading] = useState(false);
 
   useEffect(() => {
     if (tab === 'activitylog') fetchLogs();
@@ -97,6 +105,7 @@ export default function Settings() {
     { id: 'theme', label: 'System Theme', icon: Palette },
     { id: 'cloudinary', label: 'Cloudinary Config', icon: Cloud },
     { id: 'activitylog', label: 'Activity Log', icon: ClipboardList },
+    { id: 'password', label: 'Change Password', icon: KeyRound },
     { id: 'about', label: 'About', icon: Info },
   ];
 
@@ -123,6 +132,25 @@ export default function Settings() {
       : true;
     return matchesAction && matchesSearch;
   });
+
+  const handleChangePassword = async () => {
+    setPwError('');
+    setPwSuccess(false);
+    if (!pwCurrent || !pwNew || !pwConfirm) { setPwError('All fields are required.'); return; }
+    if (pwNew !== pwConfirm) { setPwError('New passwords do not match.'); return; }
+    if (pwNew.length < 6) { setPwError('New password must be at least 6 characters.'); return; }
+    setPwLoading(true);
+    try {
+      await changePassword(pwCurrent, pwNew);
+      setPwSuccess(true);
+      setPwCurrent(''); setPwNew(''); setPwConfirm('');
+      setTimeout(() => setPwSuccess(false), 3000);
+    } catch (err: unknown) {
+      setPwError(err instanceof Error ? err.message : 'Failed to change password');
+    } finally {
+      setPwLoading(false);
+    }
+  };
 
   return (
     <div className="p-5 max-w-3xl mx-auto">
@@ -336,6 +364,46 @@ export default function Settings() {
           </div>
         )}
 
+        {/* Change Password */}
+        {tab === 'password' && (
+          <div className="space-y-4 max-w-sm">
+            <h2 className="text-base font-bold mb-4" style={{ color: '#004526' }}>Change Password</h2>
+            <p className="text-xs text-gray-500">Changing password for: <span className="font-semibold">{localStorage.getItem('dts_username') || 'staff'}</span></p>
+
+            {pwError && <p className="text-xs text-red-600 bg-red-50 px-3 py-2 rounded-lg">{pwError}</p>}
+            {pwSuccess && <p className="text-xs text-green-700 bg-green-50 px-3 py-2 rounded-lg flex items-center gap-1"><Check className="w-3.5 h-3.5" /> Password changed successfully.</p>}
+
+            <div>
+              <label className="block text-xs font-medium text-gray-700 mb-1">Current Password</label>
+              <input type="password" value={pwCurrent} onChange={(e) => setPwCurrent(e.target.value)}
+                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:border-transparent"
+                placeholder="••••••••" />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-700 mb-1">New Password</label>
+              <input type="password" value={pwNew} onChange={(e) => setPwNew(e.target.value)}
+                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:border-transparent"
+                placeholder="Min. 6 characters" />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-700 mb-1">Confirm New Password</label>
+              <input type="password" value={pwConfirm} onChange={(e) => setPwConfirm(e.target.value)}
+                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:border-transparent"
+                placeholder="••••••••" />
+            </div>
+
+            <button
+              onClick={handleChangePassword}
+              disabled={pwLoading}
+              className="w-full flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-medium text-white transition-colors disabled:opacity-60"
+              style={{ backgroundColor: '#004526' }}
+            >
+              {pwLoading ? <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <KeyRound className="w-4 h-4" />}
+              {pwLoading ? 'Changing...' : 'Change Password'}
+            </button>
+          </div>
+        )}
+
         {/* About */}
         {tab === 'about' && (
           <div className="space-y-4">
@@ -360,7 +428,7 @@ export default function Settings() {
         )}
 
         {/* Save Button */}
-        {tab !== 'about' && tab !== 'activitylog' && (
+        {tab !== 'about' && tab !== 'activitylog' && tab !== 'password' && (
           <button
             onClick={handleSave}
             className="mt-6 w-full flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-medium text-white transition-colors"

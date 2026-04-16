@@ -29,6 +29,18 @@ export const logout = async (): Promise<void> => {
   localStorage.removeItem('dts_role');
 };
 
+export const changePassword = async (currentPassword: string, newPassword: string): Promise<void> => {
+  const res = await fetch(`${BASE}/change-password`, {
+    method: 'POST',
+    headers: authHeaders(),
+    body: JSON.stringify({ currentPassword, newPassword }),
+  });
+  if (!res.ok) {
+    const err = await res.json();
+    throw new Error(err.error || 'Failed to change password');
+  }
+};
+
 // ── Letters ──────────────────────────────────────────────
 
 export const getLetters = async (): Promise<Letter[]> => {

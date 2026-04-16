@@ -265,6 +265,7 @@ initSqlJs().then((SQL) => {
 
   // ── Auth ──────────────────────────────────────────────────
   app.post('/api/login', (req, res) => {
+
     const { username, password } = req.body;
     if (!username || !password) return res.status(400).json({ error: 'Missing credentials' });
     const user = USERS[username];
@@ -278,6 +279,18 @@ initSqlJs().then((SQL) => {
   app.post('/api/logout', (req, res) => {
     const token = req.headers['authorization']?.replace('Bearer ', '');
     if (token) run('DELETE FROM sessions WHERE token = ?', [token]);
+    res.json({ success: true });
+  });
+
+  app.post('/api/change-password', requireAuth, (req, res) => {
+    const { currentPassword, newPassword } = req.body;
+    if (!currentPassword || !newPassword) return res.status(400).json({ error: 'Missing fields' });
+    const user = USERS[req.userId];
+    if (!user || user.password !== currentPassword)
+      return res.status(401).json({ error: 'Current password is incorrect' });
+    if (newPassword.length < 6)
+      return res.status(400).json({ error: 'New password must be at least 6 characters' });
+    USERS[req.userId].password = newPassword;
     res.json({ success: true });
   });
 
