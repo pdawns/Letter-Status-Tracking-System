@@ -1,5 +1,6 @@
-import { useState, useRef } from 'react';
-import { Settings as SettingsIcon, Building2, Palette, Cloud, Info, Upload, Check } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import { Settings as SettingsIcon, Building2, Palette, Cloud, Info, Upload, Check, ClipboardList, RefreshCw, Search } from 'lucide-react';
+import { getAllActivityLogs, ActivityLog } from '../lib/api';
 
 const STORAGE_KEY = 'dts_settings';
 
@@ -42,7 +43,7 @@ function saveSettings(s: AppSettings) {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(s));
 }
 
-type Tab = 'office' | 'theme' | 'cloudinary' | 'about';
+type Tab = 'office' | 'theme' | 'cloudinary' | 'about' | 'activitylog';
 
 export default function Settings() {
   const [tab, setTab] = useState<Tab>('office');
@@ -50,6 +51,28 @@ export default function Settings() {
   const [saved, setSaved] = useState(false);
   const logo1Ref = useRef<HTMLInputElement>(null);
   const logo2Ref = useRef<HTMLInputElement>(null);
+
+  // Activity Log state
+  const [logs, setLogs] = useState<(ActivityLog & { reference_number?: string; title?: string })[]>([]);
+  const [logsLoading, setLogsLoading] = useState(false);
+  const [actionFilter, setActionFilter] = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
+
+  useEffect(() => {
+    if (tab === 'activitylog') fetchLogs();
+  }, [tab]);
+
+  const fetchLogs = async () => {
+    setLogsLoading(true);
+    try {
+      const data = await getAllActivityLogs({ limit: 200 });
+      setLogs(data);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLogsLoading(false);
+    }
+  };
 
   const update = (key: keyof AppSettings, value: string) =>
     setSettings((prev) => ({ ...prev, [key]: value }));
@@ -73,8 +96,33 @@ export default function Settings() {
     { id: 'office', label: 'Office Info', icon: Building2 },
     { id: 'theme', label: 'System Theme', icon: Palette },
     { id: 'cloudinary', label: 'Cloudinary Config', icon: Cloud },
+    { id: 'activitylog', label: 'Activity Log', icon: ClipboardList },
     { id: 'about', label: 'About', icon: Info },
   ];
+
+  const ACTION_LABELS: Record<string, { label: string; color: string }> = {
+    document_created:   { label: 'Created',    color: 'bg-blue-100 text-blue-700' },
+    document_updated:   { label: 'Updated',    color: 'bg-yellow-100 text-yellow-700' },
+    document_archived:  { label: 'Archived',   color: 'bg-orange-100 text-orange-700' },
+    document_unarchived:{ label: 'Restored',   color: 'bg-teal-100 text-teal-700' },
+    status_added:       { label: 'Status',     color: 'bg-purple-100 text-purple-700' },
+    ticket_created:     { label: 'Ticket',     color: 'bg-indigo-100 text-indigo-700' },
+    ticket_completed:   { label: 'Completed',  color: 'bg-green-100 text-green-700' },
+    email_sent:         { label: 'Email Sent', color: 'bg-pink-100 text-pink-700' },
+    file_uploaded:      { label: 'File',       color: 'bg-cyan-100 text-cyan-700' },
+  };
+
+  const filteredLogs = logs.filter(l => {
+    const matchesAction = actionFilter ? l.action === actionFilter : true;
+    const q = searchQuery.toLowerCase();
+    const matchesSearch = q
+      ? l.description.toLowerCase().includes(q) ||
+        l.performed_by.toLowerCase().includes(q) ||
+        (l.reference_number?.toLowerCase().includes(q) ?? false) ||
+        (l.title?.toLowerCase().includes(q) ?? false)
+      : true;
+    return matchesAction && matchesSearch;
+  });
 
   return (
     <div className="p-5 max-w-3xl mx-auto">
@@ -212,6 +260,82 @@ export default function Settings() {
           </div>
         )}
 
+        {/* Activity Log */}
+        {tab === 'activitylog' && (
+          <div>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-base font-bold" style={{ color: '#004526' }}>System Activity Log</h2>
+              <button onClick={fetchLogs} className="flex items-center gap-1 text-xs px-3 py-1.5 rounded-lg border border-gray-300 hover:bg-gray-50 transition-colors">
+                <RefreshCw className="w-3 h-3" />
+                Refresh
+              </button>
+            </div>
+
+            {/* Filter + Search */}
+            <div className="flex flex-col sm:flex-row gap-2 mb-4">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-2.5 w-3.5 h-3.5 text-gray-400" />
+                <input
+                  type="text"
+                  placeholder="Search description, user, reference..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full pl-8 pr-3 py-2 text-xs border border-gray-300 rounded-lg focus:ring-2 focus:border-transparent"
+                />
+              </div>
+              <select
+                value={actionFilter}
+                onChange={(e) => setActionFilter(e.target.value)}
+                className="px-3 py-2 text-xs border border-gray-300 rounded-lg sm:w-40"
+              >
+                <option value="">All Actions</option>
+                {Object.entries(ACTION_LABELS).map(([key, { label }]) => (
+                  <option key={key} value={key}>{label}</option>
+                ))}
+              </select>
+            </div>
+
+            {logsLoading ? (
+              <div className="flex justify-center py-10">
+                <div className="animate-spin rounded-full h-7 w-7 border-b-2" style={{ borderColor: '#004526' }} />
+              </div>
+            ) : filteredLogs.length === 0 ? (
+              <div className="text-center py-10 text-gray-400">
+                <ClipboardList className="w-10 h-10 mx-auto mb-2 opacity-30" />
+                <p className="text-sm">No activity recorded yet</p>
+              </div>
+            ) : (
+              <div className="space-y-2 max-h-[520px] overflow-y-auto pr-1">
+                {filteredLogs.map((log) => {
+                  const badge = ACTION_LABELS[log.action] ?? { label: log.action, color: 'bg-gray-100 text-gray-600' };
+                  return (
+                    <div key={log.id} className="flex gap-3 p-3 rounded-lg border border-gray-100 hover:bg-gray-50 transition-colors">
+                      <div className="flex-shrink-0 mt-0.5">
+                        <span className={`inline-block text-xs px-2 py-0.5 rounded font-medium ${badge.color}`}>
+                          {badge.label}
+                        </span>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm text-gray-800">{log.description}</p>
+                        {(log.reference_number || log.title) && (
+                          <p className="text-xs text-gray-400 truncate mt-0.5">
+                            {log.reference_number} {log.title ? `— ${log.title}` : ''}
+                          </p>
+                        )}
+                        <p className="text-xs text-gray-400 mt-0.5">
+                          by {log.performed_by} · {new Date(log.created_at).toLocaleString()}
+                        </p>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+
+            <p className="text-xs text-gray-400 mt-3">{filteredLogs.length} record(s)</p>
+          </div>
+        )}
+
         {/* About */}
         {tab === 'about' && (
           <div className="space-y-4">
@@ -236,7 +360,7 @@ export default function Settings() {
         )}
 
         {/* Save Button */}
-        {tab !== 'about' && (
+        {tab !== 'about' && tab !== 'activitylog' && (
           <button
             onClick={handleSave}
             className="mt-6 w-full flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-medium text-white transition-colors"

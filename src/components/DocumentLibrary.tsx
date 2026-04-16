@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
-import { getLetters, archiveLetter, getStatusesForLetter } from '../lib/api';
+import { getLetters, archiveLetter, getStatusesForLetter, getActivityLogs, ActivityLog } from '../lib/api';
 import { Letter } from '../types';
-import { Search, FileText, Download, Eye, ArrowLeft, Filter, Info, Archive } from 'lucide-react';
+import { Search, FileText, Download, Eye, ArrowLeft, Filter, Info, Archive, ClipboardList, X } from 'lucide-react';
 
 interface DocumentLibraryProps {
   onDocumentSelected: (letterId: string) => void;
@@ -21,6 +21,9 @@ export default function DocumentLibrary({ onDocumentSelected, onViewDocumentInfo
   const [confirmArchive, setConfirmArchive] = useState<Letter | null>(null);
   const [completedIds, setCompletedIds] = useState<Set<string>>(new Set());
   const [localStatusFilter, setLocalStatusFilter] = useState<string>(statusFilter ?? 'all');
+  const [activityDoc, setActivityDoc] = useState<Letter | null>(null);
+  const [activityLogs, setActivityLogs] = useState<ActivityLog[]>([]);
+  const [activityLoading, setActivityLoading] = useState(false);
 
   useEffect(() => {
     fetchDocuments();
@@ -103,6 +106,20 @@ export default function DocumentLibrary({ onDocumentSelected, onViewDocumentInfo
         ? doc.file_url.replace('/upload/', '/upload/fl_inline/')
         : doc.file_url;
       window.open(inlineUrl, '_blank', 'noopener,noreferrer');
+    }
+  };
+
+  const openActivityLog = async (doc: Letter) => {
+    setActivityDoc(doc);
+    setActivityLogs([]);
+    setActivityLoading(true);
+    try {
+      const logs = await getActivityLogs(doc.id);
+      setActivityLogs(logs);
+    } catch (err) {
+      console.error('Error fetching activity logs:', err);
+    } finally {
+      setActivityLoading(false);
     }
   };
 
@@ -244,6 +261,17 @@ export default function DocumentLibrary({ onDocumentSelected, onViewDocumentInfo
 
                     <div className="flex gap-2 flex-shrink-0">
                       <button
+                        onClick={() => openActivityLog(doc)}
+                        className="flex items-center gap-1 text-white px-3 py-1.5 rounded-lg transition-colors text-xs"
+                        style={{ backgroundColor: '#6366f1' }}
+                        onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#4f46e5'}
+                        onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#6366f1'}
+                        title="View activity log"
+                      >
+                        <ClipboardList className="w-3 h-3" />
+                        <span className="hidden sm:inline">Log</span>
+                      </button>
+                      <button
                         onClick={() => onViewDocumentInfo(doc.id)}
                         className="flex items-center gap-1 text-white px-3 py-1.5 rounded-lg transition-colors text-xs"
                         style={{ backgroundColor: '#9CAF88' }}
@@ -299,6 +327,52 @@ export default function DocumentLibrary({ onDocumentSelected, onViewDocumentInfo
         </div>
       </div>
     </div>
+
+    {/* Activity Log Drawer */}
+    {activityDoc && (
+      <div className="fixed inset-0 z-50 flex justify-end">
+        <div className="absolute inset-0 bg-black bg-opacity-40" onClick={() => setActivityDoc(null)} />
+        <div className="relative bg-white w-full max-w-md h-full shadow-2xl flex flex-col">
+          <div className="flex items-center justify-between px-5 py-4 border-b" style={{ backgroundColor: '#004526' }}>
+            <div className="flex items-center gap-2 text-white">
+              <ClipboardList className="w-5 h-5" />
+              <div>
+                <p className="font-semibold text-sm">Activity Log</p>
+                <p className="text-xs opacity-75 truncate max-w-[220px]">{activityDoc.reference_number} — {activityDoc.title}</p>
+              </div>
+            </div>
+            <button onClick={() => setActivityDoc(null)} className="text-white hover:opacity-75">
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+
+          <div className="flex-1 overflow-y-auto p-5">
+            {activityLoading ? (
+              <div className="flex justify-center py-10">
+                <div className="animate-spin rounded-full h-7 w-7 border-b-2" style={{ borderColor: '#004526' }} />
+              </div>
+            ) : activityLogs.length === 0 ? (
+              <div className="text-center py-10 text-gray-400">
+                <ClipboardList className="w-10 h-10 mx-auto mb-2 opacity-30" />
+                <p className="text-sm">No activity recorded yet</p>
+              </div>
+            ) : (
+              <ol className="relative border-l-2 border-gray-200 ml-3 space-y-5">
+                {activityLogs.map((log) => (
+                  <li key={log.id} className="ml-5">
+                    <span className="absolute -left-2 flex items-center justify-center w-4 h-4 rounded-full bg-white border-2" style={{ borderColor: '#004526' }} />
+                    <p className="text-sm font-medium text-gray-800">{log.description}</p>
+                    <p className="text-xs text-gray-400 mt-0.5">
+                      by {log.performed_by} · {new Date(log.created_at).toLocaleString()}
+                    </p>
+                  </li>
+                ))}
+              </ol>
+            )}
+          </div>
+        </div>
+      </div>
+    )}
 
     {confirmArchive && (
       <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">

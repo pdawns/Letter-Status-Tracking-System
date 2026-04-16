@@ -1,6 +1,6 @@
 import { Letter, LetterStatus } from '../types';
 
-const BASE = 'http://localhost:3001/api';
+const BASE = '/api';
 
 // ── Auth helpers ──────────────────────────────────────────
 
@@ -160,5 +160,30 @@ export const completeActionTicket = async (ticketId: string): Promise<import('..
     method: 'PATCH',
     headers: authHeaders(),
   });
+  return res.json();
+};
+
+// ── Activity Logs ─────────────────────────────────────────
+
+export interface ActivityLog {
+  id: string;
+  letter_id: string;
+  action: string;
+  description: string;
+  performed_by: string;
+  created_at: string;
+}
+
+export const getActivityLogs = async (letterId: string): Promise<ActivityLog[]> => {
+  const res = await fetch(`${BASE}/letters/${letterId}/activity-logs`, { headers: authHeaders() });
+  return res.json();
+};
+
+export const getAllActivityLogs = async (params?: { limit?: number; action?: string }): Promise<(ActivityLog & { reference_number?: string; title?: string })[]> => {
+  const query = new URLSearchParams();
+  if (params?.limit) query.set('limit', String(params.limit));
+  if (params?.action) query.set('action', params.action);
+  const res = await fetch(`${BASE}/activity-logs?${query}`, { headers: authHeaders() });
+  if (!res.ok) throw new Error(`Server error: ${res.status}`);
   return res.json();
 };
