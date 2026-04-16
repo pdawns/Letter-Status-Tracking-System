@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { getLetters, archiveLetter, getStatusesForLetter, getActivityLogs, ActivityLog } from '../lib/api';
 import { Letter } from '../types';
-import { Search, FileText, Download, Eye, ArrowLeft, Filter, Info, Archive, ClipboardList, X } from 'lucide-react';
+import { Search, FileText, Download, Eye, ArrowLeft, Filter, Info, Archive, ClipboardList, X, ArrowDownToLine, ArrowUpFromLine, Calendar, CheckCircle2, Clock } from 'lucide-react';
 
 interface DocumentLibraryProps {
   onDocumentSelected: (letterId: string) => void;
@@ -21,6 +21,7 @@ export default function DocumentLibrary({ onDocumentSelected, onViewDocumentInfo
   const [confirmArchive, setConfirmArchive] = useState<Letter | null>(null);
   const [completedIds, setCompletedIds] = useState<Set<string>>(new Set());
   const [localStatusFilter, setLocalStatusFilter] = useState<string>(statusFilter ?? 'all');
+  const [transmittalFilter, setTransmittalFilter] = useState<string>('all');
   const [activityDoc, setActivityDoc] = useState<Letter | null>(null);
   const [activityLogs, setActivityLogs] = useState<ActivityLog[]>([]);
   const [activityLoading, setActivityLoading] = useState(false);
@@ -39,7 +40,7 @@ export default function DocumentLibrary({ onDocumentSelected, onViewDocumentInfo
 
   useEffect(() => {
     filterDocuments();
-  }, [documents, searchQuery, typeFilter, sortOrder, completedIds, localStatusFilter]);
+  }, [documents, searchQuery, typeFilter, sortOrder, completedIds, localStatusFilter, transmittalFilter]);
 
   const fetchDocuments = async () => {
     try {
@@ -76,6 +77,12 @@ export default function DocumentLibrary({ onDocumentSelected, onViewDocumentInfo
 
     if (typeFilter !== 'all') {
       filtered = filtered.filter((doc) => doc.document_type === typeFilter);
+    }
+
+    if (transmittalFilter === 'incoming') {
+      filtered = filtered.filter((doc) => doc.document_direction === 'receiving');
+    } else if (transmittalFilter === 'outgoing') {
+      filtered = filtered.filter((doc) => doc.document_direction === 'sending');
     }
 
     if (searchQuery.trim()) {
@@ -195,6 +202,15 @@ export default function DocumentLibrary({ onDocumentSelected, onViewDocumentInfo
                 <option value="completed">Completed</option>
               </select>
               <select
+                value={transmittalFilter}
+                onChange={(e) => setTransmittalFilter(e.target.value)}
+                className="px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:border-transparent"
+              >
+                <option value="all">All Transmittal</option>
+                <option value="incoming">Incoming</option>
+                <option value="outgoing">Outgoing</option>
+              </select>
+              <select
                 value={sortOrder}
                 onChange={(e) => setSortOrder(e.target.value)}
                 className="px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:border-transparent"
@@ -219,103 +235,131 @@ export default function DocumentLibrary({ onDocumentSelected, onViewDocumentInfo
             </div>
           ) : (
             <div className="space-y-3">
-              {filteredDocuments.map((doc) => (
+              {filteredDocuments.map((doc) => {
+                const isCompleted = completedIds.has(doc.id);
+                const isReceiving = doc.document_direction === 'receiving';
+                const isSending = doc.document_direction === 'sending';
+                const borderColor = isReceiving ? '#9CAF88' : isSending ? '#004526' : '#e5e7eb';
+                return (
                 <div
                   key={doc.id}
-                  className="border border-gray-200 rounded-lg p-3 hover:shadow-md transition-shadow"
+                  className="rounded-xl border bg-white hover:shadow-lg transition-all duration-200"
+                  style={{ borderColor, borderLeftWidth: '4px' }}
                 >
-                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-start gap-2 mb-1">
-                        <FileText className="w-5 h-5 mt-0.5 flex-shrink-0" style={{ color: '#004526' }} />
-                        <div className="min-w-0">
-                          <p className="text-xs font-medium text-gray-500">
-                            {doc.reference_number}
-                          </p>
-                          <h3 className="font-semibold text-gray-900 break-words text-sm">
-                            {doc.title}
-                          </h3>
-                        </div>
+                  <div className="p-4">
+                    {/* Top row: transmittal badge + ref number + date */}
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center gap-2">
+                        {isReceiving && (
+                          <span className="flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-full" style={{ backgroundColor: '#DFF5E1', color: '#4a7c59', border: '1px solid #9CAF88' }}>
+                            <ArrowDownToLine className="w-3 h-3" />
+                            Incoming
+                          </span>
+                        )}
+                        {isSending && (
+                          <span className="flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-full text-white" style={{ backgroundColor: '#004526', border: '1px solid #004526' }}>
+                            <ArrowUpFromLine className="w-3 h-3" />
+                            Outgoing
+                          </span>
+                        )}
+                        {!isReceiving && !isSending && (
+                          <span className="flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-full bg-gray-100 text-gray-500 border border-gray-200">
+                            <FileText className="w-3 h-3" />
+                            No Direction
+                          </span>
+                        )}
+                        <span className="text-xs text-gray-400 font-mono">{doc.reference_number}</span>
                       </div>
-                      {doc.document_subject && (
-                        <p className="text-xs text-gray-600 ml-7">{doc.document_subject}</p>
-                      )}
-                      <div className="flex flex-wrap gap-1 mt-2 ml-7">
-                        <span className="inline-block text-xs px-2 py-0.5 rounded" style={{ backgroundColor: '#DFF5E1', color: '#004526' }}>
+                      <div className="flex items-center gap-1 text-xs text-gray-400">
+                        <Calendar className="w-3 h-3" />
+                        {new Date(doc.created_at).toLocaleDateString()}
+                      </div>
+                    </div>
+
+                    {/* Title + subject */}
+                    <h3 className="font-bold text-gray-800 text-sm leading-snug mb-0.5">{doc.title}</h3>
+                    {doc.document_subject && (
+                      <p className="text-xs text-gray-500 mb-2">{doc.document_subject}</p>
+                    )}
+
+                    {/* Bottom row: type pill + status + actions */}
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mt-3">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="text-xs font-medium px-2.5 py-1 rounded-full capitalize" style={{ backgroundColor: '#DFF5E1', color: '#004526' }}>
                           {doc.document_type}
                         </span>
-                        <span className="inline-block bg-gray-100 text-gray-800 text-xs px-2 py-0.5 rounded">
-                          {new Date(doc.created_at).toLocaleDateString()}
-                        </span>
-                        {completedIds.has(doc.id) ? (
-                          <span className="inline-block text-xs px-2 py-0.5 rounded bg-green-100 text-green-700 font-medium">
+                        {isCompleted ? (
+                          <span className="flex items-center gap-1 text-xs font-medium px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-600 border border-emerald-200">
+                            <CheckCircle2 className="w-3 h-3" />
                             Completed
                           </span>
                         ) : (
-                          <span className="inline-block text-xs px-2 py-0.5 rounded bg-yellow-100 text-yellow-700 font-medium">
+                          <span className="flex items-center gap-1 text-xs font-medium px-2.5 py-1 rounded-full bg-amber-50 text-amber-600 border border-amber-200">
+                            <Clock className="w-3 h-3" />
                             Pending
                           </span>
                         )}
                       </div>
-                    </div>
 
-                    <div className="flex gap-2 flex-shrink-0">
-                      <button
-                        onClick={() => openActivityLog(doc)}
-                        className="flex items-center gap-1 text-white px-3 py-1.5 rounded-lg transition-colors text-xs"
-                        style={{ backgroundColor: '#6366f1' }}
-                        onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#4f46e5'}
-                        onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#6366f1'}
-                        title="View activity log"
-                      >
-                        <ClipboardList className="w-3 h-3" />
-                        <span className="hidden sm:inline">Log</span>
-                      </button>
-                      <button
-                        onClick={() => onViewDocumentInfo(doc.id)}
-                        className="flex items-center gap-1 text-white px-3 py-1.5 rounded-lg transition-colors text-xs"
-                        style={{ backgroundColor: '#9CAF88' }}
-                        onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#004526'}
-                        onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#9CAF88'}
-                        title="View document info"
-                      >
-                        <Info className="w-3 h-3" />
-                        <span className="hidden sm:inline">Info</span>
-                      </button>
-                      {doc.file_url && (
+                      <div className="flex gap-1.5 flex-shrink-0">
                         <button
-                          onClick={() => viewDocument(doc)}
-                          className="flex items-center gap-1 bg-green-600 text-white px-3 py-1.5 rounded-lg hover:bg-green-700 transition-colors text-xs"
-                          title="View document"
+                          onClick={() => openActivityLog(doc)}
+                          className="flex items-center gap-1 text-white px-3 py-1.5 rounded-lg transition-colors text-xs"
+                          style={{ backgroundColor: '#6366f1' }}
+                          onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#4f46e5'}
+                          onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#6366f1'}
+                          title="View activity log"
                         >
-                          <Eye className="w-3 h-3" />
-                          <span className="hidden sm:inline">View</span>
+                          <ClipboardList className="w-3 h-3" />
+                          <span className="hidden sm:inline">Log</span>
                         </button>
-                      )}
-                      <button
-                        onClick={() => onDocumentSelected(doc.id)}
-                        className="flex items-center gap-1 text-white px-3 py-1.5 rounded-lg transition-colors text-xs"
-                        style={{ backgroundColor: '#004526' }}
-                        onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#9CAF88'}
-                        onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#004526'}
-                        title="Track document"
-                      >
-                        <Download className="w-3 h-3" />
-                        <span className="hidden sm:inline">Track</span>
-                      </button>
-                      <button
-                        onClick={() => setConfirmArchive(doc)}
-                        disabled={archivingId === doc.id}
-                        className="flex items-center gap-1 bg-yellow-600 text-white px-3 py-1.5 rounded-lg hover:bg-yellow-700 transition-colors text-xs disabled:opacity-50"
-                        title="Archive document"
-                      >
-                        <Archive className="w-3 h-3" />
-                        <span className="hidden sm:inline">Archive</span>
-                      </button>
+                        <button
+                          onClick={() => onViewDocumentInfo(doc.id)}
+                          className="flex items-center gap-1 text-white px-3 py-1.5 rounded-lg transition-colors text-xs"
+                          style={{ backgroundColor: '#9CAF88' }}
+                          onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#004526'}
+                          onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#9CAF88'}
+                          title="View document info"
+                        >
+                          <Info className="w-3 h-3" />
+                          <span className="hidden sm:inline">Info</span>
+                        </button>
+                        {doc.file_url && (
+                          <button
+                            onClick={() => viewDocument(doc)}
+                            className="flex items-center gap-1 bg-green-600 text-white px-3 py-1.5 rounded-lg hover:bg-green-700 transition-colors text-xs"
+                            title="View document"
+                          >
+                            <Eye className="w-3 h-3" />
+                            <span className="hidden sm:inline">View</span>
+                          </button>
+                        )}
+                        <button
+                          onClick={() => onDocumentSelected(doc.id)}
+                          className="flex items-center gap-1 text-white px-3 py-1.5 rounded-lg transition-colors text-xs"
+                          style={{ backgroundColor: '#004526' }}
+                          onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#9CAF88'}
+                          onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#004526'}
+                          title="Track document"
+                        >
+                          <Download className="w-3 h-3" />
+                          <span className="hidden sm:inline">Track</span>
+                        </button>
+                        <button
+                          onClick={() => setConfirmArchive(doc)}
+                          disabled={archivingId === doc.id}
+                          className="flex items-center gap-1 bg-amber-500 text-white px-3 py-1.5 rounded-lg hover:bg-amber-600 transition-colors text-xs disabled:opacity-50"
+                          title="Archive document"
+                        >
+                          <Archive className="w-3 h-3" />
+                          <span className="hidden sm:inline">Archive</span>
+                        </button>
+                      </div>
                     </div>
                   </div>
                 </div>
-              ))}
+                );
+              })}
             </div>
           )}
 
