@@ -410,7 +410,7 @@ export default function Settings() {
             <h2 className="text-base font-bold mb-4" style={{ color: '#004526' }}>About</h2>
             <div className="space-y-3">
               {[
-                { label: 'System Name', value: 'Document Tracking System (DTS)' },
+                { label: 'System Name', value: 'DocuTrack' },
                 { label: 'Version', value: '1.0.0' },
                 { label: 'Office', value: "Provincial Treasurer's Office" },
                 { label: 'Province', value: 'Misamis Oriental' },

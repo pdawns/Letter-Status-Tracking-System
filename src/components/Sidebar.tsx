@@ -39,7 +39,7 @@ export default function Sidebar({ currentView, onViewChange, onLogout, role = 's
             className="w-8 h-8 rounded-full object-cover"
             style={{ filter: 'hue-rotate(200deg) saturate(1.5) brightness(0.95)' }}
           />
-          <h1 className="text-lg font-bold">DTS</h1>
+          <h1 className="text-lg font-bold">DocuTrack</h1>
         </button>
       </div>
 

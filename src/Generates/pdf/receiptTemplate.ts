@@ -145,7 +145,7 @@ export function generateReceiptTemplate(letter: Letter, statuses: LetterStatus[]
         <div style="margin-top: 30px; padding-top: 15px; border-top: 1px solid #eee; text-align: center; color: #666; font-size: 12px;">
           <p style="margin: 5px 0;">This is an official tracking receipt</p>
           <p style="margin: 5px 0;">Generated on ${new Date().toLocaleString()}</p>
-          <p style="margin: 5px 0; font-weight: bold;">Document Tracking System</p>
+          <p style="margin: 5px 0; font-weight: bold;">DocuTrack</p>
         </div>
       </div>
     </div>
@@ -198,7 +198,7 @@ export function generateReceiptText(letter: Letter, statuses: LetterStatus[]): s
   }
   
   text += `Generated on ${new Date().toLocaleString()}\n`;
-  text += `Document Tracking System\n`;
+  text += `DocuTrack\n`;
   
   return text;
 }

@@ -272,7 +272,7 @@ initSqlJs().then((SQL) => {
   app.use(cors({ origin: '*' }));
   app.use(express.json({ limit: '10mb' }));
 
-  app.get('/', (req, res) => res.json({ status: 'DTS Server is running' }));
+  app.get('/', (req, res) => res.json({ status: 'DocuTrack Server is running' }));
   app.get('/health', (req, res) => res.json({ status: 'ok' }));
 
   // ── Auth ──────────────────────────────────────────────────
@@ -503,7 +503,7 @@ initSqlJs().then((SQL) => {
     res.json(ticket);
   });
 
-  app.listen(PORT, '0.0.0.0', () => console.log(`DTS Server running on port ${PORT}`));
+  app.listen(PORT, '0.0.0.0', () => console.log(`DocuTrack Server running on port ${PORT}`));
 
 }).catch(err => {
   console.error('Failed to initialize database:', err);

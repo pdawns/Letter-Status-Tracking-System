@@ -23,9 +23,9 @@ export async function generateReceiptPDF(
     pdf.setProperties({
       title: `Receipt - ${letter.reference_number}`,
       subject: 'Document Tracking Receipt',
-      author: 'Document Tracking System',
+      author: 'DocuTrack',
       keywords: 'receipt, document, tracking, signature',
-      creator: 'Document Tracking System'
+      creator: 'DocuTrack'
     });
 
     let yPosition = 20;
@@ -147,7 +147,7 @@ export async function generateReceiptPDF(
       pdf.setFont('helvetica', 'italic');
       pdf.setTextColor(120, 120, 120);
       pdf.text(`Generated on ${new Date().toLocaleString()}`, 105, 285, { align: 'center' });
-      pdf.text('Document Tracking System - Official Receipt', 105, 290, { align: 'center' });
+      pdf.text('DocuTrack - Official Receipt', 105, 290, { align: 'center' });
       pdf.text(`Page ${i} of ${pageCount}`, 190, 290, { align: 'right' });
     }
     

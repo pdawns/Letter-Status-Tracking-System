@@ -51,7 +51,7 @@ export default function Login({ onLogin }: LoginProps) {
         </div>
 
         <div className="text-center mb-6">
-          <h1 className="text-xl font-bold text-white">Document Tracking System</h1>
+          <h1 className="text-xl font-bold text-white">DocuTrack</h1>
           <p className="text-sm text-green-200 mt-1">{settings.officeName}</p>
         </div>
 

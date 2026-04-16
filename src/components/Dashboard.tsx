@@ -57,7 +57,7 @@ export default function Dashboard({ onStatusFilter }: DashboardProps) {
     <div className="p-5">
       <div className="mb-5">
         <h1 className="text-2xl font-bold" style={{ color: '#004526' }}>Dashboard</h1>
-        <p className="text-gray-600 text-sm mt-1">Overview of your document tracking system</p>
+        <p className="text-gray-600 text-sm mt-1">Overview of your DocuTrack system</p>
       </div>
 
       <div className="space-y-4">

@@ -21,8 +21,8 @@ export async function generateTicklerPDF(
   pdf.setProperties({
     title: `Action Tickler Slip - ${ticket.ticket_number}`,
     subject: 'Action Tickler Slip',
-    author: 'Document Tracking System',
-    creator: 'Document Tracking System',
+    author: 'DocuTrack',
+    creator: 'DocuTrack',
   });
 
   // ── Dimensions ────────────────────────────────────────────
@@ -187,7 +187,7 @@ export async function generateTicklerPDF(
   pdf.setFont('helvetica', 'italic');
   pdf.setTextColor(160);
   pdf.text(
-    `Generated on ${new Date().toLocaleString()} — Document Tracking System`,
+    `Generated on ${new Date().toLocaleString()} — DocuTrack`,
     lx, y + 4
   );
 

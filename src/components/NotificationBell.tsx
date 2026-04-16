@@ -30,6 +30,7 @@ interface EmailNotification {
 
 const STALE_DAYS = 3;
 const STORAGE_KEY = 'dts_dismissed_notifications';
+const VIEWED_KEY = 'dts_viewed_notifications';
 
 function getDismissed(): Set<string> {
   try {
@@ -40,6 +41,17 @@ function getDismissed(): Set<string> {
 
 function saveDismissed(ids: Set<string>) {
   localStorage.setItem(STORAGE_KEY, JSON.stringify([...ids]));
+}
+
+function getViewed(): Set<string> {
+  try {
+    const raw = localStorage.getItem(VIEWED_KEY);
+    return new Set(raw ? JSON.parse(raw) : []);
+  } catch { return new Set(); }
+}
+
+function saveViewed(ids: Set<string>) {
+  localStorage.setItem(VIEWED_KEY, JSON.stringify([...ids]));
 }
 
 // SQLite returns "YYYY-MM-DD HH:MM:SS" without timezone — treat as UTC by appending Z
@@ -324,7 +336,7 @@ function NotificationDetail({
             onClick={() => { onDismiss(notification.id); onClose(); }}
             className="flex-1 text-sm py-2 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 transition-colors"
           >
-            Dismiss
+            Mark as Read
           </button>
           <button
             onClick={() => { onNavigate(notification.id); onClose(); }}
@@ -351,6 +363,7 @@ export default function NotificationBell({ onNavigate }: Props) {
   const [all, setAll] = useState<Notification[]>([]);
   const [emailNotifs, setEmailNotifs] = useState<EmailNotification[]>([]);
   const [dismissed, setDismissed] = useState<Set<string>>(getDismissed);
+  const [viewed, setViewed] = useState<Set<string>>(getViewed);
   const [loading, setLoading] = useState(false);
   const [selected, setSelected] = useState<Notification | null>(null);
   const [selectedEmail, setSelectedEmail] = useState<EmailNotification | null>(null);
@@ -453,6 +466,12 @@ export default function NotificationBell({ onNavigate }: Props) {
     const next = new Set([...dismissed, ...all.map((n) => n.id), ...emailNotifs.map((n) => n.id)]);
     setDismissed(next);
     saveDismissed(next);
+  };
+
+  const markViewed = (id: string) => {
+    const next = new Set(viewed).add(id);
+    setViewed(next);
+    saveViewed(next);
   };
 
   // ── Outside click ──────────────────────────────────────
@@ -601,8 +620,9 @@ export default function NotificationBell({ onNavigate }: Props) {
                       return (
                         <div key={id} className="relative group border-b border-gray-100 last:border-0">
                           <button
-                            onClick={() => { setSelected(notif); setOpen(false); }}
+                            onClick={() => { markViewed(id); setSelected(notif); setOpen(false); }}
                             className="w-full text-left px-4 py-3 hover:bg-gray-50 transition-colors pr-10"
+                            style={{ opacity: viewed.has(id) ? 0.5 : 1 }}
                           >
                             <div className="flex items-start gap-3">
                               <div className="mt-0.5 p-1.5 rounded-lg flex-shrink-0" style={{ backgroundColor: URGENCY_COLORS[u].bg }}>
@@ -613,7 +633,12 @@ export default function NotificationBell({ onNavigate }: Props) {
                                   <p className="text-xs font-semibold truncate" style={{ color: '#004526' }}>
                                     {letter.reference_number}
                                   </p>
-                                  <span className="text-xs text-gray-400 flex-shrink-0">{timeAgo(letter.created_at)}</span>
+                                  <div className="flex items-center gap-1.5 flex-shrink-0">
+                                    {viewed.has(id) && (
+                                      <span className="text-xs text-gray-400 italic">viewed</span>
+                                    )}
+                                    <span className="text-xs text-gray-400">{timeAgo(letter.created_at)}</span>
+                                  </div>
                                 </div>
                                 <p className="text-xs text-gray-600 truncate mt-0.5">{letter.title}</p>
                                 {/* Mini progress */}
@@ -782,7 +807,7 @@ export default function NotificationBell({ onNavigate }: Props) {
                 onClick={() => { dismissById(selectedEmail.id); setSelectedEmail(null); }}
                 className="flex-1 text-sm py-2 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 transition-colors"
               >
-                Dismiss
+                Mark as Read
               </button>
               <button
                 onClick={() => { setSelectedEmail(null); onNavigate(selectedEmail.letter.id); }}

@@ -60,7 +60,7 @@ export default function LandingPage({ onEnter }: LandingPageProps) {
             </div>
           </div>
           <div className="text-right hidden sm:block">
-            <p className="text-xs opacity-70">Document Tracking System</p>
+            <p className="text-xs opacity-70">DocuTrack</p>
             <p className="text-sm font-bold">{officeName}</p>
           </div>
         </div>
@@ -75,7 +75,7 @@ export default function LandingPage({ onEnter }: LandingPageProps) {
                 Official System
               </div>
               <h1 className="text-3xl sm:text-4xl font-bold mb-4 leading-tight">
-                Document Tracking System
+                DocuTrack
               </h1>
               <p className="text-lg font-semibold mb-1" style={{ color: '#DFF5E1' }}>
                 {officeName}

@@ -302,7 +302,7 @@ export default function Receipt({ letterId, onBack }: ReceiptProps) {
           <div className="pt-4 border-t border-gray-200 text-center text-xs text-gray-500 print:pt-3 print:border-t print:text-[10px]">
             <p className="font-medium">This is an official tracking receipt</p>
             <p className="mt-1">Generated on {new Date().toLocaleString()}</p>
-            <p className="mt-1 text-gray-400 print:text-gray-600">Document Tracking System</p>
+            <p className="mt-1 text-gray-400 print:text-gray-600">DocuTrack</p>
           </div>
         </div>
       </div>

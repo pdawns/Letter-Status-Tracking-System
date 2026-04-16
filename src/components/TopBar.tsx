@@ -33,7 +33,7 @@ export default function TopBar({ onHome, onNavigateToLetter }: TopBarProps) {
 
       {/* Center — system title */}
       <div className="hidden md:block text-center">
-        <p className="text-white text-sm font-bold tracking-wide">Document Tracking System</p>
+        <p className="text-white text-sm font-bold tracking-wide">DocuTrack</p>
         <p className="text-xs" style={{ color: '#9CAF88' }}>{dateStr}</p>
       </div>
 
