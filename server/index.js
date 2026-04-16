@@ -130,7 +130,19 @@ initSqlJs().then((SQL) => {
       performed_by TEXT NOT NULL,
       created_at TEXT DEFAULT (datetime('now'))
     );
+    CREATE TABLE IF NOT EXISTS users (
+      username TEXT PRIMARY KEY,
+      password TEXT NOT NULL,
+      role TEXT NOT NULL DEFAULT 'staff'
+    );
   `);
+  // Seed default users if table is empty
+  const userCount = get('SELECT COUNT(*) as cnt FROM users');
+  if (!userCount || userCount.cnt === 0) {
+    for (const [username, { password, role }] of Object.entries(USERS)) {
+      run('INSERT OR IGNORE INTO users (username, password, role) VALUES (?, ?, ?)', [username, password, role]);
+    }
+  }
   // Migrate: add email_sent_at if missing
   try { db.run('ALTER TABLE letters ADD COLUMN email_sent_at TEXT DEFAULT NULL'); saveDb(); } catch (_) {}
   // Migrate: add document_direction, sent_at, received_at if missing
@@ -253,7 +265,7 @@ initSqlJs().then((SQL) => {
     const session = get('SELECT token, user_id FROM sessions WHERE token = ?', [token]);
     if (!session) return res.status(401).json({ error: 'Unauthorized' });
     req.userId = session.user_id;
-    req.userRole = USERS[session.user_id]?.role || 'staff';
+    req.userRole = get('SELECT role FROM users WHERE username = ?', [session.user_id])?.role || 'staff';
     next();
   }
 
@@ -268,7 +280,7 @@ initSqlJs().then((SQL) => {
 
     const { username, password } = req.body;
     if (!username || !password) return res.status(400).json({ error: 'Missing credentials' });
-    const user = USERS[username];
+    const user = get('SELECT * FROM users WHERE username = ?', [username]);
     if (!user || user.password !== password)
       return res.status(401).json({ error: 'Invalid username or password' });
     const token = crypto.randomBytes(32).toString('hex');
@@ -285,12 +297,12 @@ initSqlJs().then((SQL) => {
   app.post('/api/change-password', requireAuth, (req, res) => {
     const { currentPassword, newPassword } = req.body;
     if (!currentPassword || !newPassword) return res.status(400).json({ error: 'Missing fields' });
-    const user = USERS[req.userId];
+    const user = get('SELECT * FROM users WHERE username = ?', [req.userId]);
     if (!user || user.password !== currentPassword)
       return res.status(401).json({ error: 'Current password is incorrect' });
     if (newPassword.length < 6)
       return res.status(400).json({ error: 'New password must be at least 6 characters' });
-    USERS[req.userId].password = newPassword;
+    run('UPDATE users SET password = ? WHERE username = ?', [newPassword, req.userId]);
     res.json({ success: true });
   });
 

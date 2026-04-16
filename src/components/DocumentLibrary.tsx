@@ -268,7 +268,7 @@ export default function DocumentLibrary({ onDocumentSelected, onViewDocumentInfo
                             No Direction
                           </span>
                         )}
-                        <span className="text-xs text-gray-400 font-mono">{doc.reference_number}</span>
+                        <span className="text-xs text-gray-700 font-mono font-semibold">Ref No.: {doc.reference_number}</span>
                       </div>
                       <div className="flex items-center gap-1 text-xs text-gray-400">
                         <Calendar className="w-3 h-3" />
