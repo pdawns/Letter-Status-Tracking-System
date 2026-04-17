@@ -12,7 +12,10 @@ const app = express();
 const PORT = process.env.PORT || 3001;
 
 // ── Local file storage ────────────────────────────────────
-const UPLOADS_DIR = path.join(__dirname, 'uploads');
+// Use persistent disk on Render, fallback to local for dev
+const UPLOADS_DIR = process.env.RENDER
+  ? '/app/data/uploads'
+  : path.join(__dirname, 'uploads');
 if (!fs.existsSync(UPLOADS_DIR)) fs.mkdirSync(UPLOADS_DIR, { recursive: true });
 
 const storage = multer.diskStorage({
@@ -24,7 +27,10 @@ const storage = multer.diskStorage({
 });
 const upload = multer({ storage, limits: { fileSize: 500 * 1024 * 1024 } });
 
-const DB_PATH = path.join(__dirname, 'dts.db');
+// Use persistent disk on Render, fallback to local for dev
+const DB_PATH = process.env.RENDER
+  ? '/app/data/dts.db'
+  : path.join(__dirname, 'dts.db');
 
 function now() {
   return new Date().toISOString().replace('T', ' ').substring(0, 19);

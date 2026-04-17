@@ -1,7 +1,10 @@
 [build]
 builder = "nixpacks"
-buildCommand = "npm install && npm rebuild better-sqlite3"
+buildCommand = "npm install"
 
 [deploy]
 startCommand = "node index.js"
 restartPolicyType = "on_failure"
+
+[variables]
+NIXPACKS_NODE_VERSION = "20"
