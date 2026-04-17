@@ -50,7 +50,7 @@ export default function LandingPage({ onEnter }: LandingPageProps) {
       <header className="text-white py-4 px-6 shadow-lg" style={{ backgroundColor: '#004526' }}>
         <div className="max-w-6xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <div className="w-14 h-14 rounded-full overflow-hidden bg-white flex items-center justify-center flex-shrink-0 border-2 border-yellow-400">
+            <div className="w-14 h-14 rounded-full overflow-hidden bg-white flex items-center justify-center flex-shrink-0 border-2" style={{ borderColor: '#004526' }}>
               <img src={displayLogo2} alt="Seal" className="w-full h-full object-contain" />
             </div>
             <div>
@@ -101,7 +101,7 @@ export default function LandingPage({ onEnter }: LandingPageProps) {
             {/* Logos */}
             <div className="flex gap-6 items-start">
               <div className="flex flex-col items-center gap-2">
-                <div className="w-28 h-28 rounded-full overflow-hidden shadow-xl border-4 border-yellow-400 flex items-center justify-center bg-white">
+                <div className="w-28 h-28 rounded-full overflow-hidden shadow-xl border-4 flex items-center justify-center bg-white" style={{ borderColor: '#004526' }}>
                   <img src={displayLogo2} alt="Province Seal" className="w-full h-full object-cover" />
                 </div>
                 <p className="text-xs opacity-70 text-center w-28">{province}</p>
@@ -171,7 +171,7 @@ export default function LandingPage({ onEnter }: LandingPageProps) {
 
             {/* Modal logos */}
             <div className="flex justify-center gap-3 mb-4">
-              <div className="w-12 h-12 rounded-full overflow-hidden border-2 border-yellow-400 bg-white">
+              <div className="w-12 h-12 rounded-full overflow-hidden border-2 bg-white" style={{ borderColor: '#004526' }}>
                 <img src={displayLogo2} alt="Seal" className="w-full h-full object-contain" />
               </div>
               <div className="w-12 h-12 rounded-full overflow-hidden border-2 bg-white" style={{ borderColor: '#9CAF88' }}>

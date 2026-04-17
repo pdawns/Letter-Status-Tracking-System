@@ -109,10 +109,7 @@ export default function DocumentLibrary({ onDocumentSelected, onViewDocumentInfo
     if (isOfficeFile) {
       window.open(`https://docs.google.com/viewer?url=${encodeURIComponent(doc.file_url)}&embedded=false`, '_blank');
     } else {
-      const inlineUrl = doc.file_url.includes('/upload/')
-        ? doc.file_url.replace('/upload/', '/upload/fl_inline/')
-        : doc.file_url;
-      window.open(inlineUrl, '_blank', 'noopener,noreferrer');
+      window.open(doc.file_url, '_blank', 'noopener,noreferrer');
     }
   };
 

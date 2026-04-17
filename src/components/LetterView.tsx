@@ -43,11 +43,7 @@ export default function LetterView({ letterId, onBack }: LetterViewProps) {
     if (isOffice) {
       window.open(`https://docs.google.com/viewer?url=${encodeURIComponent(letter.file_url)}&embedded=false`, '_blank');
     } else {
-      // Force inline view by replacing /upload/ with /upload/fl_inline/ in Cloudinary URL
-      const inlineUrl = letter.file_url.includes('/upload/')
-        ? letter.file_url.replace('/upload/', '/upload/fl_inline/')
-        : letter.file_url;
-      window.open(inlineUrl, '_blank', 'noopener,noreferrer');
+      window.open(letter.file_url, '_blank', 'noopener,noreferrer');
     }
   };
 
