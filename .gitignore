@@ -21,3 +21,10 @@ dist-ssr
 *.sln
 *.sw?
 .env
+
+# SQLite database — keep locally, don't track in git
+server/dts.db
+server/dts.db.backup
+
+# Uploaded files — stored locally only
+server/uploads/
