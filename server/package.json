@@ -3,6 +3,9 @@
   "version": "1.0.0",
   "type": "commonjs",
   "main": "index.js",
+  "engines": {
+    "node": ">=20.0.0"
+  },
   "scripts": {
     "start": "node index.js",
     "build": "npm rebuild better-sqlite3"
