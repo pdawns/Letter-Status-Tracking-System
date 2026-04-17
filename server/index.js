@@ -12,10 +12,7 @@ const app = express();
 const PORT = process.env.PORT || 3001;
 
 // ── Local file storage ────────────────────────────────────
-// Use persistent disk on Render, fallback to local for dev
-const UPLOADS_DIR = process.env.RENDER
-  ? '/app/data/uploads'
-  : path.join(__dirname, 'uploads');
+const UPLOADS_DIR = path.join(__dirname, 'uploads');
 if (!fs.existsSync(UPLOADS_DIR)) fs.mkdirSync(UPLOADS_DIR, { recursive: true });
 
 const storage = multer.diskStorage({
@@ -27,10 +24,7 @@ const storage = multer.diskStorage({
 });
 const upload = multer({ storage, limits: { fileSize: 500 * 1024 * 1024 } });
 
-// Use persistent disk on Render, fallback to local for dev
-const DB_PATH = process.env.RENDER
-  ? '/app/data/dts.db'
-  : path.join(__dirname, 'dts.db');
+const DB_PATH = path.join(__dirname, 'dts.db');
 
 function now() {
   return new Date().toISOString().replace('T', ' ').substring(0, 19);
@@ -415,7 +409,11 @@ initSqlJs().then((SQL) => {
 
   app.listen(PORT, '0.0.0.0', () => console.log(`DocuTrack Server running on port ${PORT}`));
 
+
+
 }).catch(err => {
   console.error('Failed to initialize database:', err);
   process.exit(1);
 });
+
+
