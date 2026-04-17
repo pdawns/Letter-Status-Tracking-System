@@ -7,22 +7,23 @@ const crypto = require('crypto');
 require('dotenv').config({ path: path.join(__dirname, '../.env') });
 const initSqlJs = require('sql.js');
 const nodemailer = require('nodemailer');
+const cloudinary = require('cloudinary').v2;
 
 const app = express();
 const PORT = process.env.PORT || 3001;
 
-// ── Local file storage ────────────────────────────────────
-const UPLOADS_DIR = path.join(__dirname, 'uploads');
-if (!fs.existsSync(UPLOADS_DIR)) fs.mkdirSync(UPLOADS_DIR, { recursive: true });
-
-const storage = multer.diskStorage({
-  destination: (_req, _file, cb) => cb(null, UPLOADS_DIR),
-  filename: (_req, file, cb) => {
-    const ext = path.extname(file.originalname);
-    cb(null, `${Date.now()}-${crypto.randomBytes(6).toString('hex')}${ext}`);
-  },
+// ── Cloudinary config ─────────────────────────────────────
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
 });
-const upload = multer({ storage, limits: { fileSize: 500 * 1024 * 1024 } });
+
+// ── Multer memory storage for Cloudinary ──────────────────
+const upload = multer({ 
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 100 * 1024 * 1024 } // 100MB limit
+});
 
 const DB_PATH = path.join(__dirname, 'dts.db');
 
@@ -202,7 +203,6 @@ initSqlJs().then((SQL) => {
 
   app.use(cors({ origin: '*' }));
   app.use(express.json({ limit: '10mb' }));
-  app.use('/uploads', express.static(UPLOADS_DIR));
 
   app.get('/', (_req, res) => res.json({ status: 'DocuTrack Server is running' }));
   app.get('/health', (_req, res) => res.json({ status: 'ok' }));
@@ -336,12 +336,34 @@ initSqlJs().then((SQL) => {
   });
 
   // ── Upload ──────────────────────────────────────────────
-  app.post('/api/upload', requireAuth, upload.single('file'), (req, res) => {
-    if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
-    const host = req.get('host');
-    const protocol = req.protocol;
-    const file_url = `${protocol}://${host}/uploads/${req.file.filename}`;
-    res.json({ file_url, file_name: req.file.originalname });
+  app.post('/api/upload', requireAuth, upload.single('file'), async (req, res) => {
+    try {
+      if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
+      
+      // Upload to Cloudinary using buffer
+      const uploadStream = cloudinary.uploader.upload_stream(
+        { 
+          resource_type: 'auto',
+          folder: 'dts-documents',
+          public_id: `${Date.now()}-${crypto.randomBytes(6).toString('hex')}`
+        },
+        (error, result) => {
+          if (error) {
+            console.error('Cloudinary upload error:', error);
+            return res.status(500).json({ error: 'Upload failed' });
+          }
+          res.json({ 
+            file_url: result.secure_url, 
+            file_name: req.file.originalname 
+          });
+        }
+      );
+      
+      uploadStream.end(req.file.buffer);
+    } catch (err) {
+      console.error('Upload error:', err);
+      res.status(500).json({ error: err.message || 'Upload failed' });
+    }
   });
 
   // ── Activity Logs ───────────────────────────────────────
