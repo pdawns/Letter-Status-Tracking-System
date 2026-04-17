@@ -1,7 +1,10 @@
 [build]
 builder = "nixpacks"
-buildCommand = "npm install"
+buildCommand = "npm install && npm run build"
 
 [deploy]
-startCommand = "node index.js"
+startCommand = "npx serve dist -l $PORT"
 restartPolicyType = "on_failure"
+
+[variables]
+NIXPACKS_NODE_VERSION = "20"
