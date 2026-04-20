@@ -355,9 +355,10 @@ initSqlJs().then((SQL) => {
       if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
       
       // Upload to Cloudinary using buffer
+      const isImage = req.file.mimetype.startsWith('image/');
       const uploadStream = cloudinary.uploader.upload_stream(
         { 
-          resource_type: 'auto',
+          resource_type: isImage ? 'image' : 'raw',
           folder: 'dts-documents',
           public_id: `${Date.now()}-${crypto.randomBytes(6).toString('hex')}`
         },
