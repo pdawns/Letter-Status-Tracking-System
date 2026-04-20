@@ -350,34 +350,30 @@ initSqlJs().then((SQL) => {
   });
 
   // ── Upload ──────────────────────────────────────────────
-  app.post('/api/upload', requireAuth, upload.single('file'), async (req, res) => {
+  // ── Upload — serve files directly from Railway ──────────
+  const UPLOADS_DIR = path.join(__dirname, 'uploads');
+  if (!fs.existsSync(UPLOADS_DIR)) fs.mkdirSync(UPLOADS_DIR, { recursive: true });
+
+  // Serve uploaded files publicly (no auth needed so Google Docs viewer can access)
+  app.use('/uploads', express.static(UPLOADS_DIR));
+
+  const diskStorage = multer.diskStorage({
+    destination: (_req, _file, cb) => cb(null, UPLOADS_DIR),
+    filename: (_req, file, cb) => {
+      const ext = path.extname(file.originalname);
+      cb(null, `${Date.now()}-${crypto.randomBytes(6).toString('hex')}${ext}`);
+    },
+  });
+  const diskUpload = multer({ storage: diskStorage, limits: { fileSize: 100 * 1024 * 1024 } });
+
+  app.post('/api/upload', requireAuth, diskUpload.single('file'), (req, res) => {
     try {
       if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
-      
-      // Upload to Cloudinary using buffer
-      const isImage = req.file.mimetype.startsWith('image/');
-      const isPdf = req.file.mimetype === 'application/pdf' || req.file.originalname.toLowerCase().endsWith('.pdf');
-      const publicId = `${Date.now()}-${crypto.randomBytes(6).toString('hex')}`;
-      const uploadStream = cloudinary.uploader.upload_stream(
-        { 
-          resource_type: isPdf ? 'image' : (isImage ? 'image' : 'raw'),
-          folder: 'dts-documents',
-          public_id: publicId,
-          ...(isPdf && { format: 'pdf' }),
-        },
-        (error, result) => {
-          if (error) {
-            console.error('Cloudinary upload error:', error);
-            return res.status(500).json({ error: 'Upload failed' });
-          }
-          res.json({ 
-            file_url: result.secure_url, 
-            file_name: req.file.originalname 
-          });
-        }
-      );
-      
-      uploadStream.end(req.file.buffer);
+      const baseUrl = process.env.RAILWAY_PUBLIC_DOMAIN
+        ? `https://${process.env.RAILWAY_PUBLIC_DOMAIN}`
+        : `http://localhost:${PORT}`;
+      const fileUrl = `${baseUrl}/uploads/${req.file.filename}`;
+      res.json({ file_url: fileUrl, file_name: req.file.originalname });
     } catch (err) {
       console.error('Upload error:', err);
       res.status(500).json({ error: err.message || 'Upload failed' });
