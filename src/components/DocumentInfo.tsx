@@ -45,11 +45,13 @@ export default function DocumentInfo({ letterId, onBack }: DocumentInfoProps) {
 
   const viewDocument = () => {
     if (!document?.file_url) return;
-    const isOffice = document.file_url.match(/\.(doc|docx|xls|xlsx|ppt|pptx)(\?|$)/i);
-    if (isOffice) {
-      window.open(`https://docs.google.com/viewer?url=${encodeURIComponent(document.file_url)}&embedded=false`, '_blank');
+    const url = document.file_url;
+    const isOffice = url.match(/\.(doc|docx|xls|xlsx|ppt|pptx)(\?|$)/i);
+    const isPdf = url.match(/\.pdf(\?|$)/i) || url.includes('/raw/upload/');
+    if (isOffice || isPdf) {
+      window.open(`https://docs.google.com/viewer?url=${encodeURIComponent(url)}&embedded=false`, '_blank');
     } else {
-      window.open(document.file_url, '_blank', 'noopener,noreferrer');
+      window.open(url, '_blank', 'noopener,noreferrer');
     }
   };
 
@@ -279,8 +281,9 @@ export default function DocumentInfo({ letterId, onBack }: DocumentInfoProps) {
                 </div>
                 {(() => {
                   const url = document.file_url!;
-                  const isImage = url.match(/\.(png|jpe?g|gif|webp|bmp|svg)(\?|$)/i);
+                  const isImage = url.match(/\.(png|jpe?g|gif|webp|bmp|svg)(\?|$)/i) || url.includes('/image/upload/');
                   const isOffice = url.match(/\.(doc|docx|xls|xlsx|ppt|pptx)(\?|$)/i);
+                  const isPdf = url.match(/\.pdf(\?|$)/i) || url.includes('/raw/upload/');
 
                   if (isImage) {
                     return (
@@ -307,7 +310,18 @@ export default function DocumentInfo({ letterId, onBack }: DocumentInfoProps) {
                     );
                   }
 
-                  // PDF or other — embed directly
+                  if (isPdf) {
+                    return (
+                      <iframe
+                        src={`https://docs.google.com/viewer?url=${encodeURIComponent(url)}&embedded=true`}
+                        title="Document Preview"
+                        className="w-full border-0"
+                        style={{ height: '600px' }}
+                      />
+                    );
+                  }
+
+                  // fallback
                   return (
                     <iframe
                       src={url}
