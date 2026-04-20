@@ -204,13 +204,15 @@ initSqlJs().then((SQL) => {
   const allowedOrigins = [
     'http://localhost:5173',
     'http://localhost:4173',
+    'https://letters-status-tracking-system.vercel.app',
     process.env.FRONTEND_URL,
   ].filter(Boolean);
+
   app.use(cors({
     origin: (origin, cb) => {
-      // allow requests with no origin (mobile apps, curl, etc.) or matched origins
-      if (!origin || allowedOrigins.includes(origin) || allowedOrigins.includes('*')) return cb(null, true);
-      cb(new Error('Not allowed by CORS'));
+      // allow no-origin requests (curl, mobile) and matched origins
+      if (!origin || allowedOrigins.includes(origin)) return cb(null, true);
+      cb(new Error(`CORS blocked: ${origin}`));
     },
     credentials: true,
   }));
