@@ -201,7 +201,19 @@ initSqlJs().then((SQL) => {
     next();
   }
 
-  app.use(cors({ origin: '*' }));
+  const allowedOrigins = [
+    'http://localhost:5173',
+    'http://localhost:4173',
+    process.env.FRONTEND_URL,
+  ].filter(Boolean);
+  app.use(cors({
+    origin: (origin, cb) => {
+      // allow requests with no origin (mobile apps, curl, etc.) or matched origins
+      if (!origin || allowedOrigins.includes(origin) || allowedOrigins.includes('*')) return cb(null, true);
+      cb(new Error('Not allowed by CORS'));
+    },
+    credentials: true,
+  }));
   app.use(express.json({ limit: '10mb' }));
 
   app.get('/', (_req, res) => res.json({ status: 'DocuTrack Server is running' }));
