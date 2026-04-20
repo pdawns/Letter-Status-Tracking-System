@@ -356,14 +356,14 @@ initSqlJs().then((SQL) => {
       
       // Upload to Cloudinary using buffer
       const isImage = req.file.mimetype.startsWith('image/');
-      const ext = req.file.originalname.split('.').pop()?.toLowerCase() || '';
-      const publicId = `${Date.now()}-${crypto.randomBytes(6).toString('hex')}${isImage ? '' : `.${ext}`}`;
+      const isPdf = req.file.mimetype === 'application/pdf' || req.file.originalname.toLowerCase().endsWith('.pdf');
+      const publicId = `${Date.now()}-${crypto.randomBytes(6).toString('hex')}`;
       const uploadStream = cloudinary.uploader.upload_stream(
         { 
-          resource_type: isImage ? 'image' : 'raw',
+          resource_type: isPdf ? 'image' : (isImage ? 'image' : 'raw'),
           folder: 'dts-documents',
           public_id: publicId,
-          use_filename: false,
+          ...(isPdf && { format: 'pdf' }),
         },
         (error, result) => {
           if (error) {
