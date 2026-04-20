@@ -47,7 +47,7 @@ export default function DocumentInfo({ letterId, onBack }: DocumentInfoProps) {
     if (!document?.file_url) return;
     const url = document.file_url;
     const isOffice = url.match(/\.(doc|docx|xls|xlsx|ppt|pptx)(\?|$)/i);
-    const isPdf = url.match(/\.pdf(\?|$)/i) || url.includes('/raw/upload/');
+    const isPdf = url.match(/\.pdf(\?|$)/i) || url.includes('/raw/upload/') || url.includes('/image/upload/');
     if (isOffice || isPdf) {
       window.open(`https://docs.google.com/viewer?url=${encodeURIComponent(url)}&embedded=false`, '_blank');
     } else {
@@ -281,7 +281,8 @@ export default function DocumentInfo({ letterId, onBack }: DocumentInfoProps) {
                 </div>
                 {(() => {
                   const url = document.file_url!;
-                  const isImage = url.match(/\.(png|jpe?g|gif|webp|bmp|svg)(\?|$)/i) || url.includes('/image/upload/');
+                  const isImage = (url.match(/\.(png|jpe?g|gif|webp|bmp|svg)(\?|$)/i)) ||
+                    (url.includes('/image/upload/') && !url.match(/\.pdf(\?|$)/i));
                   const isOffice = url.match(/\.(doc|docx|xls|xlsx|ppt|pptx)(\?|$)/i);
                   const isPdf = url.match(/\.pdf(\?|$)/i) || url.includes('/raw/upload/');
 
