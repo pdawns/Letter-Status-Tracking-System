@@ -356,11 +356,14 @@ initSqlJs().then((SQL) => {
       
       // Upload to Cloudinary using buffer
       const isImage = req.file.mimetype.startsWith('image/');
+      const ext = req.file.originalname.split('.').pop()?.toLowerCase() || '';
+      const publicId = `${Date.now()}-${crypto.randomBytes(6).toString('hex')}${isImage ? '' : `.${ext}`}`;
       const uploadStream = cloudinary.uploader.upload_stream(
         { 
           resource_type: isImage ? 'image' : 'raw',
           folder: 'dts-documents',
-          public_id: `${Date.now()}-${crypto.randomBytes(6).toString('hex')}`
+          public_id: publicId,
+          use_filename: false,
         },
         (error, result) => {
           if (error) {
