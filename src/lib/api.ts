@@ -1,8 +1,11 @@
 import { Letter, LetterStatus } from '../types';
 
-const BASE = import.meta.env.VITE_API_URL
-  ? `${import.meta.env.VITE_API_URL.replace(/\/$/, '')}/api`
-  : '/api';
+const rawApiUrl = import.meta.env.VITE_API_URL || '';
+// Ensure absolute URL — prefix https:// if missing protocol
+const apiBase = rawApiUrl && !rawApiUrl.startsWith('http')
+  ? `https://${rawApiUrl}`
+  : rawApiUrl;
+const BASE = apiBase ? `${apiBase.replace(/\/$/, '')}/api` : '/api';
 
 // ── Auth helpers ──────────────────────────────────────────
 
