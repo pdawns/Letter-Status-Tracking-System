@@ -279,7 +279,7 @@ export default function DocumentInfo({ letterId, onBack }: DocumentInfoProps) {
                       </button>
                     </div>
                   );
-                  if (isPdf) return <iframe src={`https://docs.google.com/viewer?url=${encodeURIComponent(url)}&embedded=true`} title="Document Preview" className="w-full border-0" style={{ height: '600px' }} />;
+                  if (isPdf) return <iframe src={url} title="Document Preview" className="w-full border-0" style={{ height: '600px' }} />;
                   return <iframe src={url} title="Document Preview" className="w-full border-0" style={{ height: '600px' }} />;
                 })()}
               </div>

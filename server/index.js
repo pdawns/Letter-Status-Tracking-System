@@ -356,8 +356,12 @@ initSqlJs().then((SQL) => {
   const UPLOADS_DIR = path.join(__dirname, 'uploads');
   if (!fs.existsSync(UPLOADS_DIR)) fs.mkdirSync(UPLOADS_DIR, { recursive: true });
 
-  // Serve uploaded files publicly (no auth needed so Google Docs viewer can access)
-  app.use('/uploads', express.static(UPLOADS_DIR));
+  // Serve uploaded files publicly (no auth needed so browser can preview)
+  app.use('/uploads', (req, res, next) => {
+    res.setHeader('X-Frame-Options', 'ALLOWALL');
+    res.setHeader('Content-Security-Policy', "frame-ancestors *");
+    next();
+  }, express.static(UPLOADS_DIR));
 
   const diskStorage = multer.diskStorage({
     destination: (_req, _file, cb) => cb(null, UPLOADS_DIR),
