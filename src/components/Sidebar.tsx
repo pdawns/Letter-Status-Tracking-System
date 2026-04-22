@@ -1,4 +1,5 @@
-import { LayoutDashboard, Search, FileText, Archive, Settings, LogOut } from 'lucide-react';
+import { useState } from 'react';
+import { LayoutDashboard, Search, FilePlus, Archive, Settings, LogOut, X } from 'lucide-react';
 import logo1 from '../../images/LOGO1.jpg';
 
 type View = 'dashboard' | 'tracking' | 'document-tracking' | 'archive' | 'settings' | 'send-document';
@@ -8,95 +9,149 @@ interface SidebarProps {
   onViewChange: (view: View) => void;
   onLogout: () => void;
   role?: string;
+  menuOpen: boolean;
+  onMenuToggle: () => void;
 }
 
-export default function Sidebar({ currentView, onViewChange, onLogout, role = 'staff' }: SidebarProps) {
-  const staffMenuItems = [
-    { id: 'dashboard' as View, label: 'Dashboard', icon: LayoutDashboard },
-    { id: 'document-tracking' as View, label: 'Create Document', icon: FileText },
-    { id: 'tracking' as View, label: 'Tracking System', icon: Search },
-    { id: 'archive' as View, label: 'Archive', icon: Archive },
-    { id: 'settings' as View, label: 'Settings', icon: Settings },
-  ];
+const menuItems = [
+  { id: 'dashboard' as View, label: 'Dashboard', icon: LayoutDashboard },
+  { id: 'document-tracking' as View, label: 'Create Document', icon: FilePlus },
+  { id: 'tracking' as View, label: 'Track Document', icon: Search },
+  { id: 'archive' as View, label: 'Archive', icon: Archive },
+  { id: 'settings' as View, label: 'Settings', icon: Settings },
+];
 
-  const receiverMenuItems = [
-    { id: 'dashboard' as View, label: 'Dashboard', icon: LayoutDashboard },
-    { id: 'tracking' as View, label: 'Tracking System', icon: Search },
-  ];
-
-  const menuItems = staffMenuItems;
+export default function Sidebar({ currentView, onViewChange, onLogout, menuOpen, onMenuToggle }: SidebarProps) {
+  const handleNav = (id: View) => {
+    onViewChange(id);
+    onMenuToggle();
+  };
 
   return (
-    <div className="w-56 text-white h-screen flex flex-col fixed left-0 top-0 overflow-y-auto" style={{ backgroundColor: '#004526', fontFamily: 'serif' }}>
-      <div className="p-4 border-b border-opacity-20" style={{ borderColor: '#9CAF88' }}>
-        <button
-          onClick={() => onViewChange('dashboard')}
-          className="flex items-center gap-2 hover:opacity-80 transition-opacity w-full text-left"
-        >
-          <img
-            src={logo1}
-            alt="PTO Logo"
-            className="w-8 h-8 rounded-full object-cover"
-            style={{ filter: 'hue-rotate(200deg) saturate(1.5) brightness(0.95)' }}
-          />
-          <h1 className="text-lg font-bold">DocuTrack</h1>
-        </button>
-      </div>
+    <>
+      {/* ── Slide-up Sheet Overlay ── */}
+      {/* Backdrop */}
+      <div
+        className="fixed inset-0 z-[60] transition-all duration-300"
+        style={{
+          background: menuOpen ? 'rgba(0,0,0,0.55)' : 'transparent',
+          backdropFilter: menuOpen ? 'blur(6px)' : 'none',
+          WebkitBackdropFilter: menuOpen ? 'blur(6px)' : 'none',
+          pointerEvents: menuOpen ? 'auto' : 'none',
+        }}
+        onClick={onMenuToggle}
+      />
 
-      <nav className="flex-1 p-3 overflow-y-auto">
-        <ul className="space-y-1">
-          {menuItems.map((item) => {
-            const Icon = item.icon;
-            const isActive = currentView === item.id;
-            
+      {/* Sheet */}
+      <div
+        className="fixed left-0 right-0 z-[61] transition-all duration-500"
+        style={{
+          bottom: menuOpen ? '0' : '-100%',
+          borderRadius: '28px 28px 0 0',
+          background: 'rgba(0, 45, 20, 0.72)',
+          backdropFilter: 'blur(32px)',
+          WebkitBackdropFilter: 'blur(32px)',
+          border: '1px solid rgba(156,175,136,0.18)',
+          borderBottom: 'none',
+          boxShadow: '0 -12px 60px rgba(0,0,0,0.45)',
+          paddingBottom: 'env(safe-area-inset-bottom, 16px)',
+        }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Drag handle */}
+        <div className="flex justify-center pt-3 pb-1">
+          <div className="w-9 h-1 rounded-full" style={{ background: 'rgba(255,255,255,0.22)' }} />
+        </div>
+
+        {/* Header row */}
+        <div className="flex items-center justify-between px-6 py-3">
+          <div>
+            <p className="text-white font-bold text-base leading-tight tracking-wide">DocuTrack</p>
+            <p className="text-xs mt-0.5" style={{ color: '#9CAF88' }}>
+              {localStorage.getItem('dts_username') || 'staff'}
+            </p>
+          </div>
+          <button
+            onClick={onMenuToggle}
+            className="p-2 rounded-full transition-all"
+            style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.1)' }}
+          >
+            <X className="w-4 h-4 text-white" />
+          </button>
+        </div>
+
+        {/* Divider */}
+        <div className="mx-6 mb-4" style={{ height: '1px', background: 'rgba(156,175,136,0.15)' }} />
+
+        {/* Icon grid — 5 items in a row */}
+        <div className="grid grid-cols-5 gap-2 px-4 mb-5">
+          {menuItems.map(({ id, icon: Icon, label }) => {
+            const isActive = currentView === id;
             return (
-              <li key={item.id}>
-                <button
-                  onClick={() => onViewChange(item.id)}
-                  className="w-full flex items-center gap-2 px-3 py-2 rounded-lg transition-all duration-200 text-sm"
+              <button
+                key={id}
+                onClick={() => handleNav(id)}
+                className="flex flex-col items-center gap-1.5 py-3 px-1 rounded-2xl transition-all duration-200 active:scale-95"
+                style={{
+                  background: isActive
+                    ? 'rgba(223,245,225,0.18)'
+                    : 'rgba(255,255,255,0.05)',
+                  border: isActive
+                    ? '1px solid rgba(156,175,136,0.45)'
+                    : '1px solid rgba(255,255,255,0.07)',
+                  boxShadow: isActive ? '0 0 16px rgba(156,175,136,0.15)' : 'none',
+                }}
+              >
+                <div
+                  className="flex items-center justify-center rounded-xl"
                   style={{
-                    backgroundColor: isActive ? '#DFF5E1' : 'transparent',
-                    color: isActive ? '#004526' : 'white',
-                    fontWeight: 'bold',
-                  }}
-                  onMouseEnter={(e) => {
-                    if (!isActive) {
-                      e.currentTarget.style.backgroundColor = '#9CAF88';
-                      e.currentTarget.style.color = 'white';
-                    }
-                  }}
-                  onMouseLeave={(e) => {
-                    if (!isActive) {
-                      e.currentTarget.style.backgroundColor = 'transparent';
-                      e.currentTarget.style.color = 'white';
-                    }
+                    width: '40px',
+                    height: '40px',
+                    background: isActive ? 'rgba(0,69,38,0.6)' : 'rgba(255,255,255,0.06)',
+                    border: isActive ? '1px solid rgba(156,175,136,0.3)' : '1px solid rgba(255,255,255,0.06)',
                   }}
                 >
-                  <Icon className="w-4 h-4 flex-shrink-0" />
-                  <span className="text-left">{item.label}</span>
-                </button>
-              </li>
+                  <Icon
+                    style={{
+                      width: '20px',
+                      height: '20px',
+                      color: isActive ? '#DFF5E1' : 'rgba(255,255,255,0.55)',
+                      filter: isActive ? 'drop-shadow(0 0 5px rgba(156,175,136,0.7))' : 'none',
+                    }}
+                  />
+                </div>
+                <span
+                  style={{
+                    fontSize: '9px',
+                    color: isActive ? '#DFF5E1' : 'rgba(255,255,255,0.45)',
+                    fontWeight: isActive ? 700 : 400,
+                    textAlign: 'center',
+                    lineHeight: 1.2,
+                  }}
+                >
+                  {label}
+                </span>
+              </button>
             );
           })}
-        </ul>
-      </nav>
-
-      {/* User + Logout */}
-      <div className="p-3 border-t" style={{ borderColor: '#1a6b3c' }}>
-        <div className="text-xs text-green-300 mb-2 px-1 truncate">
-          {localStorage.getItem('dts_username') || 'staff'}
         </div>
-        <button
-          onClick={() => onLogout()}
-          className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-all text-white"
-          style={{ fontWeight: 'bold' }}
-          onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#9CAF88'}
-          onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
-        >
-          <LogOut className="w-4 h-4 flex-shrink-0" />
-          <span>Logout</span>
-        </button>
+
+        {/* Logout */}
+        <div className="px-4 pb-6">
+          <button
+            onClick={() => { onMenuToggle(); onLogout(); }}
+            className="w-full flex items-center justify-center gap-2 py-3 rounded-2xl transition-all duration-200 active:scale-95"
+            style={{
+              background: 'rgba(239,68,68,0.08)',
+              border: '1px solid rgba(239,68,68,0.2)',
+              color: '#fca5a5',
+            }}
+          >
+            <LogOut className="w-4 h-4" />
+            <span className="text-sm font-semibold">Logout</span>
+          </button>
+        </div>
       </div>
-    </div>
+    </>
   );
 }

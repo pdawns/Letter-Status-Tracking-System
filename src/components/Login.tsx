@@ -55,60 +55,36 @@ export default function Login({ onLogin }: LoginProps) {
           <p className="text-sm text-green-200 mt-1">{settings.officeName}</p>
         </div>
 
-        <div className="bg-white rounded-2xl shadow-2xl p-6">
-          <h2 className="text-base font-bold mb-5 text-center" style={{ color: '#004526' }}>Staff Login</h2>
-
+        <div className="rounded-2xl p-6" style={{ background: 'rgba(0,40,18,0.75)', backdropFilter: 'blur(24px)', WebkitBackdropFilter: 'blur(24px)', border: '1px solid rgba(156,175,136,0.2)', boxShadow: '0 8px 40px rgba(0,0,0,0.4)' }}>
+          <h2 className="text-base font-bold mb-5 text-center" style={{ color: '#DFF5E1' }}>Staff Login</h2>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label className="block text-xs font-medium text-gray-700 mb-1">Username</label>
-              <input
-                type="text"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2"
-                style={{ focusRingColor: '#004526' }}
-                placeholder="Enter username"
-                required
-                autoFocus
-              />
+              <label className="block text-xs font-medium mb-1" style={{ color: 'rgba(156,175,136,0.85)' }}>Username</label>
+              <input type="text" value={username} onChange={(e) => setUsername(e.target.value)}
+                className="w-full px-3 py-2 text-sm rounded-xl focus:outline-none focus:ring-1 focus:ring-green-600"
+                style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(156,175,136,0.2)', color: '#DFF5E1' }}
+                placeholder="Enter username" required autoFocus />
             </div>
-
             <div>
-              <label className="block text-xs font-medium text-gray-700 mb-1">Password</label>
+              <label className="block text-xs font-medium mb-1" style={{ color: 'rgba(156,175,136,0.85)' }}>Password</label>
               <div className="relative">
-                <input
-                  type={showPassword ? 'text' : 'password'}
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="w-full px-3 py-2 pr-10 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2"
-                  placeholder="Enter password"
-                  required
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-2.5 text-gray-400 hover:text-gray-600"
-                >
+                <input type={showPassword ? 'text' : 'password'} value={password} onChange={(e) => setPassword(e.target.value)}
+                  className="w-full px-3 py-2 pr-10 text-sm rounded-xl focus:outline-none focus:ring-1 focus:ring-green-600"
+                  style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(156,175,136,0.2)', color: '#DFF5E1' }}
+                  placeholder="Enter password" required />
+                <button type="button" onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-2.5 hover:opacity-70" style={{ color: 'rgba(156,175,136,0.6)' }}>
                   {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
               </div>
             </div>
-
-            {error && (
-              <p className="text-xs text-red-600 text-center">{error}</p>
-            )}
-
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-semibold text-white transition-colors disabled:opacity-60"
+            {error && <p className="text-xs text-center" style={{ color: '#fca5a5' }}>{error}</p>}
+            <button type="submit" disabled={loading}
+              className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold text-white transition-colors disabled:opacity-60"
               style={{ backgroundColor: '#004526' }}
-            >
-              {loading ? (
-                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-              ) : (
-                <><LogIn className="w-4 h-4" /> Login</>
-              )}
+              onMouseEnter={(e) => !loading && (e.currentTarget.style.backgroundColor = '#005c33')}
+              onMouseLeave={(e) => !loading && (e.currentTarget.style.backgroundColor = '#004526')}>
+              {loading ? <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <><LogIn className="w-4 h-4" /> Login</>}
             </button>
           </form>
         </div>

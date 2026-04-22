@@ -17,6 +17,7 @@ import Settings from './components/Settings';
 import SendDocument from './components/SendDocument';
 import { getToken, getRole, logout } from './lib/api';
 import Toast from './components/Toast';
+import BottomTicker from './components/BottomTicker';
 
 type View = 'dashboard' | 'tracking' | 'document-tracking' | 'letter-view' | 'track' | 'handler' | 'receipt' | 'scanner' | 'library' | 'document-info' | 'archive' | 'settings' | 'send-document';
 
@@ -30,6 +31,7 @@ function App() {
   const [previousView, setPreviousView] = useState<View | null>(null);
   const [role, setRole] = useState<string>(() => getRole());
   const [libraryStatusFilter, setLibraryStatusFilter] = useState<'pending' | 'completed' | undefined>(undefined);
+  const [menuOpen, setMenuOpen] = useState(false);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -119,7 +121,7 @@ function App() {
       <LandingPage onEnter={() => { setIsLoggedIn(true); setShowLanding(false); setRole(getRole()); setToast({ message: `Welcome back, ${localStorage.getItem('dts_username') || 'staff'}!`, type: 'success' }); }} />
     )}
     {isLoggedIn && !showLanding && (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-gray-100">
+    <div className="min-h-screen" style={{ background: 'linear-gradient(160deg, #002b15 0%, #004526 50%, #002b15 100%)' }}>
       <Sidebar 
         currentView={
           view === 'library' || view === 'document-info' || view === 'track' || view === 'handler' || view === 'receipt' ? 'tracking' :
@@ -131,13 +133,17 @@ function App() {
         } 
         onViewChange={setView}
         role={role}
+        menuOpen={menuOpen}
+        onMenuToggle={() => setMenuOpen(o => !o)}
         onLogout={async () => { await logout(); setIsLoggedIn(false); setShowLanding(true); setRole('staff'); setToast({ message: 'You have been logged out. See you next time!', type: 'success' }); }}
       />
       <TopBar
         onHome={() => setView('dashboard')}
         onNavigateToLetter={(id) => { setCurrentLetterId(id); setView('track'); }}
+        onMenuToggle={() => setMenuOpen(o => !o)}
       />
-      <div className="ml-56 min-h-screen overflow-auto" style={{ paddingTop: '56px' }}>
+      <BottomTicker />
+      <div className="min-h-screen overflow-auto" style={{ paddingTop: '60px', paddingBottom: '56px' }}>
         {showScanner && (
           <QRScanner
             onScanSuccess={handleQRScanSuccess}
@@ -158,35 +164,51 @@ function App() {
         {view === 'tracking' && (
           <div className="p-5">
             <div className="mb-4">
-              <h1 className="text-2xl font-bold" style={{ color: '#004526' }}>Tracking System</h1>
-              <p className="text-gray-600 text-sm mt-1">Manage documents with QR codes</p>
+              <h1 className="text-2xl font-bold" style={{ color: '#DFF5E1' }}>Tracking System</h1>
+              <p className="text-sm mt-1" style={{ color: 'rgba(156,175,136,0.8)' }}>Manage documents with QR codes</p>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-3xl">
               <button
                 onClick={() => setShowScanner(true)}
-                className="group bg-white rounded-lg shadow-lg p-6 hover:shadow-xl transition-all transform hover:scale-105 border-2"
-                style={{ borderColor: '#9CAF88' }}
+                className="group rounded-2xl p-6 transition-all duration-200 active:scale-95 hover:scale-105"
+                style={{
+                  background: 'rgba(0, 45, 20, 0.45)',
+                  backdropFilter: 'blur(20px)',
+                  WebkitBackdropFilter: 'blur(20px)',
+                  border: '1px solid rgba(156,175,136,0.2)',
+                  boxShadow: '0 4px 24px rgba(0,0,0,0.25)',
+                }}
+                onMouseEnter={(e) => (e.currentTarget.style.border = '1px solid rgba(156,175,136,0.45)')}
+                onMouseLeave={(e) => (e.currentTarget.style.border = '1px solid rgba(156,175,136,0.2)')}
               >
                 <div className="flex flex-col items-center text-center space-y-3">
-                  <div className="p-4 rounded-full transition-colors" style={{ backgroundColor: '#DFF5E1' }}>
-                    <Camera className="w-8 h-8" style={{ color: '#004526' }} />
+                  <div className="p-4 rounded-2xl" style={{ background: 'rgba(156,175,136,0.15)', border: '1px solid rgba(156,175,136,0.25)' }}>
+                    <Camera className="w-8 h-8" style={{ color: '#9CAF88' }} />
                   </div>
-                  <h3 className="text-lg font-semibold" style={{ color: '#004526' }}>Scan QR Code</h3>
-                  <p className="text-gray-600 text-sm">Track a document by scanning its QR code</p>
+                  <h3 className="text-lg font-semibold" style={{ color: '#DFF5E1' }}>Scan QR Code</h3>
+                  <p className="text-sm" style={{ color: 'rgba(223,245,225,0.6)' }}>Track a document by scanning its QR code</p>
                 </div>
               </button>
 
               <button
                 onClick={() => setView('library')}
-                className="group bg-white rounded-lg shadow-lg p-6 hover:shadow-xl transition-all transform hover:scale-105 border-2"
-                style={{ borderColor: '#9CAF88' }}
+                className="group rounded-2xl p-6 transition-all duration-200 active:scale-95 hover:scale-105"
+                style={{
+                  background: 'rgba(0, 45, 20, 0.45)',
+                  backdropFilter: 'blur(20px)',
+                  WebkitBackdropFilter: 'blur(20px)',
+                  border: '1px solid rgba(156,175,136,0.2)',
+                  boxShadow: '0 4px 24px rgba(0,0,0,0.25)',
+                }}
+                onMouseEnter={(e) => (e.currentTarget.style.border = '1px solid rgba(156,175,136,0.45)')}
+                onMouseLeave={(e) => (e.currentTarget.style.border = '1px solid rgba(156,175,136,0.2)')}
               >
                 <div className="flex flex-col items-center text-center space-y-3">
-                  <div className="p-4 rounded-full transition-colors" style={{ backgroundColor: '#DFF5E1' }}>
-                    <Library className="w-8 h-8" style={{ color: '#004526' }} />
+                  <div className="p-4 rounded-2xl" style={{ background: 'rgba(156,175,136,0.15)', border: '1px solid rgba(156,175,136,0.25)' }}>
+                    <Library className="w-8 h-8" style={{ color: '#9CAF88' }} />
                   </div>
-                  <h3 className="text-lg font-semibold" style={{ color: '#004526' }}>Document Library</h3>
-                  <p className="text-gray-600 text-sm">View and track all documents</p>
+                  <h3 className="text-lg font-semibold" style={{ color: '#DFF5E1' }}>Document Library</h3>
+                  <p className="text-sm" style={{ color: 'rgba(223,245,225,0.6)' }}>View and track all documents</p>
                 </div>
               </button>
             </div>
@@ -196,8 +218,8 @@ function App() {
         {view === 'document-tracking' && (
           <div className="p-5">
             <div className="mb-5">
-              <h1 className="text-2xl font-bold" style={{ color: '#004526' }}>Create Document</h1>
-              <p className="text-gray-600 text-sm mt-1">Create documents with QR codes</p>
+              <h1 className="text-2xl font-bold" style={{ color: '#DFF5E1' }}>Create Document</h1>
+              <p className="text-sm mt-1" style={{ color: 'rgba(156,175,136,0.8)' }}>Create documents with QR codes</p>
             </div>
             <div className="flex justify-center">
               <div className="w-full max-w-2xl">

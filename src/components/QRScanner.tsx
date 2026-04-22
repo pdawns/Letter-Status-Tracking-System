@@ -110,71 +110,57 @@ export default function QRScanner({ onScanSuccess, onClose }: QRScannerProps) {
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4 overflow-y-auto">
-      <div className="bg-white rounded-lg shadow-xl max-w-lg w-full my-8 max-h-[90vh] overflow-y-auto">
-        <div className="flex items-center justify-between p-4 border-b">
+    <div className="fixed inset-0 flex items-center justify-center z-50 p-4 overflow-y-auto" style={{ background: 'rgba(0,0,0,0.75)', backdropFilter: 'blur(6px)' }}>
+      <div className="rounded-2xl max-w-lg w-full my-8 max-h-[90vh] overflow-y-auto" style={{ background: 'rgba(0,40,18,0.88)', backdropFilter: 'blur(28px)', WebkitBackdropFilter: 'blur(28px)', border: '1px solid rgba(156,175,136,0.2)', boxShadow: '0 8px 40px rgba(0,0,0,0.5)' }}>
+        <div className="flex items-center justify-between p-4" style={{ borderBottom: '1px solid rgba(156,175,136,0.15)' }}>
           <div className="flex items-center gap-2">
-            <Camera className="w-5 h-5 text-blue-600" />
-            <h2 className="text-lg font-semibold text-gray-900">Scan QR Code</h2>
+            <Camera className="w-5 h-5" style={{ color: '#9CAF88' }} />
+            <h2 className="text-base font-semibold" style={{ color: '#DFF5E1' }}>Scan QR Code</h2>
           </div>
-          <button
-            onClick={onClose}
-            className="p-1 hover:bg-gray-100 rounded-lg transition-colors"
-          >
-            <X className="w-5 h-5 text-gray-600" />
+          <button onClick={onClose} className="p-1 rounded-lg transition-all hover:opacity-70" style={{ color: 'rgba(156,175,136,0.7)' }}>
+            <X className="w-5 h-5" />
           </button>
         </div>
 
         <div className="p-4">
           {success && (
-            <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg mb-4">
+            <div className="rounded-xl px-4 py-3 mb-4" style={{ background: 'rgba(16,185,129,0.12)', border: '1px solid rgba(16,185,129,0.25)' }}>
               <div className="flex items-start gap-2">
-                <CheckCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
+                <CheckCircle className="w-5 h-5 flex-shrink-0 mt-0.5" style={{ color: '#6ee7b7' }} />
                 <div className="flex-1">
-                  <p className="font-medium">{success}</p>
-                  {trackingId && (
-                    <p className="text-sm mt-1">Click "Track Document" to proceed</p>
-                  )}
+                  <p className="font-medium text-sm" style={{ color: '#6ee7b7' }}>{success}</p>
+                  {trackingId && <p className="text-xs mt-1" style={{ color: 'rgba(156,175,136,0.7)' }}>Click "Track Document" to proceed</p>}
                 </div>
               </div>
-              <button
-                onClick={handleSubmit}
-                className="w-full mt-3 px-4 py-2 text-white rounded-lg font-medium transition-colors"
+              <button onClick={handleSubmit}
+                className="w-full mt-3 px-4 py-2 text-white rounded-xl font-medium transition-all active:scale-95"
                 style={{ backgroundColor: '#004526' }}
-                onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#9CAF88')}
-                onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = '#004526')}
-              >
+                onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#005c33')}
+                onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = '#004526')}>
                 Track Document
               </button>
-              <button
-                onClick={handleTryAgain}
-                className="w-full mt-2 px-4 py-2 border-2 rounded-lg font-medium transition-colors"
-                style={{ borderColor: '#9CAF88', color: '#004526' }}
-              >
+              <button onClick={handleTryAgain}
+                className="w-full mt-2 px-4 py-2 rounded-xl font-medium transition-all active:scale-95"
+                style={{ border: '1px solid rgba(156,175,136,0.3)', color: '#9CAF88', background: 'rgba(156,175,136,0.08)' }}>
                 Scan Another QR Code
               </button>
             </div>
           )}
-          
+
           {error && (
-            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-4 flex items-center gap-2">
-              <AlertCircle className="w-5 h-5" />
+            <div className="rounded-xl px-4 py-3 mb-4 flex items-center gap-2" style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.2)' }}>
+              <AlertCircle className="w-5 h-5 flex-shrink-0" style={{ color: '#fca5a5' }} />
               <div>
-                <p className="font-medium">{error}</p>
-                <button
-                  onClick={handleTryAgain}
-                  className="text-sm underline mt-1"
-                >
-                  Try again
-                </button>
+                <p className="font-medium text-sm" style={{ color: '#fca5a5' }}>{error}</p>
+                <button onClick={handleTryAgain} className="text-sm underline mt-1" style={{ color: 'rgba(156,175,136,0.7)' }}>Try again</button>
               </div>
             </div>
           )}
-          
+
           {!success && !error && (
             <div>
               <div id="qr-reader" className="w-full"></div>
-              <p className="text-center text-sm text-gray-600 mt-4">
+              <p className="text-center text-sm mt-4" style={{ color: 'rgba(156,175,136,0.7)' }}>
                 Point your camera at the QR code or upload an image
               </p>
             </div>

@@ -30,7 +30,6 @@ export default function DocumentLibrary({ onDocumentSelected, onViewDocumentInfo
     fetchDocuments();
   }, []);
 
-  // Refresh every time the component mounts or becomes active
   useEffect(() => {
     fetchDocuments();
     const handleFocus = () => fetchDocuments();
@@ -46,16 +45,13 @@ export default function DocumentLibrary({ onDocumentSelected, onViewDocumentInfo
     try {
       const data = await getLetters();
       setDocuments(data);
-      // Load statuses to determine completed/pending
       const statusResults = await Promise.all(data.map((l) => getStatusesForLetter(l.id)));
       const ids = new Set<string>();
       data.forEach((l, i) => {
         const s = statusResults[i];
         const hasReview = s.some(x => x.status_type === 'for review' || x.status_type === 'reviewed');
         const hasApproval = s.some(x => x.status_type === 'for approval' || x.status_type === 'approved');
-        // Completed = both review and approval done
         if (hasReview && hasApproval) ids.add(l.id);
-        // Fallback for old docs: if they have any status and no review/approval required
         else if (s.length > 0 && !hasReview && !hasApproval) ids.add(l.id);
       });
       setCompletedIds(ids);
@@ -141,6 +137,12 @@ export default function DocumentLibrary({ onDocumentSelected, onViewDocumentInfo
     }
   };
 
+  const glassInputStyle: React.CSSProperties = {
+    background: 'rgba(0,0,0,0.25)',
+    border: '1px solid rgba(156,175,136,0.2)',
+    color: '#DFF5E1',
+  };
+
   return (
     <>
     <div className="p-5">
@@ -148,85 +150,90 @@ export default function DocumentLibrary({ onDocumentSelected, onViewDocumentInfo
         <button
           onClick={onBack}
           className="mb-4 flex items-center gap-2 text-sm hover:opacity-80"
-          style={{ color: '#004526' }}
+          style={{ color: '#9CAF88' }}
         >
           <ArrowLeft className="w-4 h-4" />
           Back to Home
         </button>
 
-        <div className="bg-white rounded-lg shadow-lg p-5">
+        <div className="rounded-2xl p-5" style={{ background: 'rgba(0, 45, 20, 0.45)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)', border: '1px solid rgba(156,175,136,0.2)', boxShadow: '0 4px 24px rgba(0,0,0,0.25)' }}>
           <div className="flex items-center gap-2 mb-4">
-            <FileText className="w-6 h-6" style={{ color: '#004526' }} />
-            <h1 className="text-2xl font-bold" style={{ color: '#004526' }}>
+            <FileText className="w-6 h-6" style={{ color: '#9CAF88' }} />
+            <h1 className="text-2xl font-bold" style={{ color: '#DFF5E1' }}>
               {localStatusFilter === 'pending' ? 'Pending Documents' : localStatusFilter === 'completed' ? 'Completed Documents' : 'Document Library'}
             </h1>
           </div>
 
           <div className="space-y-3 mb-4">
             <div className="relative">
-              <Search className="absolute left-3 top-2.5 w-4 h-4 text-gray-400" />
+              <Search className="absolute left-3 top-2.5 w-4 h-4" style={{ color: 'rgba(156,175,136,0.5)' }} />
               <input
                 type="text"
                 placeholder="Search by reference, title, or subject..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-9 pr-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:border-transparent"
+                className="w-full pl-9 pr-3 py-2 text-sm rounded-lg focus:outline-none focus:ring-1 focus:ring-green-600"
+                style={{ ...glassInputStyle }}
               />
             </div>
 
             <div className="flex items-center gap-2">
-              <Filter className="w-4 h-4 text-gray-600" />
+              <Filter className="w-4 h-4" style={{ color: 'rgba(156,175,136,0.8)' }} />
               <select
                 value={typeFilter}
                 onChange={(e) => setTypeFilter(e.target.value)}
-                className="px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:border-transparent"
+                className="px-3 py-2 text-sm rounded-lg focus:outline-none"
+                style={{ ...glassInputStyle }}
               >
-                <option value="all">All Documents</option>
-                <option value="letter">Letters</option>
-                <option value="certificate">Certificates</option>
-                <option value="memo">Memos</option>
-                <option value="report">Reports</option>
-                <option value="disbursement_voucher">Disbursement Voucher</option>
-                <option value="other">Other</option>
+                <option value="all" style={{ background: '#002814' }}>All Documents</option>
+                <option value="letter" style={{ background: '#002814' }}>Letters</option>
+                <option value="certificate" style={{ background: '#002814' }}>Certificates</option>
+                <option value="memo" style={{ background: '#002814' }}>Memos</option>
+                <option value="report" style={{ background: '#002814' }}>Reports</option>
+                <option value="disbursement_voucher" style={{ background: '#002814' }}>Disbursement Voucher</option>
+                <option value="other" style={{ background: '#002814' }}>Other</option>
               </select>
               <select
                 value={localStatusFilter}
                 onChange={(e) => setLocalStatusFilter(e.target.value)}
-                className="px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:border-transparent"
+                className="px-3 py-2 text-sm rounded-lg focus:outline-none"
+                style={{ ...glassInputStyle }}
               >
-                <option value="all">All Status</option>
-                <option value="pending">Pending</option>
-                <option value="completed">Completed</option>
+                <option value="all" style={{ background: '#002814' }}>All Status</option>
+                <option value="pending" style={{ background: '#002814' }}>Pending</option>
+                <option value="completed" style={{ background: '#002814' }}>Completed</option>
               </select>
               <select
                 value={transmittalFilter}
                 onChange={(e) => setTransmittalFilter(e.target.value)}
-                className="px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:border-transparent"
+                className="px-3 py-2 text-sm rounded-lg focus:outline-none"
+                style={{ ...glassInputStyle }}
               >
-                <option value="all">All Transmittal</option>
-                <option value="incoming">Incoming</option>
-                <option value="outgoing">Outgoing</option>
+                <option value="all" style={{ background: '#002814' }}>All Transmittal</option>
+                <option value="incoming" style={{ background: '#002814' }}>Incoming</option>
+                <option value="outgoing" style={{ background: '#002814' }}>Outgoing</option>
               </select>
               <select
                 value={sortOrder}
                 onChange={(e) => setSortOrder(e.target.value)}
-                className="px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:border-transparent"
+                className="px-3 py-2 text-sm rounded-lg focus:outline-none"
+                style={{ ...glassInputStyle }}
               >
-                <option value="desc">Newest First</option>
-                <option value="asc">Oldest First</option>
+                <option value="desc" style={{ background: '#002814' }}>Newest First</option>
+                <option value="asc" style={{ background: '#002814' }}>Oldest First</option>
               </select>
             </div>
           </div>
 
           {loading ? (
             <div className="text-center py-8">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 mx-auto" style={{ borderColor: '#004526' }}></div>
-              <p className="mt-3 text-gray-600 text-sm">Loading documents...</p>
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 mx-auto" style={{ borderColor: '#9CAF88' }}></div>
+              <p className="mt-3 text-sm" style={{ color: 'rgba(156,175,136,0.8)' }}>Loading documents...</p>
             </div>
           ) : filteredDocuments.length === 0 ? (
             <div className="text-center py-8">
-              <FileText className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-              <p className="text-gray-600">
+              <FileText className="w-12 h-12 mx-auto mb-3" style={{ color: 'rgba(156,175,136,0.3)' }} />
+              <p style={{ color: 'rgba(223,245,225,0.6)' }}>
                 {documents.length === 0 ? 'No documents yet' : 'No documents match your search'}
               </p>
             </div>
@@ -240,15 +247,15 @@ export default function DocumentLibrary({ onDocumentSelected, onViewDocumentInfo
                 return (
                 <div
                   key={doc.id}
-                  className="rounded-xl border bg-white hover:shadow-lg transition-all duration-200"
-                  style={{ borderColor, borderLeftWidth: '4px' }}
+                  className="rounded-xl hover:shadow-lg transition-all duration-200"
+                  style={{ background: 'rgba(0,0,0,0.2)', border: `1px solid rgba(156,175,136,0.15)`, borderLeftWidth: '4px', borderLeftColor: borderColor }}
                 >
                   <div className="p-4">
                     {/* Top row: transmittal badge + ref number + date */}
                     <div className="flex items-center justify-between mb-2">
                       <div className="flex items-center gap-2">
                         {isReceiving && (
-                          <span className="flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-full" style={{ backgroundColor: '#DFF5E1', color: '#4a7c59', border: '1px solid #9CAF88' }}>
+                          <span className="flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-full" style={{ background: 'rgba(156,175,136,0.15)', color: '#9CAF88', border: '1px solid rgba(156,175,136,0.25)' }}>
                             <ArrowDownToLine className="w-3 h-3" />
                             Incoming
                           </span>
@@ -260,38 +267,38 @@ export default function DocumentLibrary({ onDocumentSelected, onViewDocumentInfo
                           </span>
                         )}
                         {!isReceiving && !isSending && (
-                          <span className="flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-full bg-gray-100 text-gray-500 border border-gray-200">
+                          <span className="flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-full" style={{ background: 'rgba(0,0,0,0.2)', color: 'rgba(156,175,136,0.6)', border: '1px solid rgba(156,175,136,0.15)' }}>
                             <FileText className="w-3 h-3" />
                             No Direction
                           </span>
                         )}
-                        <span className="text-xs text-gray-700 font-mono font-semibold">Ref No.: {doc.reference_number}</span>
+                        <span className="text-xs font-mono font-semibold" style={{ color: 'rgba(223,245,225,0.8)' }}>Ref No.: {doc.reference_number}</span>
                       </div>
-                      <div className="flex items-center gap-1 text-xs text-gray-400">
+                      <div className="flex items-center gap-1 text-xs" style={{ color: 'rgba(156,175,136,0.6)' }}>
                         <Calendar className="w-3 h-3" />
                         {new Date(doc.created_at).toLocaleDateString()}
                       </div>
                     </div>
 
                     {/* Title + subject */}
-                    <h3 className="font-bold text-gray-800 text-sm leading-snug mb-0.5">{doc.title}</h3>
+                    <h3 className="font-bold text-sm leading-snug mb-0.5" style={{ color: '#DFF5E1' }}>{doc.title}</h3>
                     {doc.document_subject && (
-                      <p className="text-xs text-gray-500 mb-2">{doc.document_subject}</p>
+                      <p className="text-xs mb-2" style={{ color: 'rgba(223,245,225,0.55)' }}>{doc.document_subject}</p>
                     )}
 
                     {/* Bottom row: type pill + status + actions */}
                     <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mt-3">
                       <div className="flex items-center gap-2 flex-wrap">
-                        <span className="text-xs font-medium px-2.5 py-1 rounded-full capitalize" style={{ backgroundColor: '#DFF5E1', color: '#004526' }}>
+                        <span className="text-xs font-medium px-2.5 py-1 rounded-full capitalize" style={{ background: 'rgba(156,175,136,0.15)', color: '#9CAF88', border: '1px solid rgba(156,175,136,0.25)' }}>
                           {doc.document_type}
                         </span>
                         {isCompleted ? (
-                          <span className="flex items-center gap-1 text-xs font-medium px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-600 border border-emerald-200">
+                          <span className="flex items-center gap-1 text-xs font-medium px-2.5 py-1 rounded-full" style={{ background: 'rgba(16,185,129,0.12)', color: '#6ee7b7', border: '1px solid rgba(16,185,129,0.25)' }}>
                             <CheckCircle2 className="w-3 h-3" />
                             Completed
                           </span>
                         ) : (
-                          <span className="flex items-center gap-1 text-xs font-medium px-2.5 py-1 rounded-full bg-amber-50 text-amber-600 border border-amber-200">
+                          <span className="flex items-center gap-1 text-xs font-medium px-2.5 py-1 rounded-full" style={{ background: 'rgba(251,191,36,0.1)', color: '#fcd34d', border: '1px solid rgba(251,191,36,0.25)' }}>
                             <Clock className="w-3 h-3" />
                             Pending
                           </span>
@@ -360,7 +367,7 @@ export default function DocumentLibrary({ onDocumentSelected, onViewDocumentInfo
             </div>
           )}
 
-          <div className="mt-4 pt-4 border-t border-gray-200 text-xs text-gray-600">
+          <div className="mt-4 pt-4 text-xs" style={{ borderTop: '1px solid rgba(156,175,136,0.15)', color: 'rgba(156,175,136,0.7)' }}>
             <p>
               {filteredDocuments.length} of {documents.length} document(s)
             </p>
@@ -373,8 +380,11 @@ export default function DocumentLibrary({ onDocumentSelected, onViewDocumentInfo
     {activityDoc && (
       <div className="fixed inset-0 z-50 flex justify-end">
         <div className="absolute inset-0 bg-black bg-opacity-40" onClick={() => setActivityDoc(null)} />
-        <div className="relative bg-white w-full max-w-md h-full shadow-2xl flex flex-col">
-          <div className="flex items-center justify-between px-5 py-4 border-b" style={{ backgroundColor: '#004526' }}>
+        <div
+          className="relative w-full max-w-md h-full flex flex-col"
+          style={{ background: 'rgba(0,40,18,0.92)', backdropFilter: 'blur(28px)', WebkitBackdropFilter: 'blur(28px)', borderLeft: '1px solid rgba(156,175,136,0.2)' }}
+        >
+          <div className="flex items-center justify-between px-5 py-4" style={{ backgroundColor: '#004526', borderBottom: '1px solid rgba(156,175,136,0.2)' }}>
             <div className="flex items-center gap-2 text-white">
               <ClipboardList className="w-5 h-5" />
               <div>
@@ -390,20 +400,20 @@ export default function DocumentLibrary({ onDocumentSelected, onViewDocumentInfo
           <div className="flex-1 overflow-y-auto p-5">
             {activityLoading ? (
               <div className="flex justify-center py-10">
-                <div className="animate-spin rounded-full h-7 w-7 border-b-2" style={{ borderColor: '#004526' }} />
+                <div className="animate-spin rounded-full h-7 w-7 border-b-2" style={{ borderColor: '#9CAF88' }} />
               </div>
             ) : activityLogs.length === 0 ? (
-              <div className="text-center py-10 text-gray-400">
-                <ClipboardList className="w-10 h-10 mx-auto mb-2 opacity-30" />
-                <p className="text-sm">No activity recorded yet</p>
+              <div className="text-center py-10">
+                <ClipboardList className="w-10 h-10 mx-auto mb-2" style={{ color: 'rgba(156,175,136,0.3)' }} />
+                <p className="text-sm" style={{ color: 'rgba(223,245,225,0.5)' }}>No activity recorded yet</p>
               </div>
             ) : (
-              <ol className="relative border-l-2 border-gray-200 ml-3 space-y-5">
+              <ol className="relative ml-3 space-y-5" style={{ borderLeft: '2px solid rgba(156,175,136,0.2)' }}>
                 {activityLogs.map((log) => (
                   <li key={log.id} className="ml-5">
-                    <span className="absolute -left-2 flex items-center justify-center w-4 h-4 rounded-full bg-white border-2" style={{ borderColor: '#004526' }} />
-                    <p className="text-sm font-medium text-gray-800">{log.description}</p>
-                    <p className="text-xs text-gray-400 mt-0.5">
+                    <span className="absolute -left-2 flex items-center justify-center w-4 h-4 rounded-full" style={{ background: 'rgba(0,40,18,0.92)', border: '2px solid #9CAF88' }} />
+                    <p className="text-sm font-medium" style={{ color: 'rgba(223,245,225,0.85)' }}>{log.description}</p>
+                    <p className="text-xs mt-0.5" style={{ color: 'rgba(156,175,136,0.6)' }}>
                       by {log.performed_by} · {new Date(log.created_at).toLocaleString()}
                     </p>
                   </li>
@@ -417,13 +427,13 @@ export default function DocumentLibrary({ onDocumentSelected, onViewDocumentInfo
 
     {confirmArchive && (
       <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-        <div className="bg-white rounded-lg shadow-xl p-6 max-w-sm w-full">
-          <h2 className="text-lg font-bold text-gray-900 mb-2">Archive Document</h2>
-          <p className="text-gray-600 mb-1">Are you sure you want to archive:</p>
-          <p className="font-semibold text-gray-900 mb-4">"{confirmArchive.title}"</p>
-          <p className="text-sm text-yellow-600 mb-6">The document will be moved to the Archive page.</p>
+        <div className="rounded-2xl p-6 max-w-sm w-full" style={{ background: 'rgba(0, 40, 18, 0.88)', backdropFilter: 'blur(28px)', WebkitBackdropFilter: 'blur(28px)', border: '1px solid rgba(156,175,136,0.2)', boxShadow: '0 4px 24px rgba(0,0,0,0.4)' }}>
+          <h2 className="text-lg font-bold mb-2" style={{ color: '#DFF5E1' }}>Archive Document</h2>
+          <p className="mb-1" style={{ color: 'rgba(223,245,225,0.65)' }}>Are you sure you want to archive:</p>
+          <p className="font-semibold mb-4" style={{ color: '#DFF5E1' }}>"{confirmArchive.title}"</p>
+          <p className="text-sm mb-6" style={{ color: '#fcd34d' }}>The document will be moved to the Archive page.</p>
           <div className="flex gap-3">
-            <button onClick={() => setConfirmArchive(null)} className="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors">Cancel</button>
+            <button onClick={() => setConfirmArchive(null)} className="flex-1 px-4 py-2 rounded-lg transition-colors" style={{ background: 'rgba(0,0,0,0.25)', border: '1px solid rgba(156,175,136,0.2)', color: 'rgba(223,245,225,0.65)' }}>Cancel</button>
             <button onClick={handleArchiveConfirmed} className="flex-1 px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 transition-colors">Yes, Archive</button>
           </div>
         </div>

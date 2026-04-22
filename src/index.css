@@ -5,3 +5,27 @@
 * {
   font-family: Arial, sans-serif;
 }
+
+/* ── Custom scrollbar ── */
+::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(156, 175, 136, 0.25);
+  border-radius: 99px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(156, 175, 136, 0.45);
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(156, 175, 136, 0.25) transparent;
+}

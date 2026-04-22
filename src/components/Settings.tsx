@@ -89,7 +89,6 @@ export default function Settings() {
     saveSettings(settings);
     setSaved(true);
     setTimeout(() => setSaved(false), 2000);
-    // Apply primary color CSS variable
     document.documentElement.style.setProperty('--color-primary', settings.primaryColor);
     document.documentElement.style.setProperty('--color-secondary', settings.secondaryColor);
   };
@@ -152,15 +151,21 @@ export default function Settings() {
     }
   };
 
+  const glassInputStyle: React.CSSProperties = {
+    background: 'rgba(0,0,0,0.25)',
+    border: '1px solid rgba(156,175,136,0.2)',
+    color: '#DFF5E1',
+  };
+
   return (
     <div className="p-5 max-w-3xl mx-auto">
       <div className="flex items-center gap-2 mb-5">
-        <SettingsIcon className="w-6 h-6" style={{ color: '#004526' }} />
-        <h1 className="text-2xl font-bold" style={{ color: '#004526' }}>Settings</h1>
+        <SettingsIcon className="w-6 h-6" style={{ color: '#9CAF88' }} />
+        <h1 className="text-2xl font-bold" style={{ color: '#DFF5E1' }}>Settings</h1>
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-1 mb-5 bg-white rounded-lg shadow p-1">
+      <div className="flex gap-1 mb-5 rounded-xl p-1" style={{ background: 'rgba(0,45,20,0.35)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)', border: '1px solid rgba(156,175,136,0.2)' }}>
         {tabs.map(({ id, label, icon: Icon }) => (
           <button
             key={id}
@@ -168,7 +173,7 @@ export default function Settings() {
             className="flex-1 flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg text-xs font-medium transition-all"
             style={{
               backgroundColor: tab === id ? '#004526' : 'transparent',
-              color: tab === id ? 'white' : '#004526',
+              color: tab === id ? 'white' : 'rgba(223,245,225,0.6)',
             }}
           >
             <Icon className="w-3.5 h-3.5" />
@@ -177,56 +182,61 @@ export default function Settings() {
         ))}
       </div>
 
-      <div className="bg-white rounded-lg shadow-lg p-5">
+      <div className="rounded-2xl p-5" style={{ background: 'rgba(0, 45, 20, 0.45)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)', border: '1px solid rgba(156,175,136,0.2)', boxShadow: '0 4px 24px rgba(0,0,0,0.25)' }}>
 
         {/* Office Info */}
         {tab === 'office' && (
           <div className="space-y-4">
-            <h2 className="text-base font-bold mb-4" style={{ color: '#004526' }}>Office Information</h2>
+            <h2 className="text-base font-bold mb-4" style={{ color: '#DFF5E1' }}>Office Information</h2>
 
             <div>
-              <label className="block text-xs font-medium text-gray-700 mb-1">Office Name</label>
+              <label className="block text-xs font-medium mb-1" style={{ color: 'rgba(156,175,136,0.85)' }}>Office Name</label>
               <input type="text" value={settings.officeName} onChange={(e) => update('officeName', e.target.value)}
-                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:border-transparent" />
+                className="w-full px-3 py-2 text-sm rounded-lg focus:outline-none focus:ring-1 focus:ring-green-600" style={{ ...glassInputStyle }} />
             </div>
             <div>
-              <label className="block text-xs font-medium text-gray-700 mb-1">Province / Region</label>
+              <label className="block text-xs font-medium mb-1" style={{ color: 'rgba(156,175,136,0.85)' }}>Province / Region</label>
               <input type="text" value={settings.province} onChange={(e) => update('province', e.target.value)}
-                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:border-transparent" />
+                className="w-full px-3 py-2 text-sm rounded-lg focus:outline-none focus:ring-1 focus:ring-green-600" style={{ ...glassInputStyle }} />
             </div>
             <div>
-              <label className="block text-xs font-medium text-gray-700 mb-1">Address</label>
+              <label className="block text-xs font-medium mb-1" style={{ color: 'rgba(156,175,136,0.85)' }}>Address</label>
               <input type="text" value={settings.address} onChange={(e) => update('address', e.target.value)}
-                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:border-transparent" />
+                className="w-full px-3 py-2 text-sm rounded-lg focus:outline-none focus:ring-1 focus:ring-green-600" style={{ ...glassInputStyle }} />
             </div>
             <div>
-              <label className="block text-xs font-medium text-gray-700 mb-1">Office Email</label>
+              <label className="block text-xs font-medium mb-1" style={{ color: 'rgba(156,175,136,0.85)' }}>Office Email</label>
               <input type="email" value={settings.email} onChange={(e) => update('email', e.target.value)}
-                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:border-transparent" />
+                className="w-full px-3 py-2 text-sm rounded-lg focus:outline-none focus:ring-1 focus:ring-green-600" style={{ ...glassInputStyle }} />
             </div>
 
             {/* Logo Upload */}
-            <div className="border-t pt-4">
-              <p className="text-xs font-semibold text-gray-700 mb-3 uppercase tracking-wide">Logos</p>
+            <div className="pt-4" style={{ borderTop: '1px solid rgba(156,175,136,0.15)' }}>
+              <p className="text-xs font-semibold mb-3 uppercase tracking-wide" style={{ color: 'rgba(156,175,136,0.85)' }}>Logos</p>
               <div className="grid grid-cols-2 gap-4">
                 {(['logo1', 'logo2'] as const).map((key, i) => (
                   <div key={key}>
-                    <label className="block text-xs font-medium text-gray-700 mb-2">Logo {i + 1}</label>
-                    <div className="border-2 border-dashed border-gray-300 rounded-lg p-3 text-center hover:border-green-400 transition-colors cursor-pointer"
-                      onClick={() => (key === 'logo1' ? logo1Ref : logo2Ref).current?.click()}>
+                    <label className="block text-xs font-medium mb-2" style={{ color: 'rgba(156,175,136,0.85)' }}>Logo {i + 1}</label>
+                    <div
+                      className="border-2 border-dashed rounded-lg p-3 text-center transition-colors cursor-pointer"
+                      style={{ background: 'rgba(0,0,0,0.2)', borderColor: 'rgba(156,175,136,0.3)' }}
+                      onMouseEnter={(e) => (e.currentTarget.style.borderColor = 'rgba(156,175,136,0.6)')}
+                      onMouseLeave={(e) => (e.currentTarget.style.borderColor = 'rgba(156,175,136,0.3)')}
+                      onClick={() => (key === 'logo1' ? logo1Ref : logo2Ref).current?.click()}
+                    >
                       {settings[key] ? (
                         <img src={settings[key]} alt={`Logo ${i + 1}`} className="w-16 h-16 object-contain mx-auto rounded-full" />
                       ) : (
                         <div className="flex flex-col items-center gap-1 py-2">
-                          <Upload className="w-6 h-6 text-gray-400" />
-                          <p className="text-xs text-gray-500">Click to upload</p>
+                          <Upload className="w-6 h-6" style={{ color: 'rgba(156,175,136,0.5)' }} />
+                          <p className="text-xs" style={{ color: 'rgba(156,175,136,0.6)' }}>Click to upload</p>
                         </div>
                       )}
                     </div>
                     <input ref={key === 'logo1' ? logo1Ref : logo2Ref} type="file" accept="image/*" className="hidden"
                       onChange={(e) => { const f = e.target.files?.[0]; if (f) handleLogoUpload(key, f); }} />
                     {settings[key] && (
-                      <button onClick={() => update(key, '')} className="text-xs text-red-500 mt-1 hover:underline">Remove</button>
+                      <button onClick={() => update(key, '')} className="text-xs mt-1 hover:underline" style={{ color: '#fca5a5' }}>Remove</button>
                     )}
                   </div>
                 ))}
@@ -238,52 +248,52 @@ export default function Settings() {
         {/* Theme */}
         {tab === 'theme' && (
           <div className="space-y-4">
-            <h2 className="text-base font-bold mb-4" style={{ color: '#004526' }}>System Theme</h2>
+            <h2 className="text-base font-bold mb-4" style={{ color: '#DFF5E1' }}>System Theme</h2>
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-xs font-medium text-gray-700 mb-2">Primary Color</label>
+                <label className="block text-xs font-medium mb-2" style={{ color: 'rgba(156,175,136,0.85)' }}>Primary Color</label>
                 <div className="flex items-center gap-3">
                   <input type="color" value={settings.primaryColor} onChange={(e) => update('primaryColor', e.target.value)}
-                    className="w-12 h-10 rounded cursor-pointer border border-gray-300" />
+                    className="w-12 h-10 rounded cursor-pointer" style={{ border: '1px solid rgba(156,175,136,0.2)' }} />
                   <input type="text" value={settings.primaryColor} onChange={(e) => update('primaryColor', e.target.value)}
-                    className="flex-1 px-3 py-2 text-sm border border-gray-300 rounded-lg" />
+                    className="flex-1 px-3 py-2 text-sm rounded-lg focus:outline-none" style={{ ...glassInputStyle }} />
                 </div>
                 <div className="mt-2 h-8 rounded-lg" style={{ backgroundColor: settings.primaryColor }}></div>
               </div>
               <div>
-                <label className="block text-xs font-medium text-gray-700 mb-2">Secondary Color</label>
+                <label className="block text-xs font-medium mb-2" style={{ color: 'rgba(156,175,136,0.85)' }}>Secondary Color</label>
                 <div className="flex items-center gap-3">
                   <input type="color" value={settings.secondaryColor} onChange={(e) => update('secondaryColor', e.target.value)}
-                    className="w-12 h-10 rounded cursor-pointer border border-gray-300" />
+                    className="w-12 h-10 rounded cursor-pointer" style={{ border: '1px solid rgba(156,175,136,0.2)' }} />
                   <input type="text" value={settings.secondaryColor} onChange={(e) => update('secondaryColor', e.target.value)}
-                    className="flex-1 px-3 py-2 text-sm border border-gray-300 rounded-lg" />
+                    className="flex-1 px-3 py-2 text-sm rounded-lg focus:outline-none" style={{ ...glassInputStyle }} />
                 </div>
                 <div className="mt-2 h-8 rounded-lg" style={{ backgroundColor: settings.secondaryColor }}></div>
               </div>
             </div>
-            <p className="text-xs text-gray-500 mt-2">Note: Color changes apply after saving and refreshing the page.</p>
+            <p className="text-xs mt-2" style={{ color: 'rgba(156,175,136,0.6)' }}>Note: Color changes apply after saving and refreshing the page.</p>
           </div>
         )}
 
         {/* Cloudinary */}
         {tab === 'cloudinary' && (
           <div className="space-y-4">
-            <h2 className="text-base font-bold mb-4" style={{ color: '#004526' }}>Cloudinary Configuration</h2>
-            <p className="text-xs text-gray-500 mb-4">Used for storing uploaded document files in the cloud. Get your credentials from <a href="https://cloudinary.com/console" target="_blank" rel="noreferrer" className="underline" style={{ color: '#004526' }}>cloudinary.com/console</a>.</p>
+            <h2 className="text-base font-bold mb-4" style={{ color: '#DFF5E1' }}>Cloudinary Configuration</h2>
+            <p className="text-xs mb-4" style={{ color: 'rgba(156,175,136,0.6)' }}>Used for storing uploaded document files in the cloud. Get your credentials from <a href="https://cloudinary.com/console" target="_blank" rel="noreferrer" className="underline" style={{ color: '#9CAF88' }}>cloudinary.com/console</a>.</p>
             <div>
-              <label className="block text-xs font-medium text-gray-700 mb-1">Cloud Name</label>
+              <label className="block text-xs font-medium mb-1" style={{ color: 'rgba(156,175,136,0.85)' }}>Cloud Name</label>
               <input type="text" value={settings.cloudName} onChange={(e) => update('cloudName', e.target.value)}
-                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg" placeholder="e.g. domyoqsab" />
+                className="w-full px-3 py-2 text-sm rounded-lg focus:outline-none" style={{ ...glassInputStyle }} placeholder="e.g. domyoqsab" />
             </div>
             <div>
-              <label className="block text-xs font-medium text-gray-700 mb-1">API Key</label>
+              <label className="block text-xs font-medium mb-1" style={{ color: 'rgba(156,175,136,0.85)' }}>API Key</label>
               <input type="text" value={settings.apiKey} onChange={(e) => update('apiKey', e.target.value)}
-                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg" placeholder="e.g. 284873166776179" />
+                className="w-full px-3 py-2 text-sm rounded-lg focus:outline-none" style={{ ...glassInputStyle }} placeholder="e.g. 284873166776179" />
             </div>
             <div>
-              <label className="block text-xs font-medium text-gray-700 mb-1">API Secret</label>
+              <label className="block text-xs font-medium mb-1" style={{ color: 'rgba(156,175,136,0.85)' }}>API Secret</label>
               <input type="password" value={settings.apiSecret} onChange={(e) => update('apiSecret', e.target.value)}
-                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg" placeholder="••••••••••••" />
+                className="w-full px-3 py-2 text-sm rounded-lg focus:outline-none" style={{ ...glassInputStyle }} placeholder="••••••••••••" />
             </div>
           </div>
         )}
@@ -292,8 +302,14 @@ export default function Settings() {
         {tab === 'activitylog' && (
           <div>
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-base font-bold" style={{ color: '#004526' }}>System Activity Log</h2>
-              <button onClick={fetchLogs} className="flex items-center gap-1 text-xs px-3 py-1.5 rounded-lg border border-gray-300 hover:bg-gray-50 transition-colors">
+              <h2 className="text-base font-bold" style={{ color: '#DFF5E1' }}>System Activity Log</h2>
+              <button
+                onClick={fetchLogs}
+                className="flex items-center gap-1 text-xs px-3 py-1.5 rounded-lg transition-colors"
+                style={{ background: 'rgba(0,0,0,0.25)', border: '1px solid rgba(156,175,136,0.2)', color: 'rgba(223,245,225,0.65)' }}
+                onMouseEnter={(e) => (e.currentTarget.style.background = 'rgba(156,175,136,0.1)')}
+                onMouseLeave={(e) => (e.currentTarget.style.background = 'rgba(0,0,0,0.25)')}
+              >
                 <RefreshCw className="w-3 h-3" />
                 Refresh
               </button>
@@ -302,55 +318,63 @@ export default function Settings() {
             {/* Filter + Search */}
             <div className="flex flex-col sm:flex-row gap-2 mb-4">
               <div className="relative flex-1">
-                <Search className="absolute left-3 top-2.5 w-3.5 h-3.5 text-gray-400" />
+                <Search className="absolute left-3 top-2.5 w-3.5 h-3.5" style={{ color: 'rgba(156,175,136,0.5)' }} />
                 <input
                   type="text"
                   placeholder="Search description, user, reference..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-8 pr-3 py-2 text-xs border border-gray-300 rounded-lg focus:ring-2 focus:border-transparent"
+                  className="w-full pl-8 pr-3 py-2 text-xs rounded-lg focus:outline-none"
+                  style={{ ...glassInputStyle }}
                 />
               </div>
               <select
                 value={actionFilter}
                 onChange={(e) => setActionFilter(e.target.value)}
-                className="px-3 py-2 text-xs border border-gray-300 rounded-lg sm:w-40"
+                className="px-3 py-2 text-xs rounded-lg sm:w-40 focus:outline-none"
+                style={{ ...glassInputStyle }}
               >
-                <option value="">All Actions</option>
+                <option value="" style={{ background: '#002814' }}>All Actions</option>
                 {Object.entries(ACTION_LABELS).map(([key, { label }]) => (
-                  <option key={key} value={key}>{label}</option>
+                  <option key={key} value={key} style={{ background: '#002814' }}>{label}</option>
                 ))}
               </select>
             </div>
 
             {logsLoading ? (
               <div className="flex justify-center py-10">
-                <div className="animate-spin rounded-full h-7 w-7 border-b-2" style={{ borderColor: '#004526' }} />
+                <div className="animate-spin rounded-full h-7 w-7 border-b-2" style={{ borderColor: '#9CAF88' }} />
               </div>
             ) : filteredLogs.length === 0 ? (
-              <div className="text-center py-10 text-gray-400">
-                <ClipboardList className="w-10 h-10 mx-auto mb-2 opacity-30" />
-                <p className="text-sm">No activity recorded yet</p>
+              <div className="text-center py-10">
+                <ClipboardList className="w-10 h-10 mx-auto mb-2" style={{ color: 'rgba(156,175,136,0.3)' }} />
+                <p className="text-sm" style={{ color: 'rgba(223,245,225,0.5)' }}>No activity recorded yet</p>
               </div>
             ) : (
               <div className="space-y-2 max-h-[520px] overflow-y-auto pr-1">
                 {filteredLogs.map((log) => {
                   const badge = ACTION_LABELS[log.action] ?? { label: log.action, color: 'bg-gray-100 text-gray-600' };
                   return (
-                    <div key={log.id} className="flex gap-3 p-3 rounded-lg border border-gray-100 hover:bg-gray-50 transition-colors">
+                    <div
+                      key={log.id}
+                      className="flex gap-3 p-3 rounded-lg transition-colors"
+                      style={{ border: '1px solid rgba(156,175,136,0.1)' }}
+                      onMouseEnter={(e) => (e.currentTarget.style.background = 'rgba(156,175,136,0.08)')}
+                      onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
+                    >
                       <div className="flex-shrink-0 mt-0.5">
                         <span className={`inline-block text-xs px-2 py-0.5 rounded font-medium ${badge.color}`}>
                           {badge.label}
                         </span>
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm text-gray-800">{log.description}</p>
+                        <p className="text-sm" style={{ color: 'rgba(223,245,225,0.85)' }}>{log.description}</p>
                         {(log.reference_number || log.title) && (
-                          <p className="text-xs text-gray-400 truncate mt-0.5">
+                          <p className="text-xs truncate mt-0.5" style={{ color: 'rgba(156,175,136,0.55)' }}>
                             {log.reference_number} {log.title ? `— ${log.title}` : ''}
                           </p>
                         )}
-                        <p className="text-xs text-gray-400 mt-0.5">
+                        <p className="text-xs mt-0.5" style={{ color: 'rgba(156,175,136,0.6)' }}>
                           by {log.performed_by} · {new Date(log.created_at).toLocaleString()}
                         </p>
                       </div>
@@ -360,35 +384,44 @@ export default function Settings() {
               </div>
             )}
 
-            <p className="text-xs text-gray-400 mt-3">{filteredLogs.length} record(s)</p>
+            <p className="text-xs mt-3" style={{ color: 'rgba(156,175,136,0.6)' }}>{filteredLogs.length} record(s)</p>
           </div>
         )}
 
         {/* Change Password */}
         {tab === 'password' && (
           <div className="space-y-4 max-w-sm">
-            <h2 className="text-base font-bold mb-4" style={{ color: '#004526' }}>Change Password</h2>
-            <p className="text-xs text-gray-500">Changing password for: <span className="font-semibold">{localStorage.getItem('dts_username') || 'staff'}</span></p>
+            <h2 className="text-base font-bold mb-4" style={{ color: '#DFF5E1' }}>Change Password</h2>
+            <p className="text-xs" style={{ color: 'rgba(156,175,136,0.7)' }}>Changing password for: <span className="font-semibold" style={{ color: '#DFF5E1' }}>{localStorage.getItem('dts_username') || 'staff'}</span></p>
 
-            {pwError && <p className="text-xs text-red-600 bg-red-50 px-3 py-2 rounded-lg">{pwError}</p>}
-            {pwSuccess && <p className="text-xs text-green-700 bg-green-50 px-3 py-2 rounded-lg flex items-center gap-1"><Check className="w-3.5 h-3.5" /> Password changed successfully.</p>}
+            {pwError && (
+              <p className="text-xs px-3 py-2 rounded-lg" style={{ color: '#fca5a5', background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.2)' }}>{pwError}</p>
+            )}
+            {pwSuccess && (
+              <p className="text-xs px-3 py-2 rounded-lg flex items-center gap-1" style={{ color: '#6ee7b7', background: 'rgba(16,185,129,0.1)', border: '1px solid rgba(16,185,129,0.2)' }}>
+                <Check className="w-3.5 h-3.5" /> Password changed successfully.
+              </p>
+            )}
 
             <div>
-              <label className="block text-xs font-medium text-gray-700 mb-1">Current Password</label>
+              <label className="block text-xs font-medium mb-1" style={{ color: 'rgba(156,175,136,0.85)' }}>Current Password</label>
               <input type="password" value={pwCurrent} onChange={(e) => setPwCurrent(e.target.value)}
-                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:border-transparent"
+                className="w-full px-3 py-2 text-sm rounded-lg focus:outline-none focus:ring-1 focus:ring-green-600"
+                style={{ ...glassInputStyle }}
                 placeholder="••••••••" />
             </div>
             <div>
-              <label className="block text-xs font-medium text-gray-700 mb-1">New Password</label>
+              <label className="block text-xs font-medium mb-1" style={{ color: 'rgba(156,175,136,0.85)' }}>New Password</label>
               <input type="password" value={pwNew} onChange={(e) => setPwNew(e.target.value)}
-                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:border-transparent"
+                className="w-full px-3 py-2 text-sm rounded-lg focus:outline-none focus:ring-1 focus:ring-green-600"
+                style={{ ...glassInputStyle }}
                 placeholder="Min. 6 characters" />
             </div>
             <div>
-              <label className="block text-xs font-medium text-gray-700 mb-1">Confirm New Password</label>
+              <label className="block text-xs font-medium mb-1" style={{ color: 'rgba(156,175,136,0.85)' }}>Confirm New Password</label>
               <input type="password" value={pwConfirm} onChange={(e) => setPwConfirm(e.target.value)}
-                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:border-transparent"
+                className="w-full px-3 py-2 text-sm rounded-lg focus:outline-none focus:ring-1 focus:ring-green-600"
+                style={{ ...glassInputStyle }}
                 placeholder="••••••••" />
             </div>
 
@@ -407,7 +440,7 @@ export default function Settings() {
         {/* About */}
         {tab === 'about' && (
           <div className="space-y-4">
-            <h2 className="text-base font-bold mb-4" style={{ color: '#004526' }}>About</h2>
+            <h2 className="text-base font-bold mb-4" style={{ color: '#DFF5E1' }}>About</h2>
             <div className="space-y-3">
               {[
                 { label: 'System Name', value: 'DocuTrack' },
@@ -418,9 +451,9 @@ export default function Settings() {
                 { label: 'File Storage', value: 'Cloudinary' },
                 { label: 'Built with', value: 'React + TypeScript + Vite' },
               ].map(({ label, value }) => (
-                <div key={label} className="flex justify-between py-2 border-b border-gray-100 text-sm">
-                  <span className="text-gray-500 text-xs">{label}</span>
-                  <span className="font-medium text-xs" style={{ color: '#004526' }}>{value}</span>
+                <div key={label} className="flex justify-between py-2 text-sm" style={{ borderBottom: '1px solid rgba(156,175,136,0.12)' }}>
+                  <span className="text-xs" style={{ color: 'rgba(156,175,136,0.7)' }}>{label}</span>
+                  <span className="font-medium text-xs" style={{ color: '#9CAF88' }}>{value}</span>
                 </div>
               ))}
             </div>

@@ -77,87 +77,94 @@ export default function Archive({ onBack, onDocumentSelected }: ArchiveProps) {
     }
   };
 
+  const glassInputStyle: React.CSSProperties = {
+    background: 'rgba(0,0,0,0.25)',
+    border: '1px solid rgba(156,175,136,0.2)',
+    color: '#DFF5E1',
+  };
+
   return (
     <>
     <div className="p-5">
       <div className="max-w-5xl mx-auto">
-        <button onClick={onBack} className="mb-4 flex items-center gap-2 text-sm hover:opacity-80" style={{ color: '#004526' }}>
+        <button onClick={onBack} className="mb-4 flex items-center gap-2 text-sm hover:opacity-80" style={{ color: '#9CAF88' }}>
           <ArrowLeft className="w-4 h-4" />
           Back
         </button>
 
-        <div className="bg-white rounded-lg shadow-lg p-5">
+        <div className="rounded-2xl p-5" style={{ background: 'rgba(0, 45, 20, 0.45)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)', border: '1px solid rgba(156,175,136,0.2)', boxShadow: '0 4px 24px rgba(0,0,0,0.25)' }}>
           <div className="flex items-center gap-2 mb-4">
-            <FileText className="w-6 h-6" style={{ color: '#004526' }} />
-            <h1 className="text-2xl font-bold" style={{ color: '#004526' }}>Archive</h1>
+            <FileText className="w-6 h-6" style={{ color: '#9CAF88' }} />
+            <h1 className="text-2xl font-bold" style={{ color: '#DFF5E1' }}>Archive</h1>
           </div>
 
           {/* Filters */}
           <div className="space-y-3 mb-4">
             <div className="relative">
-              <Search className="absolute left-3 top-2.5 w-4 h-4 text-gray-400" />
+              <Search className="absolute left-3 top-2.5 w-4 h-4" style={{ color: 'rgba(156,175,136,0.5)' }} />
               <input
                 type="text"
                 placeholder="Search by reference, title, or subject..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-9 pr-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:border-transparent"
+                className="w-full pl-9 pr-3 py-2 text-sm rounded-lg focus:outline-none focus:ring-1 focus:ring-green-600"
+                style={{ ...glassInputStyle }}
               />
             </div>
             <div className="flex flex-wrap items-center gap-2">
-              <Filter className="w-4 h-4 text-gray-600" />
-              <select value={typeFilter} onChange={(e) => setTypeFilter(e.target.value)} className="px-3 py-2 text-sm border border-gray-300 rounded-lg">
-                <option value="all">All Types</option>
-                <option value="letter">Letters</option>
-                <option value="certificate">Certificates</option>
-                <option value="memo">Memos</option>
-                <option value="report">Reports</option>
-                <option value="disbursement_voucher">Disbursement Voucher</option>
-                <option value="other">Other</option>
+              <Filter className="w-4 h-4" style={{ color: 'rgba(156,175,136,0.8)' }} />
+              <select value={typeFilter} onChange={(e) => setTypeFilter(e.target.value)} className="px-3 py-2 text-sm rounded-lg focus:outline-none" style={{ ...glassInputStyle }}>
+                <option value="all" style={{ background: '#002814' }}>All Types</option>
+                <option value="letter" style={{ background: '#002814' }}>Letters</option>
+                <option value="certificate" style={{ background: '#002814' }}>Certificates</option>
+                <option value="memo" style={{ background: '#002814' }}>Memos</option>
+                <option value="report" style={{ background: '#002814' }}>Reports</option>
+                <option value="disbursement_voucher" style={{ background: '#002814' }}>Disbursement Voucher</option>
+                <option value="other" style={{ background: '#002814' }}>Other</option>
               </select>
-              <select value={sortBy} onChange={(e) => setSortBy(e.target.value as 'archived_at' | 'created_at')} className="px-3 py-2 text-sm border border-gray-300 rounded-lg">
-                <option value="archived_at">Sort by Archived Date</option>
-                <option value="created_at">Sort by Created Date</option>
+              <select value={sortBy} onChange={(e) => setSortBy(e.target.value as 'archived_at' | 'created_at')} className="px-3 py-2 text-sm rounded-lg focus:outline-none" style={{ ...glassInputStyle }}>
+                <option value="archived_at" style={{ background: '#002814' }}>Sort by Archived Date</option>
+                <option value="created_at" style={{ background: '#002814' }}>Sort by Created Date</option>
               </select>
-              <select value={sortOrder} onChange={(e) => setSortOrder(e.target.value)} className="px-3 py-2 text-sm border border-gray-300 rounded-lg">
-                <option value="desc">Newest First</option>
-                <option value="asc">Oldest First</option>
+              <select value={sortOrder} onChange={(e) => setSortOrder(e.target.value)} className="px-3 py-2 text-sm rounded-lg focus:outline-none" style={{ ...glassInputStyle }}>
+                <option value="desc" style={{ background: '#002814' }}>Newest First</option>
+                <option value="asc" style={{ background: '#002814' }}>Oldest First</option>
               </select>
             </div>
           </div>
 
           {loading ? (
             <div className="text-center py-8">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 mx-auto" style={{ borderColor: '#004526' }}></div>
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 mx-auto" style={{ borderColor: '#9CAF88' }}></div>
             </div>
           ) : filtered.length === 0 ? (
             <div className="text-center py-8">
-              <FileText className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-              <p className="text-gray-600">{documents.length === 0 ? 'No archived documents' : 'No documents match your search'}</p>
+              <FileText className="w-12 h-12 mx-auto mb-3" style={{ color: 'rgba(156,175,136,0.3)' }} />
+              <p style={{ color: 'rgba(223,245,225,0.6)' }}>{documents.length === 0 ? 'No archived documents' : 'No documents match your search'}</p>
             </div>
           ) : (
             <div className="space-y-3">
               {filtered.map((doc) => (
-                <div key={doc.id} className="border border-gray-200 rounded-lg p-3 hover:shadow-md transition-shadow bg-gray-50">
+                <div key={doc.id} className="rounded-xl p-3 hover:shadow-md transition-shadow" style={{ background: 'rgba(0,0,0,0.2)', border: '1px solid rgba(156,175,136,0.15)' }}>
                   <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                     <div className="flex-1 min-w-0">
                       <div className="flex items-start gap-2 mb-1">
-                        <FileText className="w-5 h-5 mt-0.5 flex-shrink-0 text-gray-400" />
+                        <FileText className="w-5 h-5 mt-0.5 flex-shrink-0" style={{ color: 'rgba(156,175,136,0.5)' }} />
                         <div className="min-w-0">
-                          <p className="text-xs font-medium text-gray-500">{doc.reference_number}</p>
-                          <h3 className="font-semibold text-gray-700 break-words text-sm">{doc.title}</h3>
+                          <p className="text-xs font-medium" style={{ color: 'rgba(156,175,136,0.7)' }}>{doc.reference_number}</p>
+                          <h3 className="font-semibold break-words text-sm" style={{ color: '#DFF5E1' }}>{doc.title}</h3>
                         </div>
                       </div>
                       {doc.document_subject && (
-                        <p className="text-xs text-gray-500 ml-7">{doc.document_subject}</p>
+                        <p className="text-xs ml-7" style={{ color: 'rgba(223,245,225,0.55)' }}>{doc.document_subject}</p>
                       )}
                       <div className="flex flex-wrap gap-1 mt-2 ml-7">
-                        <span className="inline-block text-xs px-2 py-0.5 rounded bg-gray-200 text-gray-600">{doc.document_type}</span>
-                        <span className="inline-block text-xs px-2 py-0.5 rounded bg-gray-100 text-gray-500">
+                        <span className="inline-block text-xs px-2 py-0.5 rounded" style={{ background: 'rgba(156,175,136,0.15)', color: '#9CAF88' }}>{doc.document_type}</span>
+                        <span className="inline-block text-xs px-2 py-0.5 rounded" style={{ background: 'rgba(0,0,0,0.2)', color: 'rgba(156,175,136,0.7)' }}>
                           Created: {new Date(doc.created_at).toLocaleDateString()}
                         </span>
                         {doc.archived_at && (
-                          <span className="inline-block text-xs px-2 py-0.5 rounded bg-yellow-100 text-yellow-700">
+                          <span className="inline-block text-xs px-2 py-0.5 rounded" style={{ background: 'rgba(251,191,36,0.12)', color: '#fcd34d' }}>
                             Archived: {new Date(doc.archived_at).toLocaleDateString()}
                           </span>
                         )}
@@ -212,7 +219,7 @@ export default function Archive({ onBack, onDocumentSelected }: ArchiveProps) {
             </div>
           )}
 
-          <div className="mt-4 pt-4 border-t border-gray-200 text-xs text-gray-600">
+          <div className="mt-4 pt-4 text-xs" style={{ borderTop: '1px solid rgba(156,175,136,0.15)', color: 'rgba(156,175,136,0.7)' }}>
             {filtered.length} of {documents.length} archived document(s)
           </div>
         </div>
@@ -221,13 +228,13 @@ export default function Archive({ onBack, onDocumentSelected }: ArchiveProps) {
 
     {confirmRestore && (
       <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-        <div className="bg-white rounded-lg shadow-xl p-6 max-w-sm w-full">
-          <h2 className="text-lg font-bold text-gray-900 mb-2">Restore Document</h2>
-          <p className="text-gray-600 mb-1">Are you sure you want to restore:</p>
-          <p className="font-semibold text-gray-900 mb-4">"{confirmRestore.title}"</p>
-          <p className="text-sm text-green-600 mb-6">This will move it back to the Document Library.</p>
+        <div className="rounded-2xl p-6 max-w-sm w-full" style={{ background: 'rgba(0, 40, 18, 0.88)', backdropFilter: 'blur(28px)', WebkitBackdropFilter: 'blur(28px)', border: '1px solid rgba(156,175,136,0.2)', boxShadow: '0 4px 24px rgba(0,0,0,0.4)' }}>
+          <h2 className="text-lg font-bold mb-2" style={{ color: '#DFF5E1' }}>Restore Document</h2>
+          <p className="mb-1" style={{ color: 'rgba(223,245,225,0.65)' }}>Are you sure you want to restore:</p>
+          <p className="font-semibold mb-4" style={{ color: '#DFF5E1' }}>"{confirmRestore.title}"</p>
+          <p className="text-sm mb-6" style={{ color: '#9CAF88' }}>This will move it back to the Document Library.</p>
           <div className="flex gap-3">
-            <button onClick={() => setConfirmRestore(null)} className="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50">Cancel</button>
+            <button onClick={() => setConfirmRestore(null)} className="flex-1 px-4 py-2 rounded-lg transition-colors" style={{ background: 'rgba(0,0,0,0.25)', border: '1px solid rgba(156,175,136,0.2)', color: 'rgba(223,245,225,0.65)' }}>Cancel</button>
             <button onClick={handleUnarchive} className="flex-1 px-4 py-2 text-white rounded-lg transition-colors" style={{ backgroundColor: '#004526' }}>Yes, Restore</button>
           </div>
         </div>
@@ -236,13 +243,13 @@ export default function Archive({ onBack, onDocumentSelected }: ArchiveProps) {
 
     {confirmDelete && (
       <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-        <div className="bg-white rounded-lg shadow-xl p-6 max-w-sm w-full">
-          <h2 className="text-lg font-bold text-gray-900 mb-2">Permanently Delete</h2>
-          <p className="text-gray-600 mb-1">Are you sure you want to permanently delete:</p>
-          <p className="font-semibold text-gray-900 mb-4">"{confirmDelete.title}"</p>
-          <p className="text-sm text-red-600 mb-6">This action cannot be undone.</p>
+        <div className="rounded-2xl p-6 max-w-sm w-full" style={{ background: 'rgba(0, 40, 18, 0.88)', backdropFilter: 'blur(28px)', WebkitBackdropFilter: 'blur(28px)', border: '1px solid rgba(156,175,136,0.2)', boxShadow: '0 4px 24px rgba(0,0,0,0.4)' }}>
+          <h2 className="text-lg font-bold mb-2" style={{ color: '#DFF5E1' }}>Permanently Delete</h2>
+          <p className="mb-1" style={{ color: 'rgba(223,245,225,0.65)' }}>Are you sure you want to permanently delete:</p>
+          <p className="font-semibold mb-4" style={{ color: '#DFF5E1' }}>"{confirmDelete.title}"</p>
+          <p className="text-sm mb-6" style={{ color: '#fca5a5' }}>This action cannot be undone.</p>
           <div className="flex gap-3">
-            <button onClick={() => setConfirmDelete(null)} className="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50">Cancel</button>
+            <button onClick={() => setConfirmDelete(null)} className="flex-1 px-4 py-2 rounded-lg transition-colors" style={{ background: 'rgba(0,0,0,0.25)', border: '1px solid rgba(156,175,136,0.2)', color: 'rgba(223,245,225,0.65)' }}>Cancel</button>
             <button onClick={handleDeleteConfirmed} className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700">Yes, Delete</button>
           </div>
         </div>

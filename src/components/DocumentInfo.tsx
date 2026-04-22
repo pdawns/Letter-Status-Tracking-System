@@ -93,11 +93,11 @@ export default function DocumentInfo({ letterId, onBack }: DocumentInfoProps) {
   if (!document) {
     return (
       <div className="p-6">
-        <button onClick={onBack} className="mb-4 flex items-center gap-2 text-sm" style={{ color: '#004526' }}>
+        <button onClick={onBack} className="mb-4 flex items-center gap-2 text-sm" style={{ color: '#9CAF88' }}>
           <ArrowLeft className="w-4 h-4" /> Back
         </button>
-        <div className="bg-white rounded-lg shadow-lg p-6 text-center">
-          <p className="text-gray-600">Document not found</p>
+        <div className="p-6 text-center rounded-2xl" style={{ background: 'rgba(0,45,20,0.45)', backdropFilter: 'blur(20px)', border: '1px solid rgba(156,175,136,0.2)' }}>
+          <p style={{ color: 'rgba(223,245,225,0.7)' }}>Document not found</p>
         </div>
       </div>
     );
@@ -105,11 +105,11 @@ export default function DocumentInfo({ letterId, onBack }: DocumentInfoProps) {
 
   return (
     <div className="p-6">
-      <button onClick={onBack} className="mb-4 flex items-center gap-2 text-sm hover:opacity-80" style={{ color: '#004526' }}>
+      <button onClick={onBack} className="mb-4 flex items-center gap-2 text-sm hover:opacity-80" style={{ color: '#9CAF88' }}>
         <ArrowLeft className="w-4 h-4" /> Back to Library
       </button>
 
-      <div className="bg-white rounded-lg shadow-lg overflow-hidden">
+      <div className="rounded-2xl overflow-hidden" style={{ background: 'rgba(0,45,20,0.45)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)', border: '1px solid rgba(156,175,136,0.2)', boxShadow: '0 4px 24px rgba(0,0,0,0.25)' }}>
         {/* Header */}
         <div className="p-4 text-white" style={{ background: 'linear-gradient(to right, #004526, #9CAF88)' }}>
           <div className="flex items-center justify-between gap-3">
@@ -135,28 +135,32 @@ export default function DocumentInfo({ letterId, onBack }: DocumentInfoProps) {
         </div>
 
         <div className="p-4">
-          <h2 className="text-base font-semibold mb-3 flex items-center gap-2" style={{ color: '#004526' }}>
-            <FileText className="w-4 h-4" /> Document Information
+          <h2 className="text-base font-semibold mb-3 flex items-center gap-2" style={{ color: '#DFF5E1' }}>
+            <FileText className="w-4 h-4" style={{ color: '#9CAF88' }} /> Document Information
           </h2>
 
           <div className="grid grid-cols-2 gap-3 mb-4">
-            <div className="p-3 rounded-lg" style={{ backgroundColor: '#DFF5E1' }}>
-              <p className="text-xs text-gray-600 mb-1 flex items-center gap-1"><Tag className="w-3 h-3" /> Document Type</p>
-              <p className="text-sm font-medium capitalize" style={{ color: '#004526' }}>{document.document_type || 'N/A'}</p>
+            {/* info tiles */}
+            {[
+              { label: <><Tag className="w-3 h-3" /> Document Type</>, value: document.document_type || 'N/A' },
+            ].map((_, i) => null)}
+            <div className="p-3 rounded-xl" style={{ background: 'rgba(156,175,136,0.1)', border: '1px solid rgba(156,175,136,0.18)' }}>
+              <p className="text-xs mb-1 flex items-center gap-1" style={{ color: 'rgba(156,175,136,0.75)' }}><Tag className="w-3 h-3" /> Document Type</p>
+              <p className="text-sm font-medium capitalize" style={{ color: '#DFF5E1' }}>{document.document_type || 'N/A'}</p>
             </div>
-            <div className="p-3 rounded-lg" style={{ backgroundColor: '#DFF5E1' }}>
-              <p className="text-xs text-gray-600 mb-1 flex items-center gap-1"><Calendar className="w-3 h-3" /> Created Date</p>
-              <p className="text-sm font-medium" style={{ color: '#004526' }}>
+            <div className="p-3 rounded-xl" style={{ background: 'rgba(156,175,136,0.1)', border: '1px solid rgba(156,175,136,0.18)' }}>
+              <p className="text-xs mb-1 flex items-center gap-1" style={{ color: 'rgba(156,175,136,0.75)' }}><Calendar className="w-3 h-3" /> Created Date</p>
+              <p className="text-sm font-medium" style={{ color: '#DFF5E1' }}>
                 {new Date(document.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}
               </p>
             </div>
             {document.document_direction === 'sending' && (
-              <div className="p-3 rounded-lg col-span-2" style={{ backgroundColor: '#DFF5E1' }}>
-                <p className="text-xs text-gray-600 mb-1 flex items-center gap-1"><Calendar className="w-3 h-3" /> Date Sent</p>
-                <p className="text-sm font-medium" style={{ color: '#004526' }}>
+              <div className="p-3 rounded-xl col-span-2" style={{ background: 'rgba(156,175,136,0.1)', border: '1px solid rgba(156,175,136,0.18)' }}>
+                <p className="text-xs mb-1 flex items-center gap-1" style={{ color: 'rgba(156,175,136,0.75)' }}><Calendar className="w-3 h-3" /> Date Sent</p>
+                <p className="text-sm font-medium" style={{ color: '#DFF5E1' }}>
                   {new Date(document.sent_at || document.created_at).toLocaleString()}
                 </p>
-                <p className="text-xs mt-1.5" style={{ color: '#004526' }}>
+                <p className="text-xs mt-1.5" style={{ color: 'rgba(156,175,136,0.8)' }}>
                   <span className="font-semibold">📤 Sent by</span> Provincial Treasurer's Office
                 </p>
               </div>
@@ -164,59 +168,61 @@ export default function DocumentInfo({ letterId, onBack }: DocumentInfoProps) {
             {document.document_direction === 'receiving' && (() => {
               const reviewStatus = statuses.find(s => s.status_type === 'for review' || s.status_type === 'reviewed');
               return reviewStatus ? (
-                <div className="p-3 rounded-lg col-span-2" style={{ backgroundColor: '#DFF5E1' }}>
-                  <p className="text-xs text-gray-600 mb-1 flex items-center gap-1"><Calendar className="w-3 h-3" /> Date Received</p>
-                  <p className="text-sm font-medium" style={{ color: '#004526' }}>
+                <div className="p-3 rounded-xl col-span-2" style={{ background: 'rgba(156,175,136,0.1)', border: '1px solid rgba(156,175,136,0.18)' }}>
+                  <p className="text-xs mb-1 flex items-center gap-1" style={{ color: 'rgba(156,175,136,0.75)' }}><Calendar className="w-3 h-3" /> Date Received</p>
+                  <p className="text-sm font-medium" style={{ color: '#DFF5E1' }}>
                     {new Date(reviewStatus.signed_at).toLocaleString()}
                   </p>
-                  <p className="text-xs mt-1.5" style={{ color: '#004526' }}>
+                  <p className="text-xs mt-1.5" style={{ color: 'rgba(156,175,136,0.8)' }}>
                     <span className="font-semibold">✓ Reviewed by</span> {reviewStatus.signed_by}
                   </p>
                 </div>
               ) : null;
             })()}
-            <div className="p-3 rounded-lg col-span-2" style={{ backgroundColor: '#DFF5E1' }}>
-              <p className="text-xs text-gray-600 mb-1">Reference Number</p>
-              <p className="text-sm font-medium" style={{ color: '#004526' }}>{document.reference_number}</p>
+            <div className="p-3 rounded-xl col-span-2" style={{ background: 'rgba(156,175,136,0.1)', border: '1px solid rgba(156,175,136,0.18)' }}>
+              <p className="text-xs mb-1" style={{ color: 'rgba(156,175,136,0.75)' }}>Reference Number</p>
+              <p className="text-sm font-medium" style={{ color: '#DFF5E1' }}>{document.reference_number}</p>
             </div>
             {document.document_subject && (
-              <div className="p-3 rounded-lg col-span-2" style={{ backgroundColor: '#DFF5E1' }}>
-                <p className="text-xs text-gray-600 mb-1">Subject</p>
-                <p className="text-sm font-medium" style={{ color: '#004526' }}>{document.document_subject}</p>
+              <div className="p-3 rounded-xl col-span-2" style={{ background: 'rgba(156,175,136,0.1)', border: '1px solid rgba(156,175,136,0.18)' }}>
+                <p className="text-xs mb-1" style={{ color: 'rgba(156,175,136,0.75)' }}>Subject</p>
+                <p className="text-sm font-medium" style={{ color: '#DFF5E1' }}>{document.document_subject}</p>
               </div>
             )}
             {document.sender_name && (
-              <div className="p-3 rounded-lg col-span-2" style={{ backgroundColor: '#DFF5E1' }}>
-                <p className="text-xs text-gray-600 mb-1">Sender</p>
-                <p className="text-sm font-medium" style={{ color: '#004526' }}>
+              <div className="p-3 rounded-xl col-span-2" style={{ background: 'rgba(156,175,136,0.1)', border: '1px solid rgba(156,175,136,0.18)' }}>
+                <p className="text-xs mb-1" style={{ color: 'rgba(156,175,136,0.75)' }}>Sender</p>
+                <p className="text-sm font-medium" style={{ color: '#DFF5E1' }}>
                   {document.sender_name}{document.sender_office ? ` — ${document.sender_office}` : ''}
                 </p>
-                {document.sender_phone && <p className="text-xs text-gray-500 mt-0.5">📱 {document.sender_phone}</p>}
-                {document.sender_email && <p className="text-xs text-gray-500">✉️ {document.sender_email}</p>}
+                {document.sender_phone && <p className="text-xs mt-0.5" style={{ color: 'rgba(156,175,136,0.7)' }}>📱 {document.sender_phone}</p>}
+                {document.sender_email && <p className="text-xs" style={{ color: 'rgba(156,175,136,0.7)' }}>✉️ {document.sender_email}</p>}
               </div>
             )}
           </div>
 
           {/* Action Tickets */}
           {actionTickets.length > 0 && (
-            <div className="border-t pt-4 mt-2">
-              <h2 className="text-base font-semibold mb-3 flex items-center gap-2" style={{ color: '#004526' }}>
-                <Ticket className="w-4 h-4" /> Action Tickler Slips
+            <div className="pt-4 mt-2" style={{ borderTop: '1px solid rgba(156,175,136,0.15)' }}>
+              <h2 className="text-base font-semibold mb-3 flex items-center gap-2" style={{ color: '#DFF5E1' }}>
+                <Ticket className="w-4 h-4" style={{ color: '#9CAF88' }} /> Action Tickler Slips
               </h2>
               <div className="space-y-2">
                 {actionTickets.map(t => (
                   <button
                     key={t.id}
                     onClick={() => setPreviewTicket(t)}
-                    className="w-full flex items-center justify-between px-3 py-2.5 rounded-lg border-2 text-sm hover:bg-green-50 transition-colors text-left"
-                    style={{ borderColor: '#9CAF88' }}
+                    className="w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-sm transition-colors text-left"
+                    style={{ background: 'rgba(156,175,136,0.1)', border: '1px solid rgba(156,175,136,0.25)' }}
+                    onMouseEnter={(e) => (e.currentTarget.style.background = 'rgba(156,175,136,0.18)')}
+                    onMouseLeave={(e) => (e.currentTarget.style.background = 'rgba(156,175,136,0.1)')}
                   >
                     <div className="min-w-0">
-                      <p className="font-semibold text-gray-800 text-xs">{t.ticket_number}</p>
-                      <p className="text-xs text-gray-500 truncate">Assigned to: {fixName(t.assigned_to)}</p>
-                      {t.due_date && <p className="text-xs text-gray-400">Due: {new Date(t.due_date).toLocaleDateString()}</p>}
+                      <p className="font-semibold text-xs" style={{ color: '#DFF5E1' }}>{t.ticket_number}</p>
+                      <p className="text-xs truncate" style={{ color: 'rgba(156,175,136,0.7)' }}>Assigned to: {fixName(t.assigned_to)}</p>
+                      {t.due_date && <p className="text-xs" style={{ color: 'rgba(156,175,136,0.6)' }}>Due: {new Date(t.due_date).toLocaleDateString()}</p>}
                     </div>
-                    <span className={`ml-2 shrink-0 text-xs font-medium px-2 py-0.5 rounded-full ${t.status === 'completed' ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'}`}>
+                    <span className={`ml-2 shrink-0 text-xs font-medium px-2 py-0.5 rounded-full ${t.status === 'completed' ? 'bg-green-900 text-green-300' : 'bg-blue-900 text-blue-300'}`}>
                       {t.status === 'completed' ? '✓ Done' : '🖨 For Printing'}
                     </span>
                   </button>
@@ -227,53 +233,27 @@ export default function DocumentInfo({ letterId, onBack }: DocumentInfoProps) {
 
           {/* Actions / File Preview */}
           {document.file_url ? (
-            <div className="border-t pt-4">
+            <div className="pt-4" style={{ borderTop: '1px solid rgba(156,175,136,0.15)' }}>
               <div className="flex flex-wrap gap-2 mb-4">
-                <button
-                  onClick={viewDocument}
-                  className="flex items-center gap-1.5 text-white px-3 py-1.5 rounded-lg transition-colors text-xs"
-                  style={{ backgroundColor: '#004526' }}
-                  onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#9CAF88'}
-                  onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#004526'}
-                >
+                <button onClick={viewDocument} className="flex items-center gap-1.5 text-white px-3 py-1.5 rounded-lg transition-colors text-xs" style={{ backgroundColor: '#004526' }} onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#9CAF88'} onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#004526'}>
                   <Eye className="w-3.5 h-3.5" /> View
                 </button>
-                <button
-                  onClick={downloadDocument}
-                  className="flex items-center gap-1.5 text-white px-3 py-1.5 rounded-lg transition-colors text-xs"
-                  style={{ backgroundColor: '#004526' }}
-                  onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#9CAF88'}
-                  onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#004526'}
-                >
+                <button onClick={downloadDocument} className="flex items-center gap-1.5 text-white px-3 py-1.5 rounded-lg transition-colors text-xs" style={{ backgroundColor: '#004526' }} onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#9CAF88'} onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#004526'}>
                   <Download className="w-3.5 h-3.5" /> Download
                 </button>
-                <button
-                  onClick={() => fileInputRef.current?.click()}
-                  disabled={uploading}
-                  className="flex items-center gap-1.5 text-white px-3 py-1.5 rounded-lg transition-colors text-xs disabled:opacity-60"
-                  style={{ backgroundColor: '#9CAF88' }}
-                  onMouseEnter={(e) => { if (!uploading) e.currentTarget.style.backgroundColor = '#004526'; }}
-                  onMouseLeave={(e) => { if (!uploading) e.currentTarget.style.backgroundColor = '#9CAF88'; }}
-                >
+                <button onClick={() => fileInputRef.current?.click()} disabled={uploading} className="flex items-center gap-1.5 text-white px-3 py-1.5 rounded-lg transition-colors text-xs disabled:opacity-60" style={{ backgroundColor: '#9CAF88' }} onMouseEnter={(e) => { if (!uploading) e.currentTarget.style.backgroundColor = '#004526'; }} onMouseLeave={(e) => { if (!uploading) e.currentTarget.style.backgroundColor = '#9CAF88'; }}>
                   {uploading ? <Loader className="w-3.5 h-3.5 animate-spin" /> : <RefreshCw className="w-3.5 h-3.5" />}
                   {uploading ? 'Uploading...' : 'Replace File'}
                 </button>
                 {(document.sender_phone || document.sender_email) && (
-                  <button
-                    onClick={() => setShowNotify(true)}
-                    className="flex items-center gap-1.5 text-white px-3 py-1.5 rounded-lg transition-colors text-xs"
-                    style={{ backgroundColor: '#9CAF88' }}
-                    onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#004526'}
-                    onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#9CAF88'}
-                  >
+                  <button onClick={() => setShowNotify(true)} className="flex items-center gap-1.5 text-white px-3 py-1.5 rounded-lg transition-colors text-xs" style={{ backgroundColor: '#9CAF88' }} onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#004526'} onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#9CAF88'}>
                     <Bell className="w-3.5 h-3.5" /> Notify Sender
                   </button>
                 )}
                 <input ref={fileInputRef} type="file" className="hidden" onChange={handleFileUpload} />
               </div>
 
-              {/* Inline File Preview */}
-              <div className="border rounded-lg overflow-hidden" style={{ borderColor: '#9CAF88' }}>
+              <div className="rounded-xl overflow-hidden" style={{ border: '1px solid rgba(156,175,136,0.25)' }}>
                 <div className="px-3 py-2 flex items-center gap-2 text-xs font-semibold text-white" style={{ backgroundColor: '#004526' }}>
                   <Eye className="w-3.5 h-3.5" />
                   Document Preview
@@ -281,75 +261,39 @@ export default function DocumentInfo({ letterId, onBack }: DocumentInfoProps) {
                 </div>
                 {(() => {
                   const url = document.file_url!;
-                  const isImage = (url.match(/\.(png|jpe?g|gif|webp|bmp|svg)(\?|$)/i)) ||
-                    (url.includes('/image/upload/') && !url.match(/\.pdf(\?|$)/i));
+                  const isImage = (url.match(/\.(png|jpe?g|gif|webp|bmp|svg)(\?|$)/i)) || (url.includes('/image/upload/') && !url.match(/\.pdf(\?|$)/i));
                   const isOffice = url.match(/\.(doc|docx|xls|xlsx|ppt|pptx)(\?|$)/i);
                   const isPdf = url.match(/\.pdf(\?|$)/i) || url.includes('/raw/upload/');
-
-                  if (isImage) {
-                    return (
-                      <div className="flex items-center justify-center bg-gray-50 p-4" style={{ minHeight: '300px' }}>
-                        <img src={url} alt={document.file_name || 'Document'} className="max-w-full max-h-[600px] object-contain rounded shadow" />
-                      </div>
-                    );
-                  }
-
-                  if (isOffice) {
-                    return (
-                      <div className="flex flex-col items-center justify-center py-12 bg-gray-50 gap-3 text-gray-500">
-                        <FileText className="w-12 h-12 opacity-30" />
-                        <p className="text-sm font-medium">Word/Excel/PowerPoint files cannot be previewed in the browser.</p>
-                        <p className="text-xs text-gray-400">Download the file to open it in Microsoft Office or LibreOffice.</p>
-                        <button
-                          onClick={downloadDocument}
-                          className="flex items-center gap-1.5 text-white px-4 py-2 rounded-lg text-xs mt-1"
-                          style={{ backgroundColor: '#004526' }}
-                        >
-                          <Download className="w-3.5 h-3.5" /> Download File
-                        </button>
-                      </div>
-                    );
-                  }
-
-                  if (isPdf) {
-                    return (
-                      <iframe
-                        src={`https://docs.google.com/viewer?url=${encodeURIComponent(url)}&embedded=true`}
-                        title="Document Preview"
-                        className="w-full border-0"
-                        style={{ height: '600px' }}
-                      />
-                    );
-                  }
-
-                  // fallback
-                  return (
-                    <iframe
-                      src={url}
-                      title="Document Preview"
-                      className="w-full border-0"
-                      style={{ height: '600px' }}
-                    />
+                  if (isImage) return (
+                    <div className="flex items-center justify-center p-4" style={{ minHeight: '300px', background: 'rgba(0,0,0,0.2)' }}>
+                      <img src={url} alt={document.file_name || 'Document'} className="max-w-full max-h-[600px] object-contain rounded shadow" />
+                    </div>
                   );
+                  if (isOffice) return (
+                    <div className="flex flex-col items-center justify-center py-12 gap-3" style={{ background: 'rgba(0,0,0,0.2)' }}>
+                      <FileText className="w-12 h-12 opacity-30" style={{ color: '#9CAF88' }} />
+                      <p className="text-sm font-medium" style={{ color: 'rgba(223,245,225,0.7)' }}>Word/Excel/PowerPoint files cannot be previewed in the browser.</p>
+                      <p className="text-xs" style={{ color: 'rgba(156,175,136,0.6)' }}>Download the file to open it in Microsoft Office or LibreOffice.</p>
+                      <button onClick={downloadDocument} className="flex items-center gap-1.5 text-white px-4 py-2 rounded-lg text-xs mt-1" style={{ backgroundColor: '#004526' }}>
+                        <Download className="w-3.5 h-3.5" /> Download File
+                      </button>
+                    </div>
+                  );
+                  if (isPdf) return <iframe src={`https://docs.google.com/viewer?url=${encodeURIComponent(url)}&embedded=true`} title="Document Preview" className="w-full border-0" style={{ height: '600px' }} />;
+                  return <iframe src={url} title="Document Preview" className="w-full border-0" style={{ height: '600px' }} />;
                 })()}
               </div>
             </div>
           ) : (
-            <div className="border-t pt-4">
-              <div className="border rounded-lg overflow-hidden" style={{ borderColor: '#9CAF88' }}>
+            <div className="pt-4" style={{ borderTop: '1px solid rgba(156,175,136,0.15)' }}>
+              <div className="rounded-xl overflow-hidden" style={{ border: '1px solid rgba(156,175,136,0.25)' }}>
                 <div className="px-3 py-2 flex items-center gap-2 text-xs font-semibold text-white" style={{ backgroundColor: '#004526' }}>
-                  <Eye className="w-3.5 h-3.5" />
-                  Document Preview
+                  <Eye className="w-3.5 h-3.5" /> Document Preview
                 </div>
-                <div className="flex flex-col items-center justify-center py-10 text-gray-400 bg-gray-50 gap-3">
-                  <FileText className="w-10 h-10 opacity-30" />
-                  <p className="text-sm">No file attached to this document.</p>
-                  <button
-                    onClick={() => fileInputRef.current?.click()}
-                    disabled={uploading}
-                    className="flex items-center gap-1.5 text-white px-4 py-2 rounded-lg transition-colors text-xs disabled:opacity-60"
-                    style={{ backgroundColor: '#004526' }}
-                  >
+                <div className="flex flex-col items-center justify-center py-10 gap-3" style={{ background: 'rgba(0,0,0,0.2)' }}>
+                  <FileText className="w-10 h-10 opacity-30" style={{ color: '#9CAF88' }} />
+                  <p className="text-sm" style={{ color: 'rgba(223,245,225,0.6)' }}>No file attached to this document.</p>
+                  <button onClick={() => fileInputRef.current?.click()} disabled={uploading} className="flex items-center gap-1.5 text-white px-4 py-2 rounded-lg transition-colors text-xs disabled:opacity-60" style={{ backgroundColor: '#004526' }}>
                     {uploading ? <Loader className="w-3.5 h-3.5 animate-spin" /> : <Upload className="w-3.5 h-3.5" />}
                     {uploading ? 'Uploading...' : 'Attach File'}
                   </button>

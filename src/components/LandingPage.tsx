@@ -163,69 +163,52 @@ export default function LandingPage({ onEnter }: LandingPageProps) {
 
       {/* Login Modal */}
       {showLogin && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ backgroundColor: 'rgba(0,0,0,0.6)' }}>
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 relative">
-            <button onClick={closeLogin} className="absolute top-4 right-4 text-gray-400 hover:text-gray-600">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.65)', backdropFilter: 'blur(6px)' }}>
+          <div className="rounded-2xl w-full max-w-sm p-6 relative" style={{ background: 'rgba(0,40,18,0.88)', backdropFilter: 'blur(28px)', WebkitBackdropFilter: 'blur(28px)', border: '1px solid rgba(156,175,136,0.2)', boxShadow: '0 8px 40px rgba(0,0,0,0.5)' }}>
+            <button onClick={closeLogin} className="absolute top-4 right-4 hover:opacity-70 transition-opacity" style={{ color: 'rgba(156,175,136,0.7)' }}>
               <X className="w-5 h-5" />
             </button>
 
-            {/* Modal logos */}
             <div className="flex justify-center gap-3 mb-4">
-              <div className="w-12 h-12 rounded-full overflow-hidden border-2 bg-white" style={{ borderColor: '#004526' }}>
+              <div className="w-12 h-12 rounded-full overflow-hidden border-2 bg-white" style={{ borderColor: 'rgba(156,175,136,0.4)' }}>
                 <img src={displayLogo2} alt="Seal" className="w-full h-full object-contain" />
               </div>
-              <div className="w-12 h-12 rounded-full overflow-hidden border-2 bg-white" style={{ borderColor: '#9CAF88' }}>
+              <div className="w-12 h-12 rounded-full overflow-hidden border-2 bg-white" style={{ borderColor: 'rgba(156,175,136,0.4)' }}>
                 <img src={displayLogo1} alt="Logo" className="w-full h-full object-cover" />
               </div>
             </div>
 
-            <h2 className="text-base font-bold text-center mb-1" style={{ color: '#004526' }}>Staff Login</h2>
-            <p className="text-xs text-center text-gray-500 mb-5">{officeName}</p>
+            <h2 className="text-base font-bold text-center mb-1" style={{ color: '#DFF5E1' }}>Staff Login</h2>
+            <p className="text-xs text-center mb-5" style={{ color: 'rgba(156,175,136,0.7)' }}>{officeName}</p>
 
             <form onSubmit={handleLogin} className="space-y-4">
               <div>
-                <label className="block text-xs font-medium text-gray-700 mb-1">Username</label>
-                <input
-                  type="text"
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
-                  className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2"
-                  placeholder="Enter username"
-                  required
-                  autoFocus
-                />
+                <label className="block text-xs font-medium mb-1" style={{ color: 'rgba(156,175,136,0.85)' }}>Username</label>
+                <input type="text" value={username} onChange={(e) => setUsername(e.target.value)}
+                  className="w-full px-3 py-2 text-sm rounded-xl focus:outline-none focus:ring-1 focus:ring-green-600"
+                  style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(156,175,136,0.2)', color: '#DFF5E1' }}
+                  placeholder="Enter username" required autoFocus />
               </div>
-
               <div>
-                <label className="block text-xs font-medium text-gray-700 mb-1">Password</label>
+                <label className="block text-xs font-medium mb-1" style={{ color: 'rgba(156,175,136,0.85)' }}>Password</label>
                 <div className="relative">
-                  <input
-                    type={showPassword ? 'text' : 'password'}
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    className="w-full px-3 py-2 pr-10 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2"
-                    placeholder="Enter password"
-                    required
-                  />
+                  <input type={showPassword ? 'text' : 'password'} value={password} onChange={(e) => setPassword(e.target.value)}
+                    className="w-full px-3 py-2 pr-10 text-sm rounded-xl focus:outline-none focus:ring-1 focus:ring-green-600"
+                    style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(156,175,136,0.2)', color: '#DFF5E1' }}
+                    placeholder="Enter password" required />
                   <button type="button" onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-2.5 text-gray-400 hover:text-gray-600">
+                    className="absolute right-3 top-2.5 hover:opacity-70 transition-opacity" style={{ color: 'rgba(156,175,136,0.6)' }}>
                     {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                   </button>
                 </div>
               </div>
-
-              {error && <p className="text-xs text-red-600 text-center">{error}</p>}
-
-              <button
-                type="submit"
-                disabled={loading}
-                className="w-full flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-semibold text-white transition-colors disabled:opacity-60"
+              {error && <p className="text-xs text-center" style={{ color: '#fca5a5' }}>{error}</p>}
+              <button type="submit" disabled={loading}
+                className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold text-white transition-colors disabled:opacity-60"
                 style={{ backgroundColor: '#004526' }}
-              >
-                {loading
-                  ? <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                  : <><LogIn className="w-4 h-4" /> Login</>
-                }
+                onMouseEnter={(e) => !loading && (e.currentTarget.style.backgroundColor = '#005c33')}
+                onMouseLeave={(e) => !loading && (e.currentTarget.style.backgroundColor = '#004526')}>
+                {loading ? <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <><LogIn className="w-4 h-4" /> Login</>}
               </button>
             </form>
           </div>

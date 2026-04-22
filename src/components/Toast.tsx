@@ -21,18 +21,26 @@ export default function Toast({ message, type = 'success', duration = 3000, onCl
 
   return (
     <div
-      className="fixed top-5 right-5 z-[9999] flex items-center gap-3 px-4 py-3 rounded-xl shadow-lg text-sm font-medium transition-all duration-300"
+      className="fixed top-5 right-5 z-[9999] flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-medium transition-all duration-300"
       style={{
-        backgroundColor: type === 'success' ? '#9CAF88' : '#b91c1c',
-        color: type === 'success' ? '#004526' : 'white',
+        background: type === 'success'
+          ? 'rgba(0,45,20,0.85)'
+          : 'rgba(127,29,29,0.85)',
+        backdropFilter: 'blur(16px)',
+        WebkitBackdropFilter: 'blur(16px)',
+        border: type === 'success'
+          ? '1px solid rgba(156,175,136,0.35)'
+          : '1px solid rgba(239,68,68,0.35)',
+        boxShadow: '0 4px 24px rgba(0,0,0,0.35)',
+        color: type === 'success' ? '#DFF5E1' : '#fca5a5',
         opacity: visible ? 1 : 0,
         transform: visible ? 'translateY(0)' : 'translateY(-12px)',
         minWidth: '220px',
       }}
     >
       {type === 'success'
-        ? <CheckCircle className="w-5 h-5 flex-shrink-0" style={{ color: '#004526' }} />
-        : <XCircle className="w-5 h-5 flex-shrink-0 text-red-300" />
+        ? <CheckCircle className="w-5 h-5 flex-shrink-0" style={{ color: '#9CAF88' }} />
+        : <XCircle className="w-5 h-5 flex-shrink-0" style={{ color: '#fca5a5' }} />
       }
       <span>{message}</span>
     </div>
