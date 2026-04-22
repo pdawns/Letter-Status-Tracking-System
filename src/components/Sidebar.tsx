@@ -13,15 +13,17 @@ interface SidebarProps {
   onMenuToggle: () => void;
 }
 
-const menuItems = [
-  { id: 'dashboard' as View, label: 'Dashboard', icon: LayoutDashboard },
-  { id: 'document-tracking' as View, label: 'Create Document', icon: FilePlus },
-  { id: 'tracking' as View, label: 'Track Document', icon: Search },
-  { id: 'archive' as View, label: 'Archive', icon: Archive },
-  { id: 'settings' as View, label: 'Settings', icon: Settings },
+const allMenuItems = [
+  { id: 'dashboard' as View, label: 'Dashboard', icon: LayoutDashboard, roles: ['staff', 'receiver'] },
+  { id: 'document-tracking' as View, label: 'Create Document', icon: FilePlus, roles: ['staff'] },
+  { id: 'tracking' as View, label: 'Track Document', icon: Search, roles: ['staff', 'receiver'] },
+  { id: 'archive' as View, label: 'Archive', icon: Archive, roles: ['staff'] },
+  { id: 'settings' as View, label: 'Settings', icon: Settings, roles: ['staff'] },
 ];
 
-export default function Sidebar({ currentView, onViewChange, onLogout, menuOpen, onMenuToggle }: SidebarProps) {
+export default function Sidebar({ currentView, onViewChange, onLogout, role = 'staff', menuOpen, onMenuToggle }: SidebarProps) {
+  const menuItems = allMenuItems.filter(item => item.roles.includes(role));
+
   const handleNav = (id: View) => {
     onViewChange(id);
     onMenuToggle();
@@ -70,6 +72,17 @@ export default function Sidebar({ currentView, onViewChange, onLogout, menuOpen,
             <p className="text-xs mt-0.5" style={{ color: '#9CAF88' }}>
               {localStorage.getItem('dts_username') || 'staff'}
             </p>
+            <span className="text-xs px-1.5 py-0.5 rounded-md mt-1 inline-block" style={{
+              background: role === 'receiver' ? 'rgba(234,179,8,0.15)' : 'rgba(156,175,136,0.15)',
+              color: role === 'receiver' ? '#fde047' : '#9CAF88',
+              border: `1px solid ${role === 'receiver' ? 'rgba(234,179,8,0.3)' : 'rgba(156,175,136,0.2)'}`,
+              fontSize: '9px',
+              fontWeight: 600,
+              textTransform: 'uppercase',
+              letterSpacing: '0.05em',
+            }}>
+              {role === 'receiver' ? 'Handler' : 'Staff'}
+            </span>
           </div>
           <button
             onClick={onMenuToggle}
@@ -83,8 +96,8 @@ export default function Sidebar({ currentView, onViewChange, onLogout, menuOpen,
         {/* Divider */}
         <div className="mx-6 mb-4" style={{ height: '1px', background: 'rgba(156,175,136,0.15)' }} />
 
-        {/* Icon grid — 5 items in a row */}
-        <div className="grid grid-cols-5 gap-2 px-4 mb-5">
+        {/* Icon grid */}
+        <div className={`grid gap-2 px-4 mb-5`} style={{ gridTemplateColumns: `repeat(${menuItems.length}, minmax(0, 1fr))` }}>
           {menuItems.map(({ id, icon: Icon, label }) => {
             const isActive = currentView === id;
             return (

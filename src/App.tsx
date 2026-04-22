@@ -58,6 +58,15 @@ function App() {
     setView('letter-view');
   };
 
+  // Restrict receiver role from accessing staff-only views
+  const safeSetView = (v: typeof view) => {
+    if (role === 'receiver') {
+      const allowed: typeof view[] = ['dashboard', 'tracking', 'track', 'handler', 'library', 'document-info'];
+      if (!allowed.includes(v)) return;
+    }
+    setView(v);
+  };
+
   const handleBackToHome = () => {
     setView('dashboard');
     setCurrentLetterId('');
@@ -131,14 +140,14 @@ function App() {
           view === 'dashboard' || view === 'tracking' || view === 'document-tracking' ? view : 
           'dashboard'
         } 
-        onViewChange={setView}
+        onViewChange={safeSetView}
         role={role}
         menuOpen={menuOpen}
         onMenuToggle={() => setMenuOpen(o => !o)}
         onLogout={async () => { await logout(); setIsLoggedIn(false); setShowLanding(true); setRole('staff'); setToast({ message: 'You have been logged out. See you next time!', type: 'success' }); }}
       />
       <TopBar
-        onHome={() => setView('dashboard')}
+        onHome={() => safeSetView('dashboard')}
         onNavigateToLetter={(id) => { setCurrentLetterId(id); setView('track'); }}
         onMenuToggle={() => setMenuOpen(o => !o)}
       />
