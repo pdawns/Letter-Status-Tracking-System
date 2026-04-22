@@ -206,6 +206,7 @@ initSqlJs().then((SQL) => {
     'http://localhost:5174',
     'http://localhost:4173',
     'https://letters-status-tracking-system.vercel.app',
+    'https://pto-dts-2026.vercel.app',
     process.env.FRONTEND_URL,
   ].filter(Boolean);
 
