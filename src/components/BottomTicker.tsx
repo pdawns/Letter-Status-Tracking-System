@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef, useCallback } from 'react';
 import { ArrowDownToLine, ArrowUpFromLine } from 'lucide-react';
-import { getLetters, getStatusesForLetter } from '../lib/api';
+import { getLetters, getStatusesForLetter, getPublicLetters, getPublicStatusesForLetter, getToken } from '../lib/api';
 import { Letter, LetterStatus } from '../types';
 
 export default function BottomTicker() {
@@ -13,10 +13,13 @@ export default function BottomTicker() {
 
   const loadData = useCallback(async () => {
     try {
-      const data = await getLetters();
+      const isPublic = !getToken();
+      const data = isPublic ? await getPublicLetters() : await getLetters();
+      if (!Array.isArray(data)) return;
       setLetters(data);
+      const fetchStatus = isPublic ? getPublicStatusesForLetter : getStatusesForLetter;
       const map: Record<string, LetterStatus[]> = {};
-      await Promise.all(data.map(async (l) => { map[l.id] = await getStatusesForLetter(l.id); }));
+      await Promise.all(data.map(async (l) => { map[l.id] = await fetchStatus(l.id); }));
       setStatusMap(map);
     } catch (e) { console.error(e); }
   }, []);
@@ -69,10 +72,10 @@ export default function BottomTicker() {
       className="fixed bottom-0 left-0 right-0 z-50 flex items-center gap-3 px-5"
       style={{
         height: '44px',
-        background: 'rgba(0, 30, 12, 0.88)',
+        background: 'rgba(0, 0, 0, 0.75)',
         backdropFilter: 'blur(24px)',
         WebkitBackdropFilter: 'blur(24px)',
-        borderTop: `1px solid ${tabColor}22`,
+        borderTop: `1px solid rgba(var(--accent-rgb), 0.15)`,
         boxShadow: '0 -2px 20px rgba(0,0,0,0.4)',
       }}
     >
@@ -101,7 +104,7 @@ export default function BottomTicker() {
       </div>
 
       {/* Divider */}
-      <div className="w-px h-5 flex-shrink-0" style={{ background: 'rgba(156,175,136,0.18)' }} />
+      <div className="w-px h-5 flex-shrink-0" style={{ background: 'rgba(var(--accent-rgb), 0.18)' }} />
 
       {/* Document info — fades in/out */}
       {doc ? (
@@ -124,7 +127,7 @@ export default function BottomTicker() {
           {doc.document_type && (
             <span
               className="text-[9px] px-1.5 py-0.5 rounded-full capitalize flex-shrink-0"
-              style={{ background: 'rgba(156,175,136,0.1)', color: '#9CAF88', border: '1px solid rgba(156,175,136,0.18)' }}
+              style={{ background: 'rgba(var(--accent-rgb),0.1)', color: 'var(--accent)', border: '1px solid rgba(var(--accent-rgb),0.18)' }}
             >
               {doc.document_type}
             </span>
@@ -148,7 +151,7 @@ export default function BottomTicker() {
       )}
 
       {/* Counter */}
-      <span className="text-[9px] font-mono flex-shrink-0" style={{ color: 'rgba(156,175,136,0.3)' }}>
+      <span className="text-[9px] font-mono flex-shrink-0" style={{ color: 'rgba(var(--accent-rgb), 0.3)' }}>
         {current} / {total}
       </span>
     </div>

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+﻿import { useState, useEffect } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
 import { getLetter, getStatusesForLetter } from '../lib/api';
 import { Letter, LetterStatus } from '../types';
@@ -104,9 +104,9 @@ export default function Receipt({ letterId, onBack }: ReceiptProps) {
             onClick={handlePrintSavePDF}
             disabled={isGeneratingPDF}
             className="flex items-center gap-2 px-5 py-2.5 text-white rounded-lg text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-md hover:shadow-lg"
-            style={{ backgroundColor: '#004526' }}
-            onMouseEnter={(e) => !isGeneratingPDF && (e.currentTarget.style.backgroundColor = '#9CAF88')}
-            onMouseLeave={(e) => !isGeneratingPDF && (e.currentTarget.style.backgroundColor = '#004526')}
+            style={{ backgroundColor: 'var(--primary)' }}
+            onMouseEnter={(e) => !isGeneratingPDF && (e.currentTarget.style.backgroundColor = 'var(--accent)')}
+            onMouseLeave={(e) => !isGeneratingPDF && (e.currentTarget.style.backgroundColor = 'var(--primary)')}
           >
             {isGeneratingPDF ? (
               <>
@@ -254,11 +254,11 @@ export default function Receipt({ letterId, onBack }: ReceiptProps) {
                     <div
                       key={status.id}
                       className="border-2 rounded-lg p-3 print:border print:p-2 print:bg-white print:break-inside-avoid"
-                      style={{ borderColor: '#004526', backgroundColor: '#DFF5E1' }}
+                      style={{ borderColor: 'var(--primary)', backgroundColor: 'var(--accent-text)' }}
                     >
                       <div className="flex items-start gap-2">
                         <div className="mt-1 flex-shrink-0">
-                          <CheckCircle className="w-5 h-5 print:w-4 print:h-4" style={{ color: '#004526' }} />
+                          <CheckCircle className="w-5 h-5 print:w-4 print:h-4" style={{ color: 'var(--primary)' }} />
                         </div>
                         <div className="flex-1 min-w-0">
                           <h3 className="font-bold text-gray-900 text-sm mb-1 print:text-xs capitalize">

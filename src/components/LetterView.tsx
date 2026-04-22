@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+﻿import { useEffect, useState } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
 import { getLetter } from '../lib/api';
 import { Letter } from '../types';
@@ -61,7 +61,7 @@ export default function LetterView({ letterId, onBack }: LetterViewProps) {
   if (loading) {
     return (
       <div className="max-w-4xl mx-auto text-center py-12">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 mx-auto" style={{ borderColor: '#004526' }}></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 mx-auto" style={{ borderColor: 'var(--primary)' }}></div>
         <p className="mt-4 text-gray-600">Loading letter...</p>
       </div>
     );
@@ -74,7 +74,7 @@ export default function LetterView({ letterId, onBack }: LetterViewProps) {
         <button
           onClick={onBack}
           className="mt-4 hover:underline"
-          style={{ color: '#004526' }}
+          style={{ color: 'var(--primary)' }}
         >
           Go back
         </button>
@@ -87,7 +87,7 @@ export default function LetterView({ letterId, onBack }: LetterViewProps) {
       <button
         onClick={onBack}
         className="mb-4 flex items-center gap-2 print:hidden"
-        style={{ color: '#004526' }}
+        style={{ color: 'var(--primary)' }}
       >
         <ArrowLeft className="w-4 h-4" />
         Back to Home
@@ -96,7 +96,7 @@ export default function LetterView({ letterId, onBack }: LetterViewProps) {
       <div className="bg-white rounded-lg shadow-lg p-8 print:shadow-none">
         <div className="flex items-center justify-between mb-6 print:mb-8">
           <div className="flex items-center gap-3">
-            <FileText className="w-8 h-8" style={{ color: '#004526' }} />
+            <FileText className="w-8 h-8" style={{ color: 'var(--primary)' }} />
             <div>
               <h1 className="text-3xl font-bold text-gray-900">Letter Created</h1>
               <p className="text-gray-600">Reference: {letter.reference_number}</p>
@@ -105,9 +105,9 @@ export default function LetterView({ letterId, onBack }: LetterViewProps) {
           <button
             onClick={handlePrint}
             className="flex items-center gap-2 text-white px-4 py-2 rounded-lg print:hidden transition-colors"
-            style={{ backgroundColor: '#004526' }}
-            onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#9CAF88')}
-            onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = '#004526')}
+            style={{ backgroundColor: 'var(--primary)' }}
+            onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--accent)')}
+            onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'var(--primary)')}
           >
             <Download className="w-4 h-4" />
             Print/Save
@@ -116,9 +116,9 @@ export default function LetterView({ letterId, onBack }: LetterViewProps) {
             <button
               onClick={() => setShowNotify(true)}
               className="flex items-center gap-2 text-white px-4 py-2 rounded-lg transition-colors print:hidden"
-              style={{ backgroundColor: '#9CAF88' }}
-              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#004526'}
-              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#9CAF88'}
+              style={{ backgroundColor: 'var(--accent)' }}
+              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'var(--primary)'}
+              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'var(--accent)'}
             >
               <Bell className="w-4 h-4" />
               Notify Sender

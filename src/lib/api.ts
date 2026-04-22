@@ -204,3 +204,19 @@ export const getAllActivityLogs = async (params?: { limit?: number; action?: str
   if (!res.ok) throw new Error(`Server error: ${res.status}`);
   return res.json();
 };
+
+// ── Public (no auth) ─────────────────────────────────────
+
+export const getPublicLetters = async (): Promise<Letter[]> => {
+  const res = await fetch(`${BASE}/public/letters`);
+  if (!res.ok) return [];
+  const data = await res.json();
+  return Array.isArray(data) ? data : [];
+};
+
+export const getPublicStatusesForLetter = async (letterId: string): Promise<LetterStatus[]> => {
+  const res = await fetch(`${BASE}/public/letters/${letterId}/statuses`);
+  if (!res.ok) return [];
+  const data = await res.json();
+  return Array.isArray(data) ? data : [];
+};

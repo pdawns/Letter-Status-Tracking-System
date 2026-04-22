@@ -253,6 +253,15 @@ initSqlJs().then((SQL) => {
     res.json({ success: true });
   });
 
+  // ── Public endpoint (no auth) ────────────────────────────
+  app.get('/api/public/letters', (req, res) => {
+    res.json(all('SELECT id, reference_number, title, document_subject, document_type, document_direction, created_at, required_statuses FROM letters WHERE archived = 0 ORDER BY created_at DESC'));
+  });
+
+  app.get('/api/public/letters/:id/statuses', (req, res) => {
+    res.json(all('SELECT * FROM letter_statuses WHERE letter_id = ? ORDER BY signed_at ASC', [req.params.id]));
+  });
+
   // ── Letters ─────────────────────────────────────────────
   app.get('/api/letters', requireAuth, (req, res) => {
     res.json(all('SELECT * FROM letters WHERE archived = 0 ORDER BY created_at DESC'));

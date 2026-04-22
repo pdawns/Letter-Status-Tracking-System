@@ -1,4 +1,4 @@
-import { useState } from 'react';
+﻿import { useState } from 'react';
 import { ActionTicket as ActionTicketType, Letter } from '../types';
 import { Ticket, Download, X } from 'lucide-react';
 import { generateTicklerPDF, downloadTicklerPDF } from '../Generates/pdf';
@@ -98,7 +98,7 @@ export default function ActionTicket({ ticket, letter, onClose }: ActionTicketPr
         {/* Top bar */}
         <div className="flex items-center justify-between px-5 py-3 border-b shrink-0">
           <div className="flex items-center gap-2">
-            <Ticket className="w-4 h-4" style={{ color: '#004526' }} />
+            <Ticket className="w-4 h-4" style={{ color: 'var(--primary)' }} />
             <span className="font-semibold text-gray-800 text-sm">Action Tickler Slip</span>
           </div>
           <div className="flex gap-2">
@@ -106,9 +106,9 @@ export default function ActionTicket({ ticket, letter, onClose }: ActionTicketPr
               onClick={handleDownload}
               disabled={generating}
               className="flex items-center gap-1.5 px-3 py-1.5 text-white text-xs rounded-lg transition-colors disabled:opacity-50"
-              style={{ backgroundColor: '#004526' }}
-              onMouseEnter={(e) => !generating && (e.currentTarget.style.backgroundColor = '#9CAF88')}
-              onMouseLeave={(e) => !generating && (e.currentTarget.style.backgroundColor = '#004526')}
+              style={{ backgroundColor: 'var(--primary)' }}
+              onMouseEnter={(e) => !generating && (e.currentTarget.style.backgroundColor = 'var(--accent)')}
+              onMouseLeave={(e) => !generating && (e.currentTarget.style.backgroundColor = 'var(--primary)')}
             >
               <Download className="w-3.5 h-3.5" />
               {generating ? 'Generating...' : 'Download PDF'}

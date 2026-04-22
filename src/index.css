@@ -2,30 +2,39 @@
 @tailwind components;
 @tailwind utilities;
 
+:root {
+  --app-bg: linear-gradient(160deg, #002b15 0%, #004526 50%, #002b15 100%);
+  --accent: #9CAF88;
+  --accent-rgb: 156,175,136;
+  --accent-text: #DFF5E1;
+  --accent-text-rgb: 223,245,225;
+  --primary: #004526;
+  --primary-hover: #005c33;
+  --primary-rgb: 0,69,38;
+  --card-bg: rgba(0,45,20,0.45);
+  --card-border: rgba(156,175,136,0.2);
+  --card-header: rgba(0,45,20,0.4);
+  --card-header-border: rgba(156,175,136,0.1);
+  --sidebar-bg: rgba(0,45,20,0.72);
+  --input-bg: rgba(0,0,0,0.25);
+  --input-border: rgba(156,175,136,0.2);
+  --scroll-thumb: rgba(156,175,136,0.25);
+}
+
 * {
   font-family: Arial, sans-serif;
 }
 
-/* ── Custom scrollbar ── */
-::-webkit-scrollbar {
-  width: 4px;
-  height: 4px;
-}
-
-::-webkit-scrollbar-track {
-  background: transparent;
-}
-
+::-webkit-scrollbar { width: 4px; height: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb {
-  background: rgba(156, 175, 136, 0.25);
+  background: var(--scroll-thumb);
   border-radius: 99px;
 }
-
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(156, 175, 136, 0.45);
+  background: rgba(var(--accent-rgb), 0.45);
 }
-
 * {
   scrollbar-width: thin;
-  scrollbar-color: rgba(156, 175, 136, 0.25) transparent;
+  scrollbar-color: var(--scroll-thumb) transparent;
 }

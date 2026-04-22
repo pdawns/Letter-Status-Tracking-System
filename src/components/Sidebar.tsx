@@ -36,8 +36,7 @@ export default function Sidebar({ currentView, onViewChange, onLogout, role = 's
       <div
         className="fixed inset-0 z-[60] transition-all duration-300"
         style={{
-          background: menuOpen ? 'rgba(0,0,0,0.55)' : 'transparent',
-          backdropFilter: menuOpen ? 'blur(6px)' : 'none',
+          background: menuOpen ? 'rgba(0,0,0,0.55)' : 'transparent',          backdropFilter: menuOpen ? 'blur(6px)' : 'none',
           WebkitBackdropFilter: menuOpen ? 'blur(6px)' : 'none',
           pointerEvents: menuOpen ? 'auto' : 'none',
         }}
@@ -50,10 +49,10 @@ export default function Sidebar({ currentView, onViewChange, onLogout, role = 's
         style={{
           bottom: menuOpen ? '0' : '-100%',
           borderRadius: '28px 28px 0 0',
-          background: 'rgba(0, 45, 20, 0.72)',
+          background: 'var(--sidebar-bg)',
           backdropFilter: 'blur(32px)',
           WebkitBackdropFilter: 'blur(32px)',
-          border: '1px solid rgba(156,175,136,0.18)',
+          border: '1px solid rgba(var(--accent-rgb), 0.18)',
           borderBottom: 'none',
           boxShadow: '0 -12px 60px rgba(0,0,0,0.45)',
           paddingBottom: 'env(safe-area-inset-bottom, 16px)',
@@ -69,13 +68,13 @@ export default function Sidebar({ currentView, onViewChange, onLogout, role = 's
         <div className="flex items-center justify-between px-6 py-3">
           <div>
             <p className="text-white font-bold text-base leading-tight tracking-wide">DocuTrack</p>
-            <p className="text-xs mt-0.5" style={{ color: '#9CAF88' }}>
+            <p className="text-xs mt-0.5" style={{ color: 'var(--accent)' }}>
               {localStorage.getItem('dts_username') || 'staff'}
             </p>
             <span className="text-xs px-1.5 py-0.5 rounded-md mt-1 inline-block" style={{
-              background: role === 'receiver' ? 'rgba(234,179,8,0.15)' : 'rgba(156,175,136,0.15)',
-              color: role === 'receiver' ? '#fde047' : '#9CAF88',
-              border: `1px solid ${role === 'receiver' ? 'rgba(234,179,8,0.3)' : 'rgba(156,175,136,0.2)'}`,
+              background: role === 'receiver' ? 'rgba(234,179,8,0.15)' : 'rgba(var(--accent-rgb),0.15)',
+              color: role === 'receiver' ? '#fde047' : 'var(--accent)',
+              border: `1px solid ${role === 'receiver' ? 'rgba(234,179,8,0.3)' : 'rgba(var(--accent-rgb),0.2)'}`,
               fontSize: '9px',
               fontWeight: 600,
               textTransform: 'uppercase',
@@ -107,12 +106,12 @@ export default function Sidebar({ currentView, onViewChange, onLogout, role = 's
                 className="flex flex-col items-center gap-1.5 py-3 px-1 rounded-2xl transition-all duration-200 active:scale-95"
                 style={{
                   background: isActive
-                    ? 'rgba(223,245,225,0.18)'
+                    ? 'rgba(var(--accent-text-rgb),0.18)'
                     : 'rgba(255,255,255,0.05)',
                   border: isActive
-                    ? '1px solid rgba(156,175,136,0.45)'
+                    ? '1px solid rgba(var(--accent-rgb),0.45)'
                     : '1px solid rgba(255,255,255,0.07)',
-                  boxShadow: isActive ? '0 0 16px rgba(156,175,136,0.15)' : 'none',
+                  boxShadow: isActive ? `0 0 16px rgba(var(--accent-rgb),0.15)` : 'none',
                 }}
               >
                 <div
@@ -120,23 +119,23 @@ export default function Sidebar({ currentView, onViewChange, onLogout, role = 's
                   style={{
                     width: '40px',
                     height: '40px',
-                    background: isActive ? 'rgba(0,69,38,0.6)' : 'rgba(255,255,255,0.06)',
-                    border: isActive ? '1px solid rgba(156,175,136,0.3)' : '1px solid rgba(255,255,255,0.06)',
+                    background: isActive ? 'rgba(var(--primary-rgb),0.6)' : 'rgba(255,255,255,0.06)',
+                    border: isActive ? '1px solid rgba(var(--accent-rgb),0.3)' : '1px solid rgba(255,255,255,0.06)',
                   }}
                 >
                   <Icon
                     style={{
                       width: '20px',
                       height: '20px',
-                      color: isActive ? '#DFF5E1' : 'rgba(255,255,255,0.55)',
-                      filter: isActive ? 'drop-shadow(0 0 5px rgba(156,175,136,0.7))' : 'none',
+                      color: isActive ? 'var(--accent-text)' : 'rgba(255,255,255,0.55)',
+                      filter: isActive ? `drop-shadow(0 0 5px rgba(var(--accent-rgb),0.7))` : 'none',
                     }}
                   />
                 </div>
                 <span
                   style={{
                     fontSize: '9px',
-                    color: isActive ? '#DFF5E1' : 'rgba(255,255,255,0.45)',
+                    color: isActive ? 'var(--accent-text)' : 'rgba(255,255,255,0.45)',
                     fontWeight: isActive ? 700 : 400,
                     textAlign: 'center',
                     lineHeight: 1.2,

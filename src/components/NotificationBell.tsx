@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+﻿import { useEffect, useRef, useState } from 'react';
 import {
   Bell, X, FileText, Clock, AlertTriangle, CheckCircle,
   User, Building2, Phone, Mail, ArrowRight, Calendar,
@@ -81,7 +81,7 @@ const URGENCY_LABEL: Record<Urgency, string> = { overdue: 'Overdue', pending: 'P
 const URGENCY_COLORS: Record<Urgency, { bg: string; text: string; icon: string; border: string }> = {
   overdue:   { bg: 'rgba(239,68,68,0.12)',    text: '#fca5a5', icon: '#f87171', border: 'rgba(239,68,68,0.25)' },
   pending:   { bg: 'rgba(251,191,36,0.12)',   text: '#fcd34d', icon: '#fbbf24', border: 'rgba(251,191,36,0.25)' },
-  new:       { bg: 'rgba(156,175,136,0.15)',  text: '#DFF5E1', icon: '#9CAF88', border: 'rgba(156,175,136,0.3)' },
+  new:       { bg: 'rgba(var(--accent-rgb),0.15)',  text: 'var(--accent-text)', icon: 'var(--accent)', border: 'rgba(var(--accent-rgb),0.3)' },
   completed: { bg: 'rgba(16,185,129,0.12)',   text: '#6ee7b7', icon: '#34d399', border: 'rgba(16,185,129,0.25)' },
 };
 
@@ -116,10 +116,10 @@ function NotificationDetail({
       <div
         className="rounded-2xl w-full max-w-md flex flex-col overflow-hidden"
         style={{
-          background: 'rgba(0,40,18,0.88)',
+          background: 'var(--card-bg)',
           backdropFilter: 'blur(28px)',
           WebkitBackdropFilter: 'blur(28px)',
-          border: '1px solid rgba(156,175,136,0.2)',
+          border: '1px solid rgba(var(--accent-rgb),0.2)',
           boxShadow: '0 8px 40px rgba(0,0,0,0.5)',
         }}
         onClick={(e) => e.stopPropagation()}
@@ -135,7 +135,7 @@ function NotificationDetail({
             </div>
             <div>
               <p className="text-white text-sm font-semibold">{letter.reference_number}</p>
-              <p className="text-xs" style={{ color: '#9CAF88' }}>
+              <p className="text-xs" style={{ color: 'var(--accent)' }}>
                 {URGENCY_LABEL[urgency]} · {timeAgo(letter.created_at)}
               </p>
             </div>
@@ -164,13 +164,13 @@ function NotificationDetail({
           {/* Document info */}
           <div className="px-5 pt-4 pb-2 space-y-3">
             <div>
-              <p className="text-xs uppercase tracking-wide mb-1" style={{ color: 'rgba(156,175,136,0.65)' }}>Document</p>
-              <p className="text-sm font-semibold" style={{ color: '#DFF5E1' }}>{letter.title}</p>
+              <p className="text-xs uppercase tracking-wide mb-1" style={{ color: 'rgba(var(--accent-rgb),0.65)' }}>Document</p>
+              <p className="text-sm font-semibold" style={{ color: 'var(--accent-text)' }}>{letter.title}</p>
               {letter.document_subject && (
-                <p className="text-xs mt-0.5" style={{ color: 'rgba(223,245,225,0.6)' }}>{letter.document_subject}</p>
+                <p className="text-xs mt-0.5" style={{ color: 'rgba(var(--accent-text-rgb),0.6)' }}>{letter.document_subject}</p>
               )}
               {letter.document_type && (
-                <span className="inline-block mt-1 text-xs rounded-full px-2 py-0.5 font-medium capitalize" style={{ background: 'rgba(156,175,136,0.15)', color: '#9CAF88', border: '1px solid rgba(156,175,136,0.25)' }}>
+                <span className="inline-block mt-1 text-xs rounded-full px-2 py-0.5 font-medium capitalize" style={{ background: 'rgba(var(--accent-rgb),0.15)', color: 'var(--accent)', border: '1px solid rgba(var(--accent-rgb),0.25)' }}>
                   {letter.document_type}
                 </span>
               )}
@@ -178,37 +178,37 @@ function NotificationDetail({
 
             {letter.description && (
               <div>
-                <p className="text-xs uppercase tracking-wide mb-1" style={{ color: 'rgba(156,175,136,0.65)' }}>Description</p>
-                <p className="text-xs leading-relaxed" style={{ color: 'rgba(223,245,225,0.65)' }}>{letter.description}</p>
+                <p className="text-xs uppercase tracking-wide mb-1" style={{ color: 'rgba(var(--accent-rgb),0.65)' }}>Description</p>
+                <p className="text-xs leading-relaxed" style={{ color: 'rgba(var(--accent-text-rgb),0.65)' }}>{letter.description}</p>
               </div>
             )}
 
             {/* Sender info */}
             {(letter.sender_name || letter.sender_office) && (
               <div>
-                <p className="text-xs uppercase tracking-wide mb-2" style={{ color: 'rgba(156,175,136,0.65)' }}>Sender</p>
+                <p className="text-xs uppercase tracking-wide mb-2" style={{ color: 'rgba(var(--accent-rgb),0.65)' }}>Sender</p>
                 <div className="space-y-1.5">
                   {letter.sender_name && (
-                    <div className="flex items-center gap-2 text-xs" style={{ color: 'rgba(223,245,225,0.7)' }}>
-                      <User className="w-3.5 h-3.5 flex-shrink-0" style={{ color: 'rgba(156,175,136,0.6)' }} />
+                    <div className="flex items-center gap-2 text-xs" style={{ color: 'rgba(var(--accent-text-rgb),0.7)' }}>
+                      <User className="w-3.5 h-3.5 flex-shrink-0" style={{ color: 'rgba(var(--accent-rgb),0.6)' }} />
                       {letter.sender_name}
                     </div>
                   )}
                   {letter.sender_office && (
-                    <div className="flex items-center gap-2 text-xs" style={{ color: 'rgba(223,245,225,0.7)' }}>
-                      <Building2 className="w-3.5 h-3.5 flex-shrink-0" style={{ color: 'rgba(156,175,136,0.6)' }} />
+                    <div className="flex items-center gap-2 text-xs" style={{ color: 'rgba(var(--accent-text-rgb),0.7)' }}>
+                      <Building2 className="w-3.5 h-3.5 flex-shrink-0" style={{ color: 'rgba(var(--accent-rgb),0.6)' }} />
                       {letter.sender_office}
                     </div>
                   )}
                   {letter.sender_phone && (
-                    <div className="flex items-center gap-2 text-xs" style={{ color: 'rgba(223,245,225,0.7)' }}>
-                      <Phone className="w-3.5 h-3.5 flex-shrink-0" style={{ color: 'rgba(156,175,136,0.6)' }} />
+                    <div className="flex items-center gap-2 text-xs" style={{ color: 'rgba(var(--accent-text-rgb),0.7)' }}>
+                      <Phone className="w-3.5 h-3.5 flex-shrink-0" style={{ color: 'rgba(var(--accent-rgb),0.6)' }} />
                       {letter.sender_phone}
                     </div>
                   )}
                   {letter.sender_email && (
-                    <div className="flex items-center gap-2 text-xs" style={{ color: 'rgba(223,245,225,0.7)' }}>
-                      <Mail className="w-3.5 h-3.5 flex-shrink-0" style={{ color: 'rgba(156,175,136,0.6)' }} />
+                    <div className="flex items-center gap-2 text-xs" style={{ color: 'rgba(var(--accent-text-rgb),0.7)' }}>
+                      <Mail className="w-3.5 h-3.5 flex-shrink-0" style={{ color: 'rgba(var(--accent-rgb),0.6)' }} />
                       {letter.sender_email}
                     </div>
                   )}
@@ -217,15 +217,15 @@ function NotificationDetail({
             )}
 
             {/* Date */}
-            <div className="flex items-center gap-2 text-xs" style={{ color: 'rgba(156,175,136,0.65)' }}>
-              <Calendar className="w-3.5 h-3.5" style={{ color: 'rgba(156,175,136,0.5)' }} />
+            <div className="flex items-center gap-2 text-xs" style={{ color: 'rgba(var(--accent-rgb),0.65)' }}>
+              <Calendar className="w-3.5 h-3.5" style={{ color: 'rgba(var(--accent-rgb),0.5)' }} />
               Created {formatDate(letter.created_at)}
             </div>
           </div>
 
           {/* Status progress */}
-          <div className="px-5 py-3" style={{ borderTop: '1px solid rgba(156,175,136,0.12)' }}>
-            <p className="text-xs uppercase tracking-wide mb-3" style={{ color: 'rgba(156,175,136,0.65)' }}>Signature Progress</p>
+          <div className="px-5 py-3" style={{ borderTop: '1px solid rgba(var(--accent-rgb),0.12)' }}>
+            <p className="text-xs uppercase tracking-wide mb-3" style={{ color: 'rgba(var(--accent-rgb),0.65)' }}>Signature Progress</p>
             <div className="space-y-2">
               {required.filter((s) => s !== 'noted').map((status) => {
                 // Normalize: 'for approval' → 'approved', 'for review' → 'reviewed'
@@ -280,22 +280,22 @@ function NotificationDetail({
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between">
-                        <span className="text-xs font-medium" style={{ color: 'rgba(223,245,225,0.85)' }}>{label}</span>
+                        <span className="text-xs font-medium" style={{ color: 'rgba(var(--accent-text-rgb),0.85)' }}>{label}</span>
                         {done
                           ? <span className="text-xs font-medium" style={{ color: '#6ee7b7' }}>{doneLabel[status] ?? 'Completed'}</span>
                           : <span className="text-xs font-medium" style={{ color: '#fca5a5' }}>Pending</span>
                         }
                       </div>
                       {!done && hint && (
-                        <p className="text-xs mt-0.5" style={{ color: 'rgba(156,175,136,0.6)' }}>Awaiting: {hint}</p>
+                        <p className="text-xs mt-0.5" style={{ color: 'rgba(var(--accent-rgb),0.6)' }}>Awaiting: {hint}</p>
                       )}
                       {done && completedEntry && (
-                        <p className="text-xs mt-0.5" style={{ color: 'rgba(156,175,136,0.6)' }}>
+                        <p className="text-xs mt-0.5" style={{ color: 'rgba(var(--accent-rgb),0.6)' }}>
                           by {completedEntry.signed_by} · {timeAgo(completedEntry.signed_at)}
                         </p>
                       )}
                       {done && completedEntry?.notes && (
-                        <p className="text-xs mt-0.5 italic" style={{ color: 'rgba(223,245,225,0.5)' }}>"{completedEntry.notes}"</p>
+                        <p className="text-xs mt-0.5 italic" style={{ color: 'rgba(var(--accent-text-rgb),0.5)' }}>"{completedEntry.notes}"</p>
                       )}
                     </div>
                   </div>
@@ -321,14 +321,14 @@ function NotificationDetail({
                 : 100;
               return (
                 <div className="mt-3">
-                  <div className="flex justify-between text-xs mb-1" style={{ color: 'rgba(156,175,136,0.65)' }}>
+                  <div className="flex justify-between text-xs mb-1" style={{ color: 'rgba(var(--accent-rgb),0.65)' }}>
                     <span>{filteredCompleted.length} of {filteredRequired.length} completed</span>
                     <span>{pct}%</span>
                   </div>
                   <div className="h-1.5 rounded-full overflow-hidden" style={{ background: 'rgba(0,0,0,0.3)' }}>
                     <div
                       className="h-full rounded-full transition-all"
-                      style={{ width: `${pct}%`, backgroundColor: '#9CAF88' }}
+                      style={{ width: `${pct}%`, backgroundColor: 'var(--accent)' }}
                     />
                   </div>
                 </div>
@@ -338,18 +338,18 @@ function NotificationDetail({
         </div>
 
         {/* Footer actions */}
-        <div className="px-5 py-4 flex gap-3" style={{ borderTop: '1px solid rgba(156,175,136,0.12)' }}>
+        <div className="px-5 py-4 flex gap-3" style={{ borderTop: '1px solid rgba(var(--accent-rgb),0.12)' }}>
           <button
             onClick={() => { onDismiss(notification.id); onClose(); }}
             className="flex-1 text-sm py-2 rounded-xl font-medium transition-all active:scale-95"
-            style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(156,175,136,0.2)', color: 'rgba(223,245,225,0.7)' }}
+            style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(var(--accent-rgb),0.2)', color: 'rgba(var(--accent-text-rgb),0.7)' }}
           >
             Mark as Read
           </button>
           <button
             onClick={() => { onNavigate(notification.id); onClose(); }}
             className="flex-1 text-sm py-2 rounded-xl text-white font-medium flex items-center justify-center gap-2 transition-all active:scale-95 hover:opacity-90"
-            style={{ backgroundColor: '#004526', border: '1px solid rgba(156,175,136,0.3)' }}
+            style={{ backgroundColor: 'var(--primary)', border: '1px solid rgba(var(--accent-rgb),0.3)' }}
           >
             View Document
             <ArrowRight className="w-4 h-4" />
@@ -521,10 +521,10 @@ export default function NotificationBell({ onNavigate }: Props) {
             style={{
               width: '340px',
               maxHeight: '480px',
-              background: 'rgba(0, 40, 18, 0.82)',
+              background: 'var(--card-bg)',
               backdropFilter: 'blur(28px)',
               WebkitBackdropFilter: 'blur(28px)',
-              border: '1px solid rgba(156,175,136,0.2)',
+              border: '1px solid rgba(var(--accent-rgb),0.2)',
               boxShadow: '0 8px 40px rgba(0,0,0,0.45)',
             }}
           >
@@ -541,7 +541,7 @@ export default function NotificationBell({ onNavigate }: Props) {
               </div>
               <div className="flex items-center gap-2">
                 {totalVisible > 0 && (
-                  <button onClick={dismissAll} className="text-xs hover:opacity-75 transition-opacity" style={{ color: '#9CAF88' }}>
+                  <button onClick={dismissAll} className="text-xs hover:opacity-75 transition-opacity" style={{ color: 'var(--accent)' }}>
                     Mark all read
                   </button>
                 )}
@@ -554,33 +554,33 @@ export default function NotificationBell({ onNavigate }: Props) {
             {/* Body */}
             <div className="overflow-y-auto flex-1">
               {loading && all.length === 0 ? (
-                <div className="flex items-center justify-center py-12 text-sm gap-2" style={{ color: 'rgba(156,175,136,0.7)' }}>
-                  <div className="w-4 h-4 border-2 rounded-full animate-spin" style={{ borderColor: 'rgba(156,175,136,0.3)', borderTopColor: '#9CAF88' }} />
+                <div className="flex items-center justify-center py-12 text-sm gap-2" style={{ color: 'rgba(var(--accent-rgb),0.7)' }}>
+                  <div className="w-4 h-4 border-2 rounded-full animate-spin" style={{ borderColor: 'rgba(var(--accent-rgb),0.3)', borderTopColor: 'var(--accent)' }} />
                   Loading...
                 </div>
               ) : visible.length === 0 && visibleEmails.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-12 gap-3">
-                  <CheckCircle className="w-10 h-10" style={{ color: '#9CAF88' }} />
-                  <p className="text-sm font-medium" style={{ color: 'rgba(223,245,225,0.8)' }}>All caught up</p>
-                  <p className="text-xs" style={{ color: 'rgba(156,175,136,0.6)' }}>No pending documents</p>
+                  <CheckCircle className="w-10 h-10" style={{ color: 'var(--accent)' }} />
+                  <p className="text-sm font-medium" style={{ color: 'rgba(var(--accent-text-rgb),0.8)' }}>All caught up</p>
+                  <p className="text-xs" style={{ color: 'rgba(var(--accent-rgb),0.6)' }}>No pending documents</p>
                 </div>
               ) : (
                 <>
                   {/* Email sent notifications section */}
                   {visibleEmails.length > 0 && (
                     <div>
-                      <div className="flex items-center gap-2 px-4 py-2 sticky top-0 border-b" style={{ background: 'rgba(0,35,15,0.9)', borderColor: 'rgba(156,175,136,0.12)' }}>
+                      <div className="flex items-center gap-2 px-4 py-2 sticky top-0 border-b" style={{ background: 'var(--card-bg)', borderColor: 'rgba(var(--accent-rgb),0.12)' }}>
                         <Mail className="w-3.5 h-3.5 text-blue-400" />
                         <span className="text-xs font-semibold uppercase tracking-wide text-blue-400">Email Sent</span>
-                        <span className="ml-auto text-xs" style={{ color: 'rgba(156,175,136,0.6)' }}>{visibleEmails.length}</span>
+                        <span className="ml-auto text-xs" style={{ color: 'rgba(var(--accent-rgb),0.6)' }}>{visibleEmails.length}</span>
                       </div>
                       {visibleEmails.map((en) => (
-                        <div key={en.id} className="relative group border-b last:border-0" style={{ borderColor: 'rgba(156,175,136,0.1)' }}>
+                        <div key={en.id} className="relative group border-b last:border-0" style={{ borderColor: 'rgba(var(--accent-rgb),0.1)' }}>
                           <button
                             onClick={() => { setSelectedEmail(en); setOpen(false); }}
                             className="w-full text-left px-4 py-3 pr-10 transition-colors"
                             style={{ background: 'transparent' }}
-                            onMouseEnter={(e) => (e.currentTarget.style.background = 'rgba(156,175,136,0.08)')}
+                            onMouseEnter={(e) => (e.currentTarget.style.background = 'rgba(var(--accent-rgb),0.08)')}
                             onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
                           >
                             <div className="flex items-start gap-3">
@@ -589,12 +589,12 @@ export default function NotificationBell({ onNavigate }: Props) {
                               </div>
                               <div className="min-w-0 flex-1">
                                 <div className="flex items-center justify-between gap-1">
-                                  <p className="text-xs font-semibold truncate" style={{ color: '#DFF5E1' }}>
+                                  <p className="text-xs font-semibold truncate" style={{ color: 'var(--accent-text)' }}>
                                     {en.letter.reference_number}
                                   </p>
-                                  <span className="text-xs flex-shrink-0" style={{ color: 'rgba(156,175,136,0.6)' }}>{timeAgo(en.sentAt)}</span>
+                                  <span className="text-xs flex-shrink-0" style={{ color: 'rgba(var(--accent-rgb),0.6)' }}>{timeAgo(en.sentAt)}</span>
                                 </div>
-                                <p className="text-xs truncate mt-0.5" style={{ color: 'rgba(223,245,225,0.6)' }}>{en.letter.title}</p>
+                                <p className="text-xs truncate mt-0.5" style={{ color: 'rgba(var(--accent-text-rgb),0.6)' }}>{en.letter.title}</p>
                                 <p className="text-xs mt-1 text-blue-400">
                                   ✓ Email sent to {en.letter.sender_email || en.letter.sender_name || 'sender'}
                                 </p>
@@ -617,7 +617,7 @@ export default function NotificationBell({ onNavigate }: Props) {
                   {grouped.map(({ urgency, items }) => (
                   <div key={urgency}>
                     {/* Group label */}
-                    <div className="flex items-center gap-2 px-4 py-2 sticky top-0 border-b" style={{ background: 'rgba(0,35,15,0.9)', borderColor: 'rgba(156,175,136,0.12)' }}>
+                    <div className="flex items-center gap-2 px-4 py-2 sticky top-0 border-b" style={{ background: 'var(--card-bg)', borderColor: 'rgba(var(--accent-rgb),0.12)' }}>
                       {urgency === 'overdue'   && <AlertTriangle className="w-3.5 h-3.5" style={{ color: URGENCY_COLORS.overdue.icon }} />}
                       {urgency === 'pending'   && <Clock className="w-3.5 h-3.5" style={{ color: URGENCY_COLORS.pending.icon }} />}
                       {urgency === 'new'       && <FileText className="w-3.5 h-3.5" style={{ color: URGENCY_COLORS.new.icon }} />}
@@ -625,7 +625,7 @@ export default function NotificationBell({ onNavigate }: Props) {
                       <span className="text-xs font-semibold uppercase tracking-wide" style={{ color: URGENCY_COLORS[urgency].text }}>
                         {URGENCY_LABEL[urgency]}
                       </span>
-                      <span className="ml-auto text-xs" style={{ color: 'rgba(156,175,136,0.6)' }}>{items.length}</span>
+                      <span className="ml-auto text-xs" style={{ color: 'rgba(var(--accent-rgb),0.6)' }}>{items.length}</span>
                     </div>
 
                     {/* Items */}
@@ -637,12 +637,12 @@ export default function NotificationBell({ onNavigate }: Props) {
                           .split(',').map((s) => _normalize[s.trim()] ?? s.trim()).filter(Boolean)
                       )];
                       return (
-                        <div key={id} className="relative group border-b last:border-0" style={{ borderColor: 'rgba(156,175,136,0.1)' }}>
+                        <div key={id} className="relative group border-b last:border-0" style={{ borderColor: 'rgba(var(--accent-rgb),0.1)' }}>
                           <button
                             onClick={() => { markViewed(id); setSelected(notif); setOpen(false); }}
                             className="w-full text-left px-4 py-3 pr-10 transition-colors"
                             style={{ background: 'transparent', opacity: viewed.has(id) ? 0.5 : 1 }}
-                            onMouseEnter={(e) => (e.currentTarget.style.background = 'rgba(156,175,136,0.08)')}
+                            onMouseEnter={(e) => (e.currentTarget.style.background = 'rgba(var(--accent-rgb),0.08)')}
                             onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
                           >
                             <div className="flex items-start gap-3">
@@ -651,17 +651,17 @@ export default function NotificationBell({ onNavigate }: Props) {
                               </div>
                               <div className="min-w-0 flex-1">
                                 <div className="flex items-center justify-between gap-1">
-                                  <p className="text-xs font-semibold truncate" style={{ color: '#DFF5E1' }}>
+                                  <p className="text-xs font-semibold truncate" style={{ color: 'var(--accent-text)' }}>
                                     {letter.reference_number}
                                   </p>
                                   <div className="flex items-center gap-1.5 flex-shrink-0">
                                     {viewed.has(id) && (
-                                      <span className="text-xs italic" style={{ color: 'rgba(156,175,136,0.5)' }}>viewed</span>
+                                      <span className="text-xs italic" style={{ color: 'rgba(var(--accent-rgb),0.5)' }}>viewed</span>
                                     )}
-                                    <span className="text-xs" style={{ color: 'rgba(156,175,136,0.6)' }}>{timeAgo(letter.created_at)}</span>
+                                    <span className="text-xs" style={{ color: 'rgba(var(--accent-rgb),0.6)' }}>{timeAgo(letter.created_at)}</span>
                                   </div>
                                 </div>
-                                <p className="text-xs truncate mt-0.5" style={{ color: 'rgba(223,245,225,0.6)' }}>{letter.title}</p>
+                                <p className="text-xs truncate mt-0.5" style={{ color: 'rgba(var(--accent-text-rgb),0.6)' }}>{letter.title}</p>
                                 {/* Mini progress */}
                                 <div className="flex items-center gap-1.5 mt-1.5">
                                   {required.filter((s) => s !== 'noted').map((s) => {
@@ -720,8 +720,8 @@ export default function NotificationBell({ onNavigate }: Props) {
 
             {/* Footer */}
             {totalVisible > 0 && (
-              <div className="px-4 py-2 flex-shrink-0 text-center" style={{ borderTop: '1px solid rgba(156,175,136,0.12)' }}>
-                <p className="text-xs" style={{ color: 'rgba(156,175,136,0.5)' }}>
+              <div className="px-4 py-2 flex-shrink-0 text-center" style={{ borderTop: '1px solid rgba(var(--accent-rgb),0.12)' }}>
+                <p className="text-xs" style={{ color: 'rgba(var(--accent-rgb),0.5)' }}>
                   Click a notification to view details
                 </p>
               </div>
@@ -750,10 +750,10 @@ export default function NotificationBell({ onNavigate }: Props) {
           <div
             className="rounded-2xl w-full max-w-md flex flex-col overflow-hidden"
             style={{
-              background: 'rgba(0, 40, 18, 0.88)',
+              background: 'var(--card-bg)',
               backdropFilter: 'blur(28px)',
               WebkitBackdropFilter: 'blur(28px)',
-              border: '1px solid rgba(156,175,136,0.2)',
+              border: '1px solid rgba(var(--accent-rgb),0.2)',
               boxShadow: '0 8px 40px rgba(0,0,0,0.5)',
             }}
             onClick={(e) => e.stopPropagation()}
@@ -766,7 +766,7 @@ export default function NotificationBell({ onNavigate }: Props) {
                 </div>
                 <div>
                   <p className="text-white text-sm font-semibold">{selectedEmail.letter.reference_number}</p>
-                  <p className="text-xs" style={{ color: '#9CAF88' }}>Email Sent · {timeAgo(selectedEmail.sentAt)}</p>
+                  <p className="text-xs" style={{ color: 'var(--accent)' }}>Email Sent · {timeAgo(selectedEmail.sentAt)}</p>
                 </div>
               </div>
               <button onClick={() => setSelectedEmail(null)} className="text-white hover:opacity-75">
@@ -786,10 +786,10 @@ export default function NotificationBell({ onNavigate }: Props) {
 
               {/* Document info */}
               <div>
-                <p className="text-xs uppercase tracking-wide mb-1" style={{ color: 'rgba(156,175,136,0.6)' }}>Document</p>
-                <p className="text-sm font-semibold" style={{ color: '#DFF5E1' }}>{selectedEmail.letter.title}</p>
+                <p className="text-xs uppercase tracking-wide mb-1" style={{ color: 'rgba(var(--accent-rgb),0.6)' }}>Document</p>
+                <p className="text-sm font-semibold" style={{ color: 'var(--accent-text)' }}>{selectedEmail.letter.title}</p>
                 {selectedEmail.letter.document_type && (
-                  <span className="inline-block mt-1 text-xs rounded-full px-2 py-0.5 font-medium capitalize" style={{ background: 'rgba(156,175,136,0.15)', color: '#9CAF88', border: '1px solid rgba(156,175,136,0.25)' }}>
+                  <span className="inline-block mt-1 text-xs rounded-full px-2 py-0.5 font-medium capitalize" style={{ background: 'rgba(var(--accent-rgb),0.15)', color: 'var(--accent)', border: '1px solid rgba(var(--accent-rgb),0.25)' }}>
                     {selectedEmail.letter.document_type}
                   </span>
                 )}
@@ -797,23 +797,23 @@ export default function NotificationBell({ onNavigate }: Props) {
 
               {/* Recipient info */}
               <div>
-                <p className="text-xs uppercase tracking-wide mb-2" style={{ color: 'rgba(156,175,136,0.6)' }}>Sent To</p>
+                <p className="text-xs uppercase tracking-wide mb-2" style={{ color: 'rgba(var(--accent-rgb),0.6)' }}>Sent To</p>
                 <div className="space-y-1.5">
                   {selectedEmail.letter.sender_name && (
-                    <div className="flex items-center gap-2 text-xs" style={{ color: 'rgba(223,245,225,0.7)' }}>
-                      <User className="w-3.5 h-3.5 flex-shrink-0" style={{ color: 'rgba(156,175,136,0.6)' }} />
+                    <div className="flex items-center gap-2 text-xs" style={{ color: 'rgba(var(--accent-text-rgb),0.7)' }}>
+                      <User className="w-3.5 h-3.5 flex-shrink-0" style={{ color: 'rgba(var(--accent-rgb),0.6)' }} />
                       {selectedEmail.letter.sender_name}
                     </div>
                   )}
                   {selectedEmail.letter.sender_office && (
-                    <div className="flex items-center gap-2 text-xs" style={{ color: 'rgba(223,245,225,0.7)' }}>
-                      <Building2 className="w-3.5 h-3.5 flex-shrink-0" style={{ color: 'rgba(156,175,136,0.6)' }} />
+                    <div className="flex items-center gap-2 text-xs" style={{ color: 'rgba(var(--accent-text-rgb),0.7)' }}>
+                      <Building2 className="w-3.5 h-3.5 flex-shrink-0" style={{ color: 'rgba(var(--accent-rgb),0.6)' }} />
                       {selectedEmail.letter.sender_office}
                     </div>
                   )}
                   {selectedEmail.letter.sender_email && (
-                    <div className="flex items-center gap-2 text-xs" style={{ color: 'rgba(223,245,225,0.7)' }}>
-                      <Mail className="w-3.5 h-3.5 flex-shrink-0" style={{ color: 'rgba(156,175,136,0.6)' }} />
+                    <div className="flex items-center gap-2 text-xs" style={{ color: 'rgba(var(--accent-text-rgb),0.7)' }}>
+                      <Mail className="w-3.5 h-3.5 flex-shrink-0" style={{ color: 'rgba(var(--accent-rgb),0.6)' }} />
                       {selectedEmail.letter.sender_email}
                     </div>
                   )}
@@ -822,26 +822,26 @@ export default function NotificationBell({ onNavigate }: Props) {
 
               {/* Email message preview */}
               <div>
-                <p className="text-xs uppercase tracking-wide mb-1" style={{ color: 'rgba(156,175,136,0.6)' }}>Message Sent</p>
-                <div className="rounded-lg p-3 text-xs whitespace-pre-wrap leading-relaxed" style={{ maxHeight: '140px', overflowY: 'auto', background: 'rgba(0,0,0,0.25)', border: '1px solid rgba(156,175,136,0.15)', color: 'rgba(223,245,225,0.65)' }}>
+                <p className="text-xs uppercase tracking-wide mb-1" style={{ color: 'rgba(var(--accent-rgb),0.6)' }}>Message Sent</p>
+                <div className="rounded-lg p-3 text-xs whitespace-pre-wrap leading-relaxed" style={{ maxHeight: '140px', overflowY: 'auto', background: 'var(--input-bg)', border: '1px solid rgba(var(--accent-rgb),0.15)', color: 'rgba(var(--accent-text-rgb),0.65)' }}>
                   {`Good day${selectedEmail.letter.sender_name ? `, ${selectedEmail.letter.sender_name}` : ''}!\n\nThis is to inform you that your document titled "${selectedEmail.letter.title}" (Reference No: ${selectedEmail.letter.reference_number}) has been officially received by the Provincial Treasurer's Office, Province of Misamis Oriental on ${new Date(selectedEmail.letter.created_at).toLocaleDateString('en-PH', { year: 'numeric', month: 'long', day: 'numeric' })}.\n\nThank you.\n\n- Provincial Treasurer's Office\n  Province of Misamis Oriental`}
                 </div>
               </div>
             </div>
 
             {/* Footer */}
-            <div className="px-5 py-4 flex gap-3" style={{ borderTop: '1px solid rgba(156,175,136,0.12)' }}>
+            <div className="px-5 py-4 flex gap-3" style={{ borderTop: '1px solid rgba(var(--accent-rgb),0.12)' }}>
               <button
                 onClick={() => { dismissById(selectedEmail.id); setSelectedEmail(null); }}
                 className="flex-1 text-sm py-2 rounded-xl transition-colors font-medium"
-                style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(156,175,136,0.2)', color: 'rgba(223,245,225,0.7)' }}
+                style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(var(--accent-rgb),0.2)', color: 'rgba(var(--accent-text-rgb),0.7)' }}
               >
                 Mark as Read
               </button>
               <button
                 onClick={() => { setSelectedEmail(null); onNavigate(selectedEmail.letter.id); }}
                 className="flex-1 text-sm py-2 rounded-xl text-white font-medium flex items-center justify-center gap-2 transition-opacity hover:opacity-90"
-                style={{ backgroundColor: '#004526', border: '1px solid rgba(156,175,136,0.3)' }}
+                style={{ backgroundColor: 'var(--primary)', border: '1px solid rgba(var(--accent-rgb),0.3)' }}
               >
                 View Document
                 <ArrowRight className="w-4 h-4" />
