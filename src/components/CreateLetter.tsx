@@ -72,8 +72,32 @@ export default function CreateLetter({ onLetterCreated, onToast }: CreateLetterP
 
   // Hardcoded offices/departments for incoming sender
   const OFFICES = [
+    // Executive & Administration
+    'Provincial Governor\'s Office',
+    'Office of the Provincial Administrator',
+    'Office of the Assistant Provincial Administrator',
+    // Legislative
+    'Sangguniang Panlalawigan of Misamis Oriental',
+    // Financial & Budget
     'Provincial Treasurer\'s Office',
     'Provincial Budget Office',
+    // Property & Land
+    'Provincial Assessor\'s Office',
+    // Engineering & Infrastructure
+    'Provincial Engineering Office',
+    // Agriculture & Veterinary
+    'Provincial Veterinary Office',
+    'Provincial Agriculture Office',
+    // Health & Social Services
+    'Provincial Health Office',
+    'Provincial Social Welfare and Development Office (PSWDO)',
+    // Planning & Development
+    'Provincial Planning & Development Office (PPDO)',
+    // Legal & HR
+    'Provincial Legal Office',
+    'Human Resource Management Office (HRMO)',
+    // Disaster Management
+    'Provincial Disaster Risk Reduction and Management Office (PDRRMO)',
   ];
 
   useEffect(() => {

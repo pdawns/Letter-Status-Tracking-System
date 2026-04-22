@@ -275,17 +275,10 @@ export default function DocumentInfo({ letterId, onBack }: DocumentInfoProps) {
                       <img src={url} alt={document.file_name || 'Document'} className="max-w-full max-h-[600px] object-contain rounded shadow" />
                     </div>
                   );
-                  if (isOffice) return (
-                    <div className="flex flex-col items-center justify-center py-12 gap-3" style={{ background: 'rgba(0,0,0,0.2)' }}>
-                      <FileText className="w-12 h-12 opacity-30" style={{ color: 'var(--accent)' }} />
-                      <p className="text-sm font-medium" style={{ color: 'rgba(var(--accent-text-rgb),0.7)' }}>Word/Excel/PowerPoint files cannot be previewed in the browser.</p>
-                      <p className="text-xs" style={{ color: 'rgba(var(--accent-rgb),0.6)' }}>Download the file to open it in Microsoft Office or LibreOffice.</p>
-                      <button onClick={downloadDocument} className="flex items-center gap-1.5 text-white px-4 py-2 rounded-lg text-xs mt-1" style={{ backgroundColor: 'var(--primary)' }}>
-                        <Download className="w-3.5 h-3.5" /> Download File
-                      </button>
-                    </div>
-                  );
-                  if (isPdf) return <iframe src={url} title="Document Preview" className="w-full border-0" style={{ height: '600px' }} />;
+                  if (isOffice || isPdf) {
+                    const googleViewerUrl = `https://docs.google.com/viewer?url=${encodeURIComponent(url)}&embedded=true`;
+                    return <iframe src={googleViewerUrl} title="Document Preview" className="w-full border-0" style={{ height: '600px' }} />;
+                  }
                   return <iframe src={url} title="Document Preview" className="w-full border-0" style={{ height: '600px' }} />;
                 })()}
               </div>
