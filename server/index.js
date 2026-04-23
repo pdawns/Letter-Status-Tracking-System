@@ -255,7 +255,7 @@ initSqlJs().then((SQL) => {
 
   // ── Public endpoint (no auth) ────────────────────────────
   app.get('/api/public/letters', (req, res) => {
-    res.json(all('SELECT id, reference_number, title, document_subject, document_type, document_direction, created_at, required_statuses FROM letters WHERE archived = 0 ORDER BY created_at DESC'));
+    res.json(all('SELECT id, reference_number, title, document_subject, document_type, document_direction, created_at, required_statuses, sender_name, sender_office FROM letters WHERE archived = 0 ORDER BY created_at DESC'));
   });
 
   app.get('/api/public/letters/:id/statuses', (req, res) => {
