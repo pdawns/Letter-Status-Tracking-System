@@ -125,6 +125,29 @@ async function initDb() {
     );
   `);
 
+  // ── Migrate: add missing columns to existing tables ──────
+  const migrations = [
+    `ALTER TABLE letters ADD COLUMN IF NOT EXISTS document_subject TEXT DEFAULT ''`,
+    `ALTER TABLE letters ADD COLUMN IF NOT EXISTS sender_name TEXT DEFAULT ''`,
+    `ALTER TABLE letters ADD COLUMN IF NOT EXISTS sender_office TEXT DEFAULT ''`,
+    `ALTER TABLE letters ADD COLUMN IF NOT EXISTS sender_phone TEXT DEFAULT ''`,
+    `ALTER TABLE letters ADD COLUMN IF NOT EXISTS sender_email TEXT DEFAULT ''`,
+    `ALTER TABLE letters ADD COLUMN IF NOT EXISTS required_statuses TEXT DEFAULT 'noted,approved,reviewed'`,
+    `ALTER TABLE letters ADD COLUMN IF NOT EXISTS email_sent_at TEXT DEFAULT NULL`,
+    `ALTER TABLE letters ADD COLUMN IF NOT EXISTS document_direction TEXT DEFAULT NULL`,
+    `ALTER TABLE letters ADD COLUMN IF NOT EXISTS sent_at TEXT DEFAULT NULL`,
+    `ALTER TABLE letters ADD COLUMN IF NOT EXISTS received_at TEXT DEFAULT NULL`,
+    `ALTER TABLE letters ADD COLUMN IF NOT EXISTS created_by TEXT DEFAULT NULL`,
+    `ALTER TABLE letters ADD COLUMN IF NOT EXISTS archived_at TEXT`,
+    `ALTER TABLE letters ADD COLUMN IF NOT EXISTS file_url TEXT`,
+    `ALTER TABLE letters ADD COLUMN IF NOT EXISTS file_name TEXT`,
+    `ALTER TABLE letter_statuses ADD COLUMN IF NOT EXISTS review_file_url TEXT DEFAULT NULL`,
+    `ALTER TABLE letter_statuses ADD COLUMN IF NOT EXISTS review_file_name TEXT DEFAULT NULL`,
+  ];
+  for (const sql of migrations) {
+    await pool.query(sql).catch(() => {}); // ignore if already exists
+  }
+
   // Seed users
   await pool.query(`INSERT INTO users (username, password, role) VALUES ('mj','password','staff') ON CONFLICT (username) DO UPDATE SET role='staff'`);
   await pool.query(`INSERT INTO users (username, password, role) VALUES ('jh','password','staff') ON CONFLICT (username) DO UPDATE SET role='staff'`);
@@ -368,18 +391,26 @@ app.post('/api/send-email', requireAuth, async (req, res) => {
 app.post('/api/upload', requireAuth, upload.single('file'), async (req, res) => {
   try {
     if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
-    const ext = path.extname(req.file.originalname).toLowerCase();
-    const resourceType = ['.pdf','.doc','.docx','.xls','.xlsx','.ppt','.pptx'].includes(ext) ? 'raw' : 'auto';
+    const ext = path.extname(req.file.originalname).toLowerCase().replace('.', '');
+    const docExts = ['pdf','doc','docx','xls','xlsx','ppt','pptx'];
+    const resourceType = docExts.includes(ext) ? 'raw' : 'auto';
 
     const result = await new Promise((resolve, reject) => {
       const stream = cloudinary.uploader.upload_stream(
-        { resource_type: resourceType, folder: 'dts-uploads', use_filename: true, unique_filename: true },
+        { resource_type: resourceType, folder: 'dts-uploads', use_filename: true, unique_filename: true, format: ext || undefined },
         (err, result) => err ? reject(err) : resolve(result)
       );
       Readable.from(req.file.buffer).pipe(stream);
     });
 
-    res.json({ file_url: result.secure_url, file_name: req.file.originalname });
+    // For raw resources, Cloudinary may strip the extension from secure_url.
+    // Ensure the URL ends with the correct extension so browsers open it properly.
+    let fileUrl = result.secure_url;
+    if (ext && !fileUrl.toLowerCase().endsWith(`.${ext}`)) {
+      fileUrl = `${fileUrl}.${ext}`;
+    }
+
+    res.json({ file_url: fileUrl, file_name: req.file.originalname });
   } catch (e) {
     console.error('Upload error:', e);
     res.status(500).json({ error: e.message || 'Upload failed' });
