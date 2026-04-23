@@ -356,7 +356,7 @@ export default function HandlerUpdate({ letterId, onBack }: HandlerUpdateProps) 
                   {/* PDF file card */}
                   {reviewStatus!.review_file_url ? (
                     <button
-                      onClick={() => window.open(`https://docs.google.com/viewer?url=${encodeURIComponent(reviewStatus!.review_file_url!)}&embedded=false`, '_blank')}
+                      onClick={() => window.open(reviewStatus!.review_file_url!, '_blank', 'noopener,noreferrer')}
                       className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all text-left"
                       style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.25)' }}
                       onMouseEnter={e => (e.currentTarget.style.background = 'rgba(239,68,68,0.15)')}
@@ -463,7 +463,7 @@ export default function HandlerUpdate({ letterId, onBack }: HandlerUpdateProps) 
                   </div>
                   {reviewStatus!.review_file_url && (
                     <button
-                      onClick={() => window.open(`https://docs.google.com/viewer?url=${encodeURIComponent(reviewStatus!.review_file_url!)}&embedded=false`, '_blank')}
+                      onClick={() => window.open(reviewStatus!.review_file_url!, '_blank', 'noopener,noreferrer')}
                       className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all text-left"
                       style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.25)' }}
                       onMouseEnter={e => (e.currentTarget.style.background = 'rgba(239,68,68,0.15)')}

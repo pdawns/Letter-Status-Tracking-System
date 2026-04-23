@@ -193,13 +193,7 @@ export default function DocumentLibrary({ onDocumentSelected, onViewDocumentInfo
 
   const viewDocument = (doc: Letter) => {
     if (!doc.file_url) return;
-    const url = doc.file_url;
-    const isImage = url.match(/\.(png|jpe?g|gif|webp|bmp|svg)(\?|$)/i);
-    if (isImage) {
-      window.open(url, '_blank', 'noopener,noreferrer');
-    } else {
-      window.open(`https://docs.google.com/viewer?url=${encodeURIComponent(url)}&embedded=false`, '_blank');
-    }
+    window.open(doc.file_url, '_blank', 'noopener,noreferrer');
   };
 
   const openActivityLog = async (doc: Letter) => {
