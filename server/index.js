@@ -393,26 +393,37 @@ app.post('/api/upload', requireAuth, upload.single('file'), async (req, res) => 
     if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
     const ext = path.extname(req.file.originalname).toLowerCase().replace('.', '');
     
-    // Use 'auto' for all files - Cloudinary will handle them properly
-    // For PDFs, this allows them to be served publicly without auth issues
+    // For PDFs: use 'image' type with pages flag to make them publicly viewable
+    // For other docs: use 'raw' but with public access
+    // For images: use 'auto'
+    let resourceType = 'auto';
+    let uploadOptions = {
+      folder: 'dts-uploads',
+      use_filename: true,
+      unique_filename: true,
+      access_mode: 'public',
+      type: 'upload',
+    };
+
+    if (ext === 'pdf') {
+      // Upload PDFs as images with pages flag - this makes them publicly accessible
+      resourceType = 'image';
+      uploadOptions.flags = 'attachment';
+      uploadOptions.format = 'pdf';
+    } else if (['doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx'].includes(ext)) {
+      // Office docs as raw with public access
+      resourceType = 'raw';
+    }
+
     const result = await new Promise((resolve, reject) => {
       const stream = cloudinary.uploader.upload_stream(
-        {
-          resource_type: 'auto',
-          folder: 'dts-uploads',
-          use_filename: true,
-          unique_filename: true,
-          access_mode: 'public',
-          type: 'upload',
-          // For PDFs, add flags to ensure they can be viewed inline
-          flags: ext === 'pdf' ? 'attachment' : undefined,
-        },
+        { resource_type: resourceType, ...uploadOptions },
         (err, result) => err ? reject(err) : resolve(result)
       );
       Readable.from(req.file.buffer).pipe(stream);
     });
 
-    // Use the secure_url directly - it should be publicly accessible now
+    // Use the secure_url directly
     const fileUrl = result.secure_url;
 
     res.json({ file_url: fileUrl, file_name: req.file.originalname });
@@ -435,8 +446,7 @@ app.get('/api/proxy-file', async (req, res) => {
       return res.status(403).json({ error: 'Only Cloudinary URLs are allowed' });
     }
 
-    // Fetch the file from Cloudinary
-    const fetch = (await import('node-fetch')).default;
+    // Fetch the file from Cloudinary using native fetch (Node 18+)
     const response = await fetch(url);
     
     if (!response.ok) {
@@ -451,7 +461,8 @@ app.get('/api/proxy-file', async (req, res) => {
     res.setHeader('Content-Disposition', 'inline');
     
     // Stream the response
-    response.body.pipe(res);
+    const buffer = await response.arrayBuffer();
+    res.send(Buffer.from(buffer));
   } catch (e) {
     console.error('Proxy error:', e);
     res.status(500).json({ error: e.message || 'Proxy failed' });
