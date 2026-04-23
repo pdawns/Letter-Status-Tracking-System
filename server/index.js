@@ -397,7 +397,15 @@ app.post('/api/upload', requireAuth, upload.single('file'), async (req, res) => 
 
     const result = await new Promise((resolve, reject) => {
       const stream = cloudinary.uploader.upload_stream(
-        { resource_type: resourceType, folder: 'dts-uploads', use_filename: true, unique_filename: true, format: ext || undefined },
+        {
+          resource_type: resourceType,
+          folder: 'dts-uploads',
+          use_filename: true,
+          unique_filename: true,
+          format: ext || undefined,
+          type: 'upload',
+          access_mode: 'public',
+        },
         (err, result) => err ? reject(err) : resolve(result)
       );
       Readable.from(req.file.buffer).pipe(stream);
