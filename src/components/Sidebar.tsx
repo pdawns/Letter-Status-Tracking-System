@@ -14,11 +14,11 @@ interface SidebarProps {
 }
 
 const allMenuItems = [
-  { id: 'dashboard' as View, label: 'Dashboard', icon: LayoutDashboard, roles: ['staff', 'receiver'] },
-  { id: 'document-tracking' as View, label: 'Create Document', icon: FilePlus, roles: ['staff'] },
-  { id: 'tracking' as View, label: 'Track Document', icon: Search, roles: ['staff', 'receiver'] },
-  { id: 'archive' as View, label: 'Archive', icon: Archive, roles: ['staff'] },
-  { id: 'settings' as View, label: 'Settings', icon: Settings, roles: ['staff'] },
+  { id: 'dashboard' as View, label: 'Dashboard', icon: LayoutDashboard, roles: ['staff', 'admin'] },
+  { id: 'document-tracking' as View, label: 'Create Document', icon: FilePlus, roles: ['staff', 'admin'] },
+  { id: 'tracking' as View, label: 'Track Document', icon: Search, roles: ['staff', 'admin'] },
+  { id: 'archive' as View, label: 'Archive', icon: Archive, roles: ['admin'] },
+  { id: 'settings' as View, label: 'Settings', icon: Settings, roles: ['admin'] },
 ];
 
 export default function Sidebar({ currentView, onViewChange, onLogout, role = 'staff', menuOpen, onMenuToggle }: SidebarProps) {
@@ -72,15 +72,15 @@ export default function Sidebar({ currentView, onViewChange, onLogout, role = 's
               {localStorage.getItem('dts_username') || 'staff'}
             </p>
             <span className="text-xs px-1.5 py-0.5 rounded-md mt-1 inline-block" style={{
-              background: role === 'receiver' ? 'rgba(234,179,8,0.15)' : 'rgba(var(--accent-rgb),0.15)',
-              color: role === 'receiver' ? '#fde047' : 'var(--accent)',
-              border: `1px solid ${role === 'receiver' ? 'rgba(234,179,8,0.3)' : 'rgba(var(--accent-rgb),0.2)'}`,
+              background: role === 'admin' ? 'rgba(168,85,247,0.15)' : 'rgba(var(--accent-rgb),0.15)',
+              color: role === 'admin' ? '#d8b4fe' : 'var(--accent)',
+              border: `1px solid ${role === 'admin' ? 'rgba(168,85,247,0.3)' : 'rgba(var(--accent-rgb),0.2)'}`,
               fontSize: '9px',
               fontWeight: 600,
               textTransform: 'uppercase',
               letterSpacing: '0.05em',
             }}>
-              {role === 'receiver' ? 'Handler' : 'Staff'}
+              {role === 'admin' ? 'Prov. Treasurer' : 'Staff'}
             </span>
           </div>
           <button

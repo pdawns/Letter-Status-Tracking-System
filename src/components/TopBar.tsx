@@ -67,7 +67,7 @@ export default function TopBar({ onHome, onNavigateToLetter, onMenuToggle, publi
         </div>
         <div className="hidden sm:block text-left">
           <p className="text-white text-xs font-bold leading-tight">{settings.officeName}</p>
-          <p className="text-xs leading-tight" style={{ color: 'var(--accent)' }}>{settings.province}</p>
+          <p className="text-xs leading-tight text-white" style={{ opacity: 0.75 }}>{settings.province}</p>
         </div>
       </button>
 
@@ -79,8 +79,8 @@ export default function TopBar({ onHome, onNavigateToLetter, onMenuToggle, publi
         >
           DocuTrack
         </p>
-        <p style={{ color: 'var(--accent)', opacity: 0.75, fontSize: '9px' }}>{dateStr}</p>
-        <p className="font-mono font-semibold" style={{ color: 'var(--accent-text)', fontSize: '10px', letterSpacing: '0.05em' }}>{timeStr}</p>
+        <p style={{ color: 'rgba(255,255,255,0.7)', fontSize: '9px' }}>{dateStr}</p>
+        <p className="font-mono font-semibold text-white" style={{ fontSize: '10px', letterSpacing: '0.05em' }}>{timeStr}</p>
       </div>
 
       {/* Right — notifications + user pill */}

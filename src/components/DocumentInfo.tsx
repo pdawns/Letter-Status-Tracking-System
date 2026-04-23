@@ -189,6 +189,12 @@ export default function DocumentInfo({ letterId, onBack }: DocumentInfoProps) {
                 <p className="text-sm font-medium" style={{ color: 'var(--accent-text)' }}>{document.document_subject}</p>
               </div>
             )}
+            {document.created_by && (
+              <div className="p-3 rounded-xl col-span-2" style={{ background: 'rgba(var(--accent-rgb),0.1)', border: '1px solid rgba(var(--accent-rgb),0.18)' }}>
+                <p className="text-xs mb-1" style={{ color: 'rgba(var(--accent-rgb),0.75)' }}>Created By</p>
+                <p className="text-sm font-medium" style={{ color: 'var(--accent-text)' }}>{document.created_by}</p>
+              </div>
+            )}
             {document.sender_name && (
               <div className="p-3 rounded-xl col-span-2" style={{ background: 'rgba(var(--accent-rgb),0.1)', border: '1px solid rgba(var(--accent-rgb),0.18)' }}>
                 <p className="text-xs mb-1" style={{ color: 'rgba(var(--accent-rgb),0.75)' }}>Sender</p>

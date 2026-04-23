@@ -43,10 +43,20 @@ export default function Dashboard({ onStatusFilter, publicMode }: DashboardProps
 
   useEffect(() => { loadData(); }, [loadData]);
 
+  // Auto-refresh every 30s + on window focus so dashboard stays live
+  useEffect(() => {
+    const interval = setInterval(loadData, 30_000);
+    const onFocus = () => loadData();
+    window.addEventListener('focus', onFocus);
+    return () => { clearInterval(interval); window.removeEventListener('focus', onFocus); };
+  }, [loadData]);
+
   const isCompleted = (l: Letter) => {
     const s = statusMap[l.id] || [];
-    const req = (l.required_statuses || 'noted,approved,reviewed').split(',').map(x => x.trim()).filter(Boolean);
-    return req.every(r => s.some(x => x.status_type === r));
+    const hasNoted = s.some(x => x.status_type === 'noted');
+    const hasReview = s.some(x => x.status_type === 'for review' || x.status_type === 'reviewed');
+    const hasApproval = s.some(x => x.status_type === 'for approval' || x.status_type === 'approved');
+    return hasNoted || (hasReview && hasApproval);
   };
 
   const getMissing = (l: Letter): string[] => {
@@ -114,22 +124,63 @@ export default function Dashboard({ onStatusFilter, publicMode }: DashboardProps
   });
   const topOutgoingOffices = Object.entries(outgoingOfficeCounts).sort(([, a], [, b]) => b - a).slice(0, 8);
 
-  // Status flow stages
+  // Status flow stages — mapped to the actual workflow
   const STATUS_STAGES = [
-    { key: 'received',     label: 'Received',      color: '#60a5fa', match: (s: string) => s === 'received' || s === 'noted' },
-    { key: 'under_review', label: 'Under Review',  color: '#a78bfa', match: (s: string) => s === 'under review' || s === 'routed' || s === 'for review' || s === 'reviewed' },
-    { key: 'under_action', label: 'Under Action',  color: '#fbbf24', match: (s: string) => s === 'under action' || s === 'under_action' },
-    { key: 'for_approval', label: 'For Approval',  color: '#fb923c', match: (s: string) => s === 'for approval' || s === 'for signature' || s === 'approved' },
-    { key: 'released',     label: 'Released',      color: '#34d399', match: (s: string) => s === 'released' || s === 'sent' || s === 'sent/released' },
-    { key: 'returned',     label: 'Returned',      color: '#f87171', match: (s: string) => s === 'returned' },
-    { key: 'closed',       label: 'Closed',        color: '#6ee7b7', match: (s: string) => s === 'closed' },
+    {
+      key: 'pending',
+      label: 'Pending',
+      color: '#94a3b8',
+      // No statuses at all yet — just created
+      match: (_s: string, all: string[]) => all.length === 0,
+    },
+    {
+      key: 'under_review',
+      label: 'Under Review',
+      color: '#a78bfa',
+      // Has some statuses but not yet reviewed or noted
+      match: (_s: string, all: string[]) =>
+        all.length > 0 && !all.includes('reviewed') && !all.includes('noted'),
+    },
+    {
+      key: 'for_approval',
+      label: 'For Approval',
+      color: '#fb923c',
+      // Reviewed but not yet noted by Sir Violon
+      match: (_s: string, all: string[]) =>
+        all.includes('reviewed') && !all.includes('noted'),
+    },
+    {
+      key: 'completed',
+      label: 'Completed',
+      color: '#34d399',
+      // Noted by Sir Violon — fully done
+      match: (_s: string, all: string[]) => all.includes('noted'),
+    },
+    {
+      key: 'released',
+      label: 'Released',
+      color: '#60a5fa',
+      match: (_s: string, all: string[]) => all.includes('released') || all.includes('sent') || all.includes('sent/released'),
+    },
+    {
+      key: 'returned',
+      label: 'Returned',
+      color: '#f87171',
+      match: (_s: string, all: string[]) => all.includes('returned'),
+    },
   ];
 
   const stageCounts: Record<string, number> = Object.fromEntries(STATUS_STAGES.map(s => [s.key, 0]));
   letters.forEach(l => {
     const all = (statusMap[l.id] || []).map(s => s.status_type.toLowerCase().trim());
-    for (let i = STATUS_STAGES.length - 1; i >= 0; i--) {
-      if (all.some(STATUS_STAGES[i].match)) { stageCounts[STATUS_STAGES[i].key]++; break; }
+    // Check stages in priority order (released/returned are final, then completed, etc.)
+    const priorityOrder = ['released', 'returned', 'completed', 'for_approval', 'under_review', 'pending'];
+    for (const key of priorityOrder) {
+      const stage = STATUS_STAGES.find(s => s.key === key)!;
+      if ((stage.match as Function)('', all)) {
+        stageCounts[key]++;
+        break;
+      }
     }
   });
   const maxStageCount = Math.max(...Object.values(stageCounts), 1);
@@ -152,8 +203,10 @@ export default function Dashboard({ onStatusFilter, publicMode }: DashboardProps
       if (!map[label]) map[label] = { total: 0, completedDays: [] };
       map[label].total++;
       const sts = [...(statusMap[l.id] || [])].sort((a, b) => new Date(b.signed_at).getTime() - new Date(a.signed_at).getTime());
-      const req = (l.required_statuses || 'noted,approved,reviewed').split(',').map((x: string) => x.trim()).filter(Boolean);
-      const done = req.every((r: string) => sts.some(x => x.status_type === r));
+      const hasNoted = sts.some(x => x.status_type === 'noted');
+      const hasReview = sts.some(x => x.status_type === 'for review' || x.status_type === 'reviewed');
+      const hasApproval = sts.some(x => x.status_type === 'for approval' || x.status_type === 'approved');
+      const done = hasNoted || (hasReview && hasApproval);
       if (done && sts[0]) {
         const days = (new Date(sts[0].signed_at).getTime() - new Date(l.created_at).getTime()) / 86_400_000;
         if (days >= 0) map[label].completedDays.push(days);
@@ -292,8 +345,10 @@ export default function Dashboard({ onStatusFilter, publicMode }: DashboardProps
                 const { letter, statuses } = searchResult;
                 const stageLabel = (() => {
                   const all = statuses.map(s => s.status_type.toLowerCase().trim());
-                  for (let i = STATUS_STAGES.length - 1; i >= 0; i--) {
-                    if (all.some(STATUS_STAGES[i].match)) return STATUS_STAGES[i];
+                  const priorityOrder = ['completed', 'released', 'returned', 'for_approval', 'under_review', 'pending'];
+                  for (const key of priorityOrder) {
+                    const stage = STATUS_STAGES.find(s => s.key === key);
+                    if (stage && (stage.match as Function)('', all)) return stage;
                   }
                   return null;
                 })();

@@ -3,6 +3,10 @@ import html2canvas from 'html2canvas';
 import QRCode from 'qrcode';
 import { Letter, LetterStatus } from '../../types';
 
+function fixNamePdf(value: string): string {
+  return value.replace(/Constantito/g, 'Constantino').replace(/Lenmark/g, 'Linmark');
+}
+
 /**
  * Generate PDF receipt from receipt component data with professional table layout
  */
@@ -138,6 +142,71 @@ export async function generateReceiptPDF(
     pdf.text('Scan to track', qrX + qrSize / 2, finalQrY + qrSize + 4, { align: 'center' });
 
     yPosition = Math.max(tableEndY, finalQrY + qrSize + 8) + 6;
+
+    // ── Noted By section ───────────────────────────────────
+    pdf.setFontSize(12);
+    pdf.setFont('helvetica', 'bold');
+    pdf.setTextColor(0, 69, 38);
+    pdf.text('NOTED BY', 20, yPosition);
+    yPosition += 6;
+
+    if (statuses.length > 0) {
+      const notedStatus = statuses[0]; // only the noted status is passed in
+      const boxX = 20;
+      const boxW = 170;
+      const labelW = 35;
+      const valW = boxW - labelW - 6;
+      const pad = 3;
+      const lh = 5;
+
+      const noteLines = notedStatus.notes
+        ? pdf.splitTextToSize(fixNamePdf(notedStatus.notes), valW)
+        : [];
+      const rowCount = 2 + (notedStatus.notes ? noteLines.length : 0);
+      const boxH = pad * 2 + rowCount * lh + 2;
+
+      pdf.setDrawColor(0, 69, 38);
+      pdf.setLineWidth(0.5);
+      pdf.rect(boxX, yPosition, boxW, boxH);
+
+      pdf.setFontSize(9);
+      let ry = yPosition + pad + lh;
+
+      pdf.setFont('helvetica', 'bold');
+      pdf.setTextColor(60, 60, 60);
+      pdf.text('Signed by:', boxX + 2, ry);
+      pdf.setFont('helvetica', 'normal');
+      pdf.setTextColor(0, 0, 0);
+      pdf.text(fixNamePdf(notedStatus.signed_by), boxX + labelW, ry);
+      ry += lh;
+
+      pdf.setFont('helvetica', 'bold');
+      pdf.setTextColor(60, 60, 60);
+      pdf.text('Date & Time:', boxX + 2, ry);
+      pdf.setFont('helvetica', 'normal');
+      pdf.setTextColor(0, 0, 0);
+      pdf.text(new Date(notedStatus.signed_at).toLocaleString(), boxX + labelW, ry);
+      ry += lh;
+
+      if (notedStatus.notes) {
+        pdf.setFont('helvetica', 'bold');
+        pdf.setTextColor(60, 60, 60);
+        pdf.text('Notes:', boxX + 2, ry);
+        pdf.setFont('helvetica', 'normal');
+        pdf.setTextColor(0, 0, 0);
+        noteLines.forEach((line: string, i: number) => {
+          pdf.text(line, boxX + labelW, ry + i * lh);
+        });
+      }
+
+      yPosition += boxH + 4;
+    } else {
+      pdf.setFontSize(9);
+      pdf.setFont('helvetica', 'italic');
+      pdf.setTextColor(120, 120, 120);
+      pdf.text('Document has not been noted by Sir Ronald yet.', 20, yPosition);
+      yPosition += 8;
+    }
     
     // Footer
     const pageCount = pdf.getNumberOfPages();

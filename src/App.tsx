@@ -113,10 +113,10 @@ function App() {
     setView('letter-view');
   };
 
-  // Restrict receiver role from accessing staff-only views
+  // Restrict staff role to their allowed views
   const safeSetView = (v: typeof view) => {
-    if (role === 'receiver') {
-      const allowed: typeof view[] = ['dashboard', 'tracking', 'track', 'handler', 'library', 'document-info'];
+    if (role === 'staff') {
+      const allowed: typeof view[] = ['dashboard', 'document-tracking', 'tracking', 'track', 'handler', 'letter-view'];
       if (!allowed.includes(v)) return;
     }
     setView(v);

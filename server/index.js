@@ -128,6 +128,12 @@ initSqlJs().then((SQL) => {
       password TEXT NOT NULL,
       role TEXT NOT NULL DEFAULT 'staff'
     );
+    CREATE TABLE IF NOT EXISTS document_types (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      name TEXT UNIQUE NOT NULL,
+      is_custom INTEGER DEFAULT 1,
+      created_at TEXT DEFAULT (datetime('now'))
+    );
   `);
 
   // ── Migrations ──────────────────────────────────────────
@@ -136,6 +142,9 @@ initSqlJs().then((SQL) => {
     'ALTER TABLE letters ADD COLUMN document_direction TEXT DEFAULT NULL',
     'ALTER TABLE letters ADD COLUMN sent_at TEXT DEFAULT NULL',
     'ALTER TABLE letters ADD COLUMN received_at TEXT DEFAULT NULL',
+    'ALTER TABLE letters ADD COLUMN created_by TEXT DEFAULT NULL',
+    'ALTER TABLE letter_statuses ADD COLUMN review_file_url TEXT DEFAULT NULL',
+    'ALTER TABLE letter_statuses ADD COLUMN review_file_name TEXT DEFAULT NULL',
   ];
   for (const m of migrations) { try { db.run(m); } catch (_) {} }
 
@@ -154,19 +163,39 @@ initSqlJs().then((SQL) => {
 
   saveDb();
 
-  // ── Seed default users ──────────────────────────────────
-  const DEFAULT_USERS = {
-    staff:  { password: 'password', role: 'staff' },
-    staff1: { password: 'password', role: 'receiver' },
-  };
-  const userCount = get('SELECT COUNT(*) as cnt FROM users');
-  if (!userCount || userCount.cnt === 0) {
-    for (const [username, { password, role }] of Object.entries(DEFAULT_USERS)) {
-      run('INSERT OR IGNORE INTO users (username, password, role) VALUES (?, ?, ?)', [username, password, role]);
-    }
+  // ── Seed / migrate users ────────────────────────────────
+  // mj, jh → staff (create + track only) | violon → admin (full access)
+  run('INSERT OR IGNORE INTO users (username, password, role) VALUES (?, ?, ?)', ['mj', 'password', 'staff']);
+  run('INSERT OR IGNORE INTO users (username, password, role) VALUES (?, ?, ?)', ['jh', 'password', 'staff']);
+  run('INSERT OR IGNORE INTO users (username, password, role) VALUES (?, ?, ?)', ['violon', 'password', 'admin']);
+  // Ensure correct roles on every boot
+  run('UPDATE users SET role = ? WHERE username = ?', ['staff', 'mj']);
+  run('UPDATE users SET role = ? WHERE username = ?', ['staff', 'jh']);
+  run('UPDATE users SET role = ? WHERE username = ?', ['admin', 'violon']);
+  // Seed default document types
+  const defaultTypes = ['Letter', 'Certificate', 'Memo', 'Report', 'Disbursement Voucher'];
+  for (const name of defaultTypes) {
+    try { run('INSERT OR IGNORE INTO document_types (name, is_custom) VALUES (?, 0)', [name]); } catch (_) {}
   }
 
-  // Backfill activity logs
+  // Remove any other legacy users
+  run("DELETE FROM users WHERE username NOT IN ('mj', 'jh', 'violon')");
+
+  // Backfill created_by for legacy docs (null → 'mj' as default)
+  try {
+    // First try to get real username from activity logs
+    const logs = all("SELECT letter_id, performed_by FROM activity_logs WHERE action = 'document_created'");
+    for (const { letter_id, performed_by } of logs) {
+      if (performed_by && performed_by !== 'system') {
+        run('UPDATE letters SET created_by = ? WHERE id = ? AND (created_by IS NULL OR created_by = "")', [performed_by, letter_id]);
+      }
+    }
+    // Remaining nulls (created before user tracking) → default 'mj'
+    run("UPDATE letters SET created_by = 'mj' WHERE created_by IS NULL OR created_by = ''");
+    saveDb();
+    console.log('created_by backfill complete.');
+  } catch (e) { console.error('created_by backfill error:', e); }
+
   try {
     const existingLetters = all('SELECT * FROM letters');
     for (const letter of existingLetters) {
@@ -258,6 +287,24 @@ initSqlJs().then((SQL) => {
     res.json(all('SELECT id, reference_number, title, document_subject, document_type, document_direction, created_at, required_statuses, sender_name, sender_office FROM letters WHERE archived = 0 ORDER BY created_at DESC'));
   });
 
+  // ── Document Types ───────────────────────────────────────
+  app.get('/api/document-types', requireAuth, (req, res) => {
+    res.json(all('SELECT id, name, is_custom FROM document_types ORDER BY is_custom ASC, name ASC'));
+  });
+
+  app.post('/api/document-types', requireAuth, (req, res) => {
+    const { name } = req.body;
+    if (!name || !name.trim()) return res.status(400).json({ error: 'Name is required' });
+    const trimmed = name.trim();
+    try {
+      run('INSERT OR IGNORE INTO document_types (name, is_custom) VALUES (?, 1)', [trimmed]);
+      const row = get('SELECT id, name, is_custom FROM document_types WHERE name = ?', [trimmed]);
+      res.json(row);
+    } catch (e) {
+      res.status(500).json({ error: 'Failed to save document type' });
+    }
+  });
+
   app.get('/api/public/letters/:id/statuses', (req, res) => {
     res.json(all('SELECT * FROM letter_statuses WHERE letter_id = ? ORDER BY signed_at ASC', [req.params.id]));
   });
@@ -284,10 +331,10 @@ initSqlJs().then((SQL) => {
     const sent_at = document_direction === 'sending' ? now() : null;
     const received_at = document_direction === 'receiving' ? now() : null;
     run(
-      'INSERT INTO letters (id, reference_number, title, document_subject, document_type, handler_pin, description, sender_name, sender_office, sender_phone, sender_email, required_statuses, document_direction, sent_at, received_at, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+      'INSERT INTO letters (id, reference_number, title, document_subject, document_type, handler_pin, description, sender_name, sender_office, sender_phone, sender_email, required_statuses, document_direction, sent_at, received_at, created_by, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
       [id, reference_number, title, document_subject || '', document_type || 'letter', handler_pin,
        description || '', sender_name || '', sender_office || '', sender_phone || '', sender_email || '',
-       required_statuses || 'noted,approved,reviewed', document_direction || null, sent_at, received_at, now()]
+       required_statuses || 'noted,approved,reviewed', document_direction || null, sent_at, received_at, req.userId, now()]
     );
     logActivity(id, 'document_created', `Document "${title}" (${reference_number}) created`, req.userId);
     res.json(get('SELECT * FROM letters WHERE id = ?', [id]));
@@ -424,8 +471,8 @@ initSqlJs().then((SQL) => {
   app.post('/api/letters/:id/statuses', requireAuth, (req, res) => {
     const items = req.body;
     for (const row of items) {
-      run('INSERT INTO letter_statuses (id, letter_id, status_type, signed_by, notes, signed_at) VALUES (?, ?, ?, ?, ?, ?)',
-        [crypto.randomUUID(), req.params.id, row.status_type, row.signed_by, row.notes || '', now()]);
+      run('INSERT INTO letter_statuses (id, letter_id, status_type, signed_by, notes, review_file_url, review_file_name, signed_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+        [crypto.randomUUID(), req.params.id, row.status_type, row.signed_by, row.notes || '', row.review_file_url || null, row.review_file_name || null, now()]);
       logActivity(req.params.id, 'status_added', `Status "${row.status_type}" added by ${row.signed_by}`, req.userId);
     }
     res.json(all('SELECT * FROM letter_statuses WHERE letter_id = ? ORDER BY signed_at ASC', [req.params.id]));

@@ -87,7 +87,7 @@ export default function LetterView({ letterId, onBack }: LetterViewProps) {
       <button
         onClick={onBack}
         className="mb-4 flex items-center gap-2 print:hidden"
-        style={{ color: 'var(--primary)' }}
+        style={{ color: 'white' }}
       >
         <ArrowLeft className="w-4 h-4" />
         Back to Home
@@ -102,16 +102,6 @@ export default function LetterView({ letterId, onBack }: LetterViewProps) {
               <p className="text-gray-600">Reference: {letter.reference_number}</p>
             </div>
           </div>
-          <button
-            onClick={handlePrint}
-            className="flex items-center gap-2 text-white px-4 py-2 rounded-lg print:hidden transition-colors"
-            style={{ backgroundColor: 'var(--primary)' }}
-            onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--accent)')}
-            onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'var(--primary)')}
-          >
-            <Download className="w-4 h-4" />
-            Print/Save
-          </button>
           {(letter.sender_phone || letter.sender_email) && (
             <button
               onClick={() => setShowNotify(true)}

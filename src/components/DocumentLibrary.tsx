@@ -139,10 +139,12 @@ export default function DocumentLibrary({ onDocumentSelected, onViewDocumentInfo
       const ids = new Set<string>();
       data.forEach((l, i) => {
         const s = statusResults[i];
+        // Completed = has a 'noted' status (final step by Sir Violon)
+        // Fallback: old docs with reviewed + approved but no noted
+        const hasNoted = s.some(x => x.status_type === 'noted');
         const hasReview = s.some(x => x.status_type === 'for review' || x.status_type === 'reviewed');
         const hasApproval = s.some(x => x.status_type === 'for approval' || x.status_type === 'approved');
-        if (hasReview && hasApproval) ids.add(l.id);
-        else if (s.length > 0 && !hasReview && !hasApproval) ids.add(l.id);
+        if (hasNoted || (hasReview && hasApproval)) ids.add(l.id);
       });
       setCompletedIds(ids);
     } catch (err) {
@@ -360,7 +362,15 @@ export default function DocumentLibrary({ onDocumentSelected, onViewDocumentInfo
                     {/* Title + subject */}
                     <h3 className="font-bold text-sm leading-snug mb-0.5" style={{ color: 'var(--accent-text)' }}>{doc.title}</h3>
                     {doc.document_subject && (
-                      <p className="text-xs mb-2" style={{ color: 'rgba(var(--accent-text-rgb),0.55)' }}>{doc.document_subject}</p>
+                      <p className="text-xs mb-1" style={{ color: 'rgba(var(--accent-text-rgb),0.55)' }}>{doc.document_subject}</p>
+                    )}
+                    {doc.created_by && (
+                      <div className="inline-flex items-center gap-1 mt-1 mb-2 px-2 py-0.5 rounded-full text-xs"
+                        style={{ background: 'rgba(var(--accent-rgb),0.1)', border: '1px solid rgba(var(--accent-rgb),0.2)', color: 'rgba(var(--accent-text-rgb),0.7)' }}>
+                        <span style={{ color: 'rgba(var(--accent-rgb),0.6)' }}>✍️</span>
+                        <span>Created by</span>
+                        <span className="font-semibold" style={{ color: 'var(--accent)' }}>{doc.created_by}</span>
+                      </div>
                     )}
 
                     {/* Bottom row: type pill + status + actions */}

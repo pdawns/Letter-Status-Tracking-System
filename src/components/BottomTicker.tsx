@@ -36,6 +36,21 @@ export default function BottomTicker() {
     return req.every(r => s.some(x => x.status_type === r));
   };
 
+  const getDocStatus = (l: Letter): { label: string; color: string; bg: string; border: string } => {
+    const all = (statusMap[l.id] || []).map(s => s.status_type.toLowerCase().trim());
+    if (all.includes('released') || all.includes('sent') || all.includes('sent/released'))
+      return { label: '↑ Released',    color: '#60a5fa', bg: 'rgba(96,165,250,0.12)',   border: 'rgba(96,165,250,0.25)' };
+    if (all.includes('returned'))
+      return { label: '↩ Returned',    color: '#f87171', bg: 'rgba(248,113,113,0.12)',  border: 'rgba(248,113,113,0.25)' };
+    if (all.includes('noted'))
+      return { label: '✓ Completed',   color: '#34d399', bg: 'rgba(52,211,153,0.12)',   border: 'rgba(52,211,153,0.2)' };
+    if (all.includes('reviewed') || all.includes('approved'))
+      return { label: '⏳ For Approval', color: '#fb923c', bg: 'rgba(251,146,60,0.12)', border: 'rgba(251,146,60,0.25)' };
+    if (all.length > 0)
+      return { label: '🔍 Under Review', color: '#a78bfa', bg: 'rgba(167,139,250,0.12)', border: 'rgba(167,139,250,0.25)' };
+    return { label: '• Pending',       color: '#94a3b8', bg: 'rgba(148,163,184,0.1)',   border: 'rgba(148,163,184,0.2)' };
+  };
+
   const incoming = letters.filter(l => l.document_direction === 'receiving');
   const outgoing = letters.filter(l => l.document_direction === 'sending');
 
@@ -63,7 +78,7 @@ export default function BottomTicker() {
   const list = tickerTab === 'incoming' ? incoming : outgoing;
   const doc = list[tickerIdx % (list.length || 1)];
   const tabColor = tickerTab === 'incoming' ? '#60a5fa' : '#a78bfa';
-  const done = doc ? isCompleted(doc) : false;
+  const docStatus = doc ? getDocStatus(doc) : null;
   const total = list.length;
   const current = total > 0 ? (tickerIdx % total) + 1 : 0;
 
@@ -137,11 +152,11 @@ export default function BottomTicker() {
           </span>
           <span
             className="text-[9px] px-2 py-0.5 rounded-full font-semibold flex-shrink-0 ml-auto"
-            style={done
-              ? { background: 'rgba(52,211,153,0.12)', color: '#34d399', border: '1px solid rgba(52,211,153,0.2)' }
-              : { background: 'rgba(251,191,36,0.1)', color: '#fbbf24', border: '1px solid rgba(251,191,36,0.2)' }}
+            style={docStatus
+              ? { background: docStatus.bg, color: docStatus.color, border: `1px solid ${docStatus.border}` }
+              : {}}
           >
-            {done ? '✓ Done' : '⏳ Pending'}
+            {docStatus?.label}
           </span>
         </div>
       ) : (

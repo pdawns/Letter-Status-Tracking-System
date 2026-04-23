@@ -96,6 +96,19 @@ export const uploadFile = async (file: File, _documentId: string): Promise<strin
   return data.file_url;
 };
 
+export const uploadReviewFile = async (file: File): Promise<{ file_url: string; file_name: string }> => {
+  const formData = new FormData();
+  formData.append('file', file);
+  const token = getToken();
+  const res = await fetch(`${BASE}/upload`, {
+    method: 'POST',
+    headers: token ? { 'Authorization': `Bearer ${token}` } : {},
+    body: formData,
+  });
+  const data = await res.json();
+  return { file_url: data.file_url, file_name: data.file_name };
+};
+
 // ── Statuses ─────────────────────────────────────────────
 
 export const getStatusesForLetter = async (letterId: string): Promise<LetterStatus[]> => {
@@ -219,4 +232,28 @@ export const getPublicStatusesForLetter = async (letterId: string): Promise<Lett
   if (!res.ok) return [];
   const data = await res.json();
   return Array.isArray(data) ? data : [];
+};
+
+// ── Document Types ────────────────────────────────────────
+
+export interface DocumentType {
+  id: number;
+  name: string;
+  is_custom: number;
+}
+
+export const getDocumentTypes = async (): Promise<DocumentType[]> => {
+  const res = await fetch(`${BASE}/document-types`, { headers: authHeaders() });
+  if (!res.ok) return [];
+  return res.json();
+};
+
+export const addDocumentType = async (name: string): Promise<DocumentType> => {
+  const res = await fetch(`${BASE}/document-types`, {
+    method: 'POST',
+    headers: authHeaders(),
+    body: JSON.stringify({ name }),
+  });
+  if (!res.ok) throw new Error('Failed to save document type');
+  return res.json();
 };

@@ -1,5 +1,5 @@
 ﻿import { useState, useEffect, useRef } from 'react';
-import { insertLetter, updateLetter, uploadFile as uploadFileToStorage } from '../lib/api';
+import { insertLetter, updateLetter, uploadFile as uploadFileToStorage, getDocumentTypes, addDocumentType, DocumentType } from '../lib/api';
 import { FileText, Upload, CheckCircle2, ChevronDown, ArrowUpFromLine, ArrowDownToLine, Check, Lock } from 'lucide-react';
 
 interface CreateLetterProps {
@@ -9,7 +9,7 @@ interface CreateLetterProps {
 
 interface DropdownOption { value: string; label: string; }
 
-function CustomDropdown({ value, onChange, options }: { value: string; onChange: (v: string) => void; options: DropdownOption[] }) {
+function CustomDropdown({ value, onChange, options, placeholder }: { value: string; onChange: (v: string) => void; options: DropdownOption[]; placeholder?: string }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   const selected = options.find(o => o.value === value);
@@ -24,8 +24,8 @@ function CustomDropdown({ value, onChange, options }: { value: string; onChange:
     <div ref={ref} className="relative">
       <button type="button" onClick={() => setOpen(v => !v)}
         className="w-full flex items-center justify-between px-3 py-2.5 text-sm rounded-xl transition-all"
-        style={{ background: open ? 'rgba(var(--primary-rgb),0.5)' : 'var(--input-bg)', border: open ? '1px solid rgba(var(--accent-rgb),0.5)' : '1px solid rgba(var(--accent-rgb),0.2)', color: 'var(--accent-text)' }}>
-        <span>{selected?.label}</span>
+        style={{ background: open ? 'rgba(var(--primary-rgb),0.5)' : 'var(--input-bg)', border: open ? '1px solid rgba(var(--accent-rgb),0.5)' : '1px solid rgba(var(--accent-rgb),0.2)', color: selected ? 'var(--accent-text)' : 'rgba(var(--accent-text-rgb),0.4)' }}>
+        <span>{selected?.label ?? placeholder ?? 'Select...'}</span>
         <ChevronDown className="w-4 h-4 flex-shrink-0 transition-transform" style={{ color: 'var(--accent)', transform: open ? 'rotate(180deg)' : 'rotate(0deg)' }} />
       </button>
       {open && (
@@ -66,8 +66,19 @@ function Card({ title, children }: { title: string; children: React.ReactNode })
 }
 
 export default function CreateLetter({ onLetterCreated, onToast }: CreateLetterProps) {
-  const [documentType, setDocumentType] = useState('letter');
+  const [documentType, setDocumentType] = useState('');
   const [otherDocumentType, setOtherDocumentType] = useState('');
+  const [dbDocumentTypes, setDbDocumentTypes] = useState<DocumentType[]>([]);
+
+  // Hardcoded offices/departments for incoming sender
+  const OFFICES = [
+    'Provincial Treasurer\'s Office',
+    'Provincial Budget Office',
+  ];
+
+  useEffect(() => {
+    getDocumentTypes().then(setDbDocumentTypes).catch(() => {});
+  }, []);
   const [title, setTitle] = useState('');
   const [subject, setSubject] = useState('');
   const [pin, setPin] = useState('');
@@ -85,12 +96,13 @@ export default function CreateLetter({ onLetterCreated, onToast }: CreateLetterP
   const [senderEmail, setSenderEmail] = useState('');
   const [reqApproval, setReqApproval] = useState(false);
   const [reqReview, setReqReview] = useState(false);
+  const [reqInfo, setReqInfo] = useState(false);
   const [reqOther, setReqOther] = useState(false);
   const [reqOtherText, setReqOtherText] = useState('');
 
   const generateReferenceNumber = () => {
     const year = new Date().getFullYear();
-    const prefix = documentType === 'certificate' ? 'CERT' : 'DOC';
+    const prefix = documentType.toLowerCase().includes('cert') ? 'CERT' : 'DOC';
     const random = Math.floor(Math.random() * 10000).toString().padStart(4, '0');
     return `${prefix}-${year}-${random}`;
   };
@@ -111,9 +123,10 @@ export default function CreateLetter({ onLetterCreated, onToast }: CreateLetterP
     setError('');
     if (!documentDirection) { setError('Please select whether this document is for sending or receiving'); return; }
     if (!title || !pin || !file) { setError('Please fill in all required fields and select a document'); return; }
+    if (!documentType) { setError('Please select a document type'); return; }
     if (documentType === 'other' && !otherDocumentType.trim()) { setError('Please specify the document type'); return; }
     if (pin.length < 4) { setError('PIN must be at least 4 characters'); return; }
-    if (!reqApproval && !reqReview && !reqOther) { setError('Please select at least one required action'); return; }
+    if (!reqApproval && !reqReview && !reqInfo && !reqOther) { setError('Please select at least one required action'); return; }
     if (reqOther && !reqOtherText.trim()) { setError('Please specify the "Other" required action'); return; }
     setShowConfirm(true);
   };
@@ -123,16 +136,29 @@ export default function CreateLetter({ onLetterCreated, onToast }: CreateLetterP
     setLoading(true);
     try {
       const referenceNumber = generateReferenceNumber();
+
+      // If "other", save the custom type to DB first so it appears in future dropdowns
+      let finalDocType = documentType;
+      if (documentType === 'other' && otherDocumentType.trim()) {
+        try {
+          const saved = await addDocumentType(otherDocumentType.trim());
+          finalDocType = saved.name;
+          setDbDocumentTypes(prev => prev.some(t => t.name === saved.name) ? prev : [...prev, saved]);
+        } catch (_) {
+          finalDocType = otherDocumentType.trim();
+        }
+      }
+
       const letter = await insertLetter({
         reference_number: referenceNumber, title,
         document_subject: subject,
-        document_type: documentType === 'other' ? otherDocumentType.trim() : documentType,
+        document_type: finalDocType,
         handler_pin: pin,
         sender_name: documentDirection === 'receiving' ? senderName : '',
         sender_office: documentDirection === 'receiving' ? senderOffice : '',
         sender_phone: documentDirection === 'receiving' ? senderPhone : '',
         sender_email: documentDirection === 'receiving' ? senderEmail : '',
-        required_statuses: [reqApproval && 'for approval', reqReview && 'for review', reqOther && reqOtherText.trim()].filter(Boolean).join(',') || '',
+        required_statuses: [reqApproval && 'for approval', reqReview && 'for review', reqInfo && 'for information', reqOther && reqOtherText.trim()].filter(Boolean).join(',') || '',
         document_direction: documentDirection || undefined,
       });
       if (file) {
@@ -178,13 +204,10 @@ export default function CreateLetter({ onLetterCreated, onToast }: CreateLetterP
                 <CustomDropdown
                   value={documentType}
                   onChange={v => { setDocumentType(v); setOtherDocumentType(''); }}
+                  placeholder="Select document type..."
                   options={[
-                    { value: 'letter', label: 'Letter' },
-                    { value: 'certificate', label: 'Certificate' },
-                    { value: 'memo', label: 'Memo' },
-                    { value: 'report', label: 'Report' },
-                    { value: 'disbursement_voucher', label: 'Disbursement Voucher' },
-                    { value: 'other', label: 'Other' },
+                    ...dbDocumentTypes.map(t => ({ value: t.name, label: t.name })),
+                    { value: 'other', label: 'Other...' },
                   ]}
                 />
                 {documentType === 'other' && (
@@ -232,9 +255,9 @@ export default function CreateLetter({ onLetterCreated, onToast }: CreateLetterP
               <p className="text-xs" style={{ color: 'rgba(var(--accent-rgb),0.6)' }}>Is this document being sent out or received?</p>
               <div className="grid grid-cols-2 gap-3">
                 {[
-                  { value: 'sending', label: 'For Sending', desc: 'Outgoing', icon: ArrowUpFromLine },
-                  { value: 'receiving', label: 'For Receiving', desc: 'Incoming', icon: ArrowDownToLine },
-                ].map(({ value, label, desc, icon: Icon }) => (
+                  { value: 'sending', label: 'For Outgoing', icon: ArrowUpFromLine },
+                  { value: 'receiving', label: 'For Incoming', icon: ArrowDownToLine },
+                ].map(({ value, label, icon: Icon }) => (
                   <button key={value} type="button" onClick={() => setDocumentDirection(value as 'sending' | 'receiving')}
                     className="flex flex-col items-center gap-2 px-4 py-4 rounded-xl text-sm font-medium transition-all"
                     style={{
@@ -244,7 +267,6 @@ export default function CreateLetter({ onLetterCreated, onToast }: CreateLetterP
                     }}>
                     <Icon className="w-5 h-5" style={{ color: documentDirection === value ? 'var(--accent)' : 'rgba(var(--accent-rgb),0.35)' }} />
                     <span className="font-semibold">{label}</span>
-                    <span className="text-xs font-normal" style={{ color: documentDirection === value ? 'rgba(var(--accent-text-rgb),0.6)' : 'rgba(var(--accent-rgb),0.4)' }}>{desc}</span>
                   </button>
                 ))}
               </div>
@@ -253,19 +275,33 @@ export default function CreateLetter({ onLetterCreated, onToast }: CreateLetterP
                 <div className="pt-2 space-y-2" style={{ borderTop: '1px solid rgba(var(--accent-rgb),0.1)' }}>
                   <p className="text-xs font-semibold uppercase tracking-wide" style={{ color: 'rgba(var(--accent-rgb),0.7)' }}>Sender Info <span className="font-normal normal-case opacity-60">(Optional)</span></p>
                   <div className="grid grid-cols-2 gap-2">
-                    {[
-                      { label: 'Sender Name', val: senderName, set: setSenderName, ph: 'Juan Dela Cruz' },
-                      { label: 'Office / Company', val: senderOffice, set: setSenderOffice, ph: 'DILG Regional Office' },
-                      { label: 'Phone', val: senderPhone, set: setSenderPhone, ph: '09XXXXXXXXX', type: 'tel' },
-                      { label: 'Email', val: senderEmail, set: setSenderEmail, ph: 'sender@email.com', type: 'email' },
-                    ].map(({ label, val, set, ph, type }) => (
-                      <div key={label}>
-                        <label className="block text-xs font-medium mb-1" style={lbl}>{label}</label>
-                        <input type={type || 'text'} value={val} onChange={e => set(e.target.value)}
-                          className="w-full px-3 py-2 text-sm rounded-xl focus:outline-none focus:ring-1 focus:ring-green-600"
-                          style={inp} placeholder={ph} />
-                      </div>
-                    ))}
+                    <div>
+                      <label className="block text-xs font-medium mb-1" style={lbl}>Sender Name</label>
+                      <input type="text" value={senderName} onChange={e => setSenderName(e.target.value)}
+                        className="w-full px-3 py-2 text-sm rounded-xl focus:outline-none focus:ring-1 focus:ring-green-600"
+                        style={inp} placeholder="Juan Dela Cruz" />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium mb-1" style={lbl}>Office / Department</label>
+                      <CustomDropdown
+                        value={senderOffice}
+                        onChange={setSenderOffice}
+                        placeholder="Select office/department..."
+                        options={OFFICES.map(o => ({ value: o, label: o }))}
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium mb-1" style={lbl}>Phone</label>
+                      <input type="tel" value={senderPhone} onChange={e => setSenderPhone(e.target.value)}
+                        className="w-full px-3 py-2 text-sm rounded-xl focus:outline-none focus:ring-1 focus:ring-green-600"
+                        style={inp} placeholder="09XXXXXXXXX" />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium mb-1" style={lbl}>Email</label>
+                      <input type="email" value={senderEmail} onChange={e => setSenderEmail(e.target.value)}
+                        className="w-full px-3 py-2 text-sm rounded-xl focus:outline-none focus:ring-1 focus:ring-green-600"
+                        style={inp} placeholder="sender@email.com" />
+                    </div>
                   </div>
                 </div>
               )}
@@ -277,6 +313,7 @@ export default function CreateLetter({ onLetterCreated, onToast }: CreateLetterP
                 {[
                   { label: 'For Approval', checked: reqApproval, toggle: () => setReqApproval(v => !v) },
                   { label: 'For Review', checked: reqReview, toggle: () => setReqReview(v => !v) },
+                  { label: 'For Information', checked: reqInfo, toggle: () => setReqInfo(v => !v) },
                   { label: 'Other', checked: reqOther, toggle: () => { setReqOther(v => { if (v) setReqOtherText(''); return !v; }); } },
                 ].map(({ label, checked, toggle }) => (
                   <button key={label} type="button" onClick={toggle}

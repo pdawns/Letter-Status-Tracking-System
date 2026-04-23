@@ -1,9 +1,9 @@
 ﻿import { useEffect, useRef, useState } from 'react';
 import {
   Bell, X, FileText, Clock, AlertTriangle, CheckCircle,
-  User, Building2, Phone, Mail, ArrowRight, Calendar,
+  User, Building2, Phone, Mail, ArrowRight, Calendar, Activity,
 } from 'lucide-react';
-import { getLetters, getStatusesForLetter } from '../lib/api';
+import { getLetters, getStatusesForLetter, getActionTickets, getRole } from '../lib/api';
 import { Letter, LetterStatus } from '../types';
 
 // ── Types ────────────────────────────────────────────────
@@ -24,6 +24,16 @@ interface EmailNotification {
   id: string; // letter.id + '_email'
   letter: Letter;
   sentAt: string;
+}
+
+// status-update notification for staff — when admin updates their document
+interface StatusUpdateNotification {
+  id: string; // letter.id + '_status_' + status.id
+  letter: Letter;
+  statusType: string;
+  signedBy: string;
+  signedAt: string;
+  notes: string;
 }
 
 // ── Helpers ──────────────────────────────────────────────
@@ -370,6 +380,7 @@ export default function NotificationBell({ onNavigate }: Props) {
   const [open, setOpen] = useState(false);
   const [all, setAll] = useState<Notification[]>([]);
   const [emailNotifs, setEmailNotifs] = useState<EmailNotification[]>([]);
+  const [statusUpdateNotifs, setStatusUpdateNotifs] = useState<StatusUpdateNotification[]>([]);
   const [dismissed, setDismissed] = useState<Set<string>>(getDismissed);
   const [viewed, setViewed] = useState<Set<string>>(getViewed);
   const [loading, setLoading] = useState(false);
@@ -377,9 +388,14 @@ export default function NotificationBell({ onNavigate }: Props) {
   const [selectedEmail, setSelectedEmail] = useState<EmailNotification | null>(null);
   const panelRef = useRef<HTMLDivElement>(null);
 
+  const currentRole = getRole();
+  const currentUser = localStorage.getItem('dts_username') || '';
+  const isStaff = currentRole === 'staff';
+
   const visible = all.filter((n) => !dismissed.has(n.id));
   const visibleEmails = emailNotifs.filter((n) => !dismissed.has(n.id));
-  const totalVisible = visible.length + visibleEmails.length;
+  const visibleStatusUpdates = statusUpdateNotifs.filter((n) => !dismissed.has(n.id));
+  const totalVisible = visible.length + visibleEmails.length + visibleStatusUpdates.length;
 
   const grouped = (['overdue', 'pending', 'new', 'completed'] as Urgency[])
     .map((u) => ({ urgency: u, items: visible.filter((n) => n.urgency === u) }))
@@ -391,6 +407,7 @@ export default function NotificationBell({ onNavigate }: Props) {
       const letters = await getLetters();
       const results: Notification[] = [];
       const emailResults: EmailNotification[] = [];
+      const statusUpdates: StatusUpdateNotification[] = [];
 
       await Promise.all(
         letters.map(async (letter) => {
@@ -402,6 +419,37 @@ export default function NotificationBell({ onNavigate }: Props) {
               letter,
               sentAt: letter.email_sent_at,
             });
+          }
+
+          // Staff: build status-update notifications for their own documents
+          if (isStaff && letter.created_by === currentUser) {
+            for (const s of statuses) {
+              const notifId = `${letter.id}_status_${s.id}`;
+              // Give noted status a special "completed" label
+              statusUpdates.push({
+                id: notifId,
+                letter,
+                statusType: s.status_type,
+                signedBy: s.signed_by,
+                signedAt: s.signed_at,
+                notes: s.notes || '',
+              });
+            }
+            // Also check action tickets (assign for review step)
+            try {
+              const tickets = await getActionTickets(letter.id);
+              for (const t of tickets) {
+                const notifId = `${letter.id}_ticket_${t.id}`;
+                statusUpdates.push({
+                  id: notifId,
+                  letter,
+                  statusType: 'assigned_for_review',
+                  signedBy: t.assigned_by,
+                  signedAt: t.created_at,
+                  notes: `Assigned to: ${t.assigned_to}${t.action_notes ? ' — ' + t.action_notes : ''}`,
+                });
+              }
+            } catch { /* ignore */ }
           }
 
           const required = (letter.required_statuses || 'noted,approved,reviewed')
@@ -442,8 +490,13 @@ export default function NotificationBell({ onNavigate }: Props) {
         parseUTC(b.sentAt).getTime() - parseUTC(a.sentAt).getTime()
       );
 
+      statusUpdates.sort((a, b) =>
+        parseUTC(b.signedAt).getTime() - parseUTC(a.signedAt).getTime()
+      );
+
       setAll(results);
       setEmailNotifs(emailResults);
+      setStatusUpdateNotifs(statusUpdates);
     } finally {
       setLoading(false);
     }
@@ -451,8 +504,11 @@ export default function NotificationBell({ onNavigate }: Props) {
 
   useEffect(() => {
     fetchNotifications();
-    const interval = setInterval(fetchNotifications, 60_000);
-    return () => clearInterval(interval);
+    const interval = setInterval(fetchNotifications, 30_000);
+    // Refresh when user comes back to the tab
+    const onFocus = () => fetchNotifications();
+    window.addEventListener('focus', onFocus);
+    return () => { clearInterval(interval); window.removeEventListener('focus', onFocus); };
   }, []);
 
   // ── Dismiss ────────────────────────────────────────────
@@ -471,7 +527,12 @@ export default function NotificationBell({ onNavigate }: Props) {
   };
 
   const dismissAll = () => {
-    const next = new Set([...dismissed, ...all.map((n) => n.id), ...emailNotifs.map((n) => n.id)]);
+    const next = new Set([
+      ...dismissed,
+      ...all.map((n) => n.id),
+      ...emailNotifs.map((n) => n.id),
+      ...statusUpdateNotifs.map((n) => n.id),
+    ]);
     setDismissed(next);
     saveDismissed(next);
   };
@@ -524,12 +585,12 @@ export default function NotificationBell({ onNavigate }: Props) {
               background: 'var(--card-bg)',
               backdropFilter: 'blur(28px)',
               WebkitBackdropFilter: 'blur(28px)',
-              border: '1px solid rgba(var(--accent-rgb),0.2)',
-              boxShadow: '0 8px 40px rgba(0,0,0,0.45)',
+              border: '1px solid rgba(var(--accent-rgb),0.25)',
+              boxShadow: '0 8px 40px rgba(0,0,0,0.6)',
             }}
           >
             {/* Header */}
-            <div className="flex items-center justify-between px-4 py-3 rounded-t-xl flex-shrink-0" style={{ backgroundColor: '#003d1f' }}>
+            <div className="flex items-center justify-between px-4 py-3 rounded-t-xl flex-shrink-0" style={{ background: 'var(--card-bg)', borderBottom: '1px solid rgba(var(--accent-rgb),0.2)' }}>
               <div className="flex items-center gap-2">
                 <Bell className="w-4 h-4 text-white" />
                 <span className="text-white text-sm font-semibold">Notifications</span>
@@ -558,7 +619,7 @@ export default function NotificationBell({ onNavigate }: Props) {
                   <div className="w-4 h-4 border-2 rounded-full animate-spin" style={{ borderColor: 'rgba(var(--accent-rgb),0.3)', borderTopColor: 'var(--accent)' }} />
                   Loading...
                 </div>
-              ) : visible.length === 0 && visibleEmails.length === 0 ? (
+              ) : visible.length === 0 && visibleEmails.length === 0 && visibleStatusUpdates.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-12 gap-3">
                   <CheckCircle className="w-10 h-10" style={{ color: 'var(--accent)' }} />
                   <p className="text-sm font-medium" style={{ color: 'rgba(var(--accent-text-rgb),0.8)' }}>All caught up</p>
@@ -566,10 +627,76 @@ export default function NotificationBell({ onNavigate }: Props) {
                 </div>
               ) : (
                 <>
+                  {/* Status update notifications for staff */}
+                  {visibleStatusUpdates.length > 0 && (
+                    <div>
+                      <div className="flex items-center gap-2 px-4 py-2 sticky top-0 border-b" style={{ background: 'var(--sidebar-bg)', borderColor: 'rgba(var(--accent-rgb),0.15)' }}>
+                        <Activity className="w-3.5 h-3.5" style={{ color: '#a78bfa' }} />
+                        <span className="text-xs font-semibold uppercase tracking-wide" style={{ color: '#a78bfa' }}>Document Updates</span>
+                        <span className="ml-auto text-xs" style={{ color: 'rgba(var(--accent-rgb),0.6)' }}>{visibleStatusUpdates.length}</span>
+                      </div>
+                      {visibleStatusUpdates.map((su) => {
+                        const labelMap: Record<string, { label: string; color: string; bg: string }> = {
+                          assigned_for_review: { label: '📋 Assigned for Review', color: '#fbbf24', bg: 'rgba(251,191,36,0.12)' },
+                          reviewed:            { label: '✅ Reviewed',             color: '#34d399', bg: 'rgba(16,185,129,0.12)' },
+                          noted:               { label: '🎉 Document Completed',   color: '#a78bfa', bg: 'rgba(167,139,250,0.15)' },
+                          'for review':        { label: '⏳ For Review',           color: '#fbbf24', bg: 'rgba(251,191,36,0.12)' },
+                          'for approval':      { label: '⏳ For Approval',         color: '#60a5fa', bg: 'rgba(96,165,250,0.12)' },
+                          approved:            { label: '✅ Approved',             color: '#34d399', bg: 'rgba(16,185,129,0.12)' },
+                        };
+                        const meta = labelMap[su.statusType] ?? { label: su.statusType, color: 'var(--accent)', bg: 'rgba(var(--accent-rgb),0.12)' };
+                        return (
+                          <div key={su.id} className="relative group border-b last:border-0" style={{ borderColor: 'rgba(var(--accent-rgb),0.1)' }}>
+                            <button
+                              onClick={() => { markViewed(su.id); onNavigate(su.letter.id); setOpen(false); }}
+                              className="w-full text-left px-4 py-3 pr-10 transition-colors"
+                              style={{
+                                background: su.statusType === 'noted' ? 'rgba(167,139,250,0.06)' : 'transparent',
+                                opacity: viewed.has(su.id) ? 0.5 : 1,
+                              }}
+                              onMouseEnter={(e) => (e.currentTarget.style.background = su.statusType === 'noted' ? 'rgba(167,139,250,0.12)' : 'rgba(var(--accent-rgb),0.08)')}
+                              onMouseLeave={(e) => (e.currentTarget.style.background = su.statusType === 'noted' ? 'rgba(167,139,250,0.06)' : 'transparent')}
+                            >
+                              <div className="flex items-start gap-3">
+                                <div className="mt-0.5 p-1.5 rounded-lg flex-shrink-0" style={{ backgroundColor: meta.bg }}>
+                                  <Activity className="w-4 h-4" style={{ color: meta.color }} />
+                                </div>
+                                <div className="min-w-0 flex-1">
+                                  <div className="flex items-center justify-between gap-1">
+                                    <p className="text-xs font-semibold truncate" style={{ color: 'var(--accent-text)' }}>
+                                      {su.letter.reference_number}
+                                    </p>
+                                    <span className="text-xs flex-shrink-0" style={{ color: 'rgba(var(--accent-rgb),0.75)' }}>{timeAgo(su.signedAt)}</span>
+                                  </div>
+                                  <p className="text-xs truncate mt-0.5" style={{ color: 'rgba(var(--accent-text-rgb),0.85)' }}>{su.letter.title}</p>
+                                  <div className="flex items-center gap-1 mt-1">
+                                    <span className="text-xs font-medium px-1.5 py-0.5 rounded-full" style={{ background: meta.bg, color: meta.color }}>
+                                      {meta.label}
+                                    </span>
+                                  </div>
+                                  {su.notes && (
+                                    <p className="text-xs mt-0.5 truncate" style={{ color: 'rgba(var(--accent-text-rgb),0.5)' }}>{su.notes}</p>
+                                  )}
+                                </div>
+                              </div>
+                            </button>
+                            <button
+                              onClick={(e) => dismiss(e, su.id)}
+                              className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity text-gray-400 hover:text-gray-600"
+                              title="Dismiss"
+                            >
+                              <X className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+
                   {/* Email sent notifications section */}
                   {visibleEmails.length > 0 && (
                     <div>
-                      <div className="flex items-center gap-2 px-4 py-2 sticky top-0 border-b" style={{ background: 'var(--card-bg)', borderColor: 'rgba(var(--accent-rgb),0.12)' }}>
+                      <div className="flex items-center gap-2 px-4 py-2 sticky top-0 border-b" style={{ background: 'var(--sidebar-bg)', borderColor: 'rgba(var(--accent-rgb),0.15)' }}>
                         <Mail className="w-3.5 h-3.5 text-blue-400" />
                         <span className="text-xs font-semibold uppercase tracking-wide text-blue-400">Email Sent</span>
                         <span className="ml-auto text-xs" style={{ color: 'rgba(var(--accent-rgb),0.6)' }}>{visibleEmails.length}</span>
@@ -592,9 +719,9 @@ export default function NotificationBell({ onNavigate }: Props) {
                                   <p className="text-xs font-semibold truncate" style={{ color: 'var(--accent-text)' }}>
                                     {en.letter.reference_number}
                                   </p>
-                                  <span className="text-xs flex-shrink-0" style={{ color: 'rgba(var(--accent-rgb),0.6)' }}>{timeAgo(en.sentAt)}</span>
+                                  <span className="text-xs flex-shrink-0" style={{ color: 'rgba(var(--accent-rgb),0.75)' }}>{timeAgo(en.sentAt)}</span>
                                 </div>
-                                <p className="text-xs truncate mt-0.5" style={{ color: 'rgba(var(--accent-text-rgb),0.6)' }}>{en.letter.title}</p>
+                                <p className="text-xs truncate mt-0.5" style={{ color: 'rgba(var(--accent-text-rgb),0.85)' }}>{en.letter.title}</p>
                                 <p className="text-xs mt-1 text-blue-400">
                                   ✓ Email sent to {en.letter.sender_email || en.letter.sender_name || 'sender'}
                                 </p>
@@ -617,7 +744,7 @@ export default function NotificationBell({ onNavigate }: Props) {
                   {grouped.map(({ urgency, items }) => (
                   <div key={urgency}>
                     {/* Group label */}
-                    <div className="flex items-center gap-2 px-4 py-2 sticky top-0 border-b" style={{ background: 'var(--card-bg)', borderColor: 'rgba(var(--accent-rgb),0.12)' }}>
+                    <div className="flex items-center gap-2 px-4 py-2 sticky top-0 border-b" style={{ background: 'var(--sidebar-bg)', borderColor: 'rgba(var(--accent-rgb),0.15)' }}>
                       {urgency === 'overdue'   && <AlertTriangle className="w-3.5 h-3.5" style={{ color: URGENCY_COLORS.overdue.icon }} />}
                       {urgency === 'pending'   && <Clock className="w-3.5 h-3.5" style={{ color: URGENCY_COLORS.pending.icon }} />}
                       {urgency === 'new'       && <FileText className="w-3.5 h-3.5" style={{ color: URGENCY_COLORS.new.icon }} />}
@@ -658,10 +785,10 @@ export default function NotificationBell({ onNavigate }: Props) {
                                     {viewed.has(id) && (
                                       <span className="text-xs italic" style={{ color: 'rgba(var(--accent-rgb),0.5)' }}>viewed</span>
                                     )}
-                                    <span className="text-xs" style={{ color: 'rgba(var(--accent-rgb),0.6)' }}>{timeAgo(letter.created_at)}</span>
+                                    <span className="text-xs" style={{ color: 'rgba(var(--accent-rgb),0.75)' }}>{timeAgo(letter.created_at)}</span>
                                   </div>
                                 </div>
-                                <p className="text-xs truncate mt-0.5" style={{ color: 'rgba(var(--accent-text-rgb),0.6)' }}>{letter.title}</p>
+                                <p className="text-xs truncate mt-0.5" style={{ color: 'rgba(var(--accent-text-rgb),0.85)' }}>{letter.title}</p>
                                 {/* Mini progress */}
                                 <div className="flex items-center gap-1.5 mt-1.5">
                                   {required.filter((s) => s !== 'noted').map((s) => {
@@ -759,7 +886,7 @@ export default function NotificationBell({ onNavigate }: Props) {
             onClick={(e) => e.stopPropagation()}
           >
             {/* Header */}
-            <div className="flex items-center justify-between px-5 py-4" style={{ backgroundColor: '#003d1f' }}>
+            <div className="flex items-center justify-between px-5 py-4" style={{ background: 'var(--card-bg)', borderBottom: '1px solid rgba(var(--accent-rgb),0.2)' }}>
               <div className="flex items-center gap-2">
                 <div className="p-1.5 rounded-lg" style={{ backgroundColor: '#EFF6FF' }}>
                   <Mail className="w-4 h-4 text-blue-500" />

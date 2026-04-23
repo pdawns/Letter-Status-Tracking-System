@@ -9,6 +9,7 @@ export interface Letter {
   file_name?: string;
   handler_pin: string;
   created_at: string;
+  created_by?: string | null;
   archived?: boolean;
   archived_at?: string;
   sender_name?: string;
@@ -29,6 +30,8 @@ export interface LetterStatus {
   signed_by: string;
   signed_at: string;
   notes: string;
+  review_file_url?: string | null;
+  review_file_name?: string | null;
 }
 
 export interface ActionTicket {
