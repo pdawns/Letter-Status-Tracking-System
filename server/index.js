@@ -5,68 +5,40 @@ const path = require('path');
 const fs = require('fs');
 const crypto = require('crypto');
 require('dotenv').config({ path: path.join(__dirname, '../.env') });
-const initSqlJs = require('sql.js');
+const { Pool } = require('pg');
 const nodemailer = require('nodemailer');
-const cloudinary = require('cloudinary').v2;
 
 const app = express();
 const PORT = process.env.PORT || 3001;
 
-// ── Cloudinary config ─────────────────────────────────────
-cloudinary.config({
-  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-  api_key: process.env.CLOUDINARY_API_KEY,
-  api_secret: process.env.CLOUDINARY_API_SECRET,
+// ── PostgreSQL connection ─────────────────────────────────
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  ssl: process.env.DATABASE_URL && process.env.DATABASE_URL.includes('railway')
+    ? { rejectUnauthorized: false }
+    : false,
 });
-
-// ── Multer memory storage for Cloudinary ──────────────────
-const upload = multer({ 
-  storage: multer.memoryStorage(),
-  limits: { fileSize: 100 * 1024 * 1024 } // 100MB limit
-});
-
-const DB_PATH = path.join(__dirname, 'dts.db');
 
 function now() {
   return new Date().toISOString().replace('T', ' ').substring(0, 19);
 }
 
-// ── Boot ──────────────────────────────────────────────────
-initSqlJs().then((SQL) => {
-  let db;
-  if (fs.existsSync(DB_PATH)) {
-    db = new SQL.Database(fs.readFileSync(DB_PATH));
-  } else {
-    db = new SQL.Database();
-  }
+// ── pg helpers ────────────────────────────────────────────
+async function run(sql, params = []) {
+  await pool.query(sql, params);
+}
+async function get(sql, params = []) {
+  const { rows } = await pool.query(sql, params);
+  return rows[0];
+}
+async function all(sql, params = []) {
+  const { rows } = await pool.query(sql, params);
+  return rows;
+}
 
-  function saveDb() {
-    fs.writeFileSync(DB_PATH, Buffer.from(db.export()));
-  }
-
-  // sql.js helpers — params must be an object or array
-  function run(sql, params = []) {
-    db.run(sql, params);
-    saveDb();
-  }
-  function get(sql, params = []) {
-    const stmt = db.prepare(sql);
-    stmt.bind(params);
-    const row = stmt.step() ? stmt.getAsObject() : undefined;
-    stmt.free();
-    return row;
-  }
-  function all(sql, params = []) {
-    const stmt = db.prepare(sql);
-    stmt.bind(params);
-    const rows = [];
-    while (stmt.step()) rows.push(stmt.getAsObject());
-    stmt.free();
-    return rows;
-  }
-
-  // ── Create tables ───────────────────────────────────────
-  db.run(`
+// ── Create tables ─────────────────────────────────────────
+async function initDb() {
+  await pool.query(`
     CREATE TABLE IF NOT EXISTS letters (
       id TEXT PRIMARY KEY,
       reference_number TEXT UNIQUE NOT NULL,
@@ -88,20 +60,23 @@ initSqlJs().then((SQL) => {
       document_direction TEXT DEFAULT NULL,
       sent_at TEXT DEFAULT NULL,
       received_at TEXT DEFAULT NULL,
-      created_at TEXT DEFAULT (datetime('now'))
+      created_by TEXT DEFAULT NULL,
+      created_at TEXT DEFAULT (to_char(now(), 'YYYY-MM-DD HH24:MI:SS'))
     );
     CREATE TABLE IF NOT EXISTS letter_statuses (
       id TEXT PRIMARY KEY,
       letter_id TEXT NOT NULL,
       status_type TEXT NOT NULL,
       signed_by TEXT NOT NULL,
-      signed_at TEXT DEFAULT (datetime('now')),
-      notes TEXT DEFAULT ''
+      signed_at TEXT DEFAULT (to_char(now(), 'YYYY-MM-DD HH24:MI:SS')),
+      notes TEXT DEFAULT '',
+      review_file_url TEXT DEFAULT NULL,
+      review_file_name TEXT DEFAULT NULL
     );
     CREATE TABLE IF NOT EXISTS sessions (
       token TEXT PRIMARY KEY,
       user_id TEXT NOT NULL,
-      created_at TEXT DEFAULT (datetime('now'))
+      created_at TEXT DEFAULT (to_char(now(), 'YYYY-MM-DD HH24:MI:SS'))
     );
     CREATE TABLE IF NOT EXISTS action_tickets (
       id TEXT PRIMARY KEY,
@@ -112,7 +87,7 @@ initSqlJs().then((SQL) => {
       action_notes TEXT DEFAULT '',
       due_date TEXT DEFAULT NULL,
       status TEXT DEFAULT 'pending',
-      created_at TEXT DEFAULT (datetime('now')),
+      created_at TEXT DEFAULT (to_char(now(), 'YYYY-MM-DD HH24:MI:SS')),
       completed_at TEXT DEFAULT NULL
     );
     CREATE TABLE IF NOT EXISTS activity_logs (
@@ -121,7 +96,7 @@ initSqlJs().then((SQL) => {
       action TEXT NOT NULL,
       description TEXT NOT NULL,
       performed_by TEXT NOT NULL,
-      created_at TEXT DEFAULT (datetime('now'))
+      created_at TEXT DEFAULT (to_char(now(), 'YYYY-MM-DD HH24:MI:SS'))
     );
     CREATE TABLE IF NOT EXISTS users (
       username TEXT PRIMARY KEY,
@@ -129,104 +104,48 @@ initSqlJs().then((SQL) => {
       role TEXT NOT NULL DEFAULT 'staff'
     );
     CREATE TABLE IF NOT EXISTS document_types (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      id SERIAL PRIMARY KEY,
       name TEXT UNIQUE NOT NULL,
       is_custom INTEGER DEFAULT 1,
-      created_at TEXT DEFAULT (datetime('now'))
+      created_at TEXT DEFAULT (to_char(now(), 'YYYY-MM-DD HH24:MI:SS'))
     );
   `);
 
-  // ── Migrations ──────────────────────────────────────────
-  const migrations = [
-    'ALTER TABLE letters ADD COLUMN email_sent_at TEXT DEFAULT NULL',
-    'ALTER TABLE letters ADD COLUMN document_direction TEXT DEFAULT NULL',
-    'ALTER TABLE letters ADD COLUMN sent_at TEXT DEFAULT NULL',
-    'ALTER TABLE letters ADD COLUMN received_at TEXT DEFAULT NULL',
-    'ALTER TABLE letters ADD COLUMN created_by TEXT DEFAULT NULL',
-    'ALTER TABLE letter_statuses ADD COLUMN review_file_url TEXT DEFAULT NULL',
-    'ALTER TABLE letter_statuses ADD COLUMN review_file_name TEXT DEFAULT NULL',
-  ];
-  for (const m of migrations) { try { db.run(m); } catch (_) {} }
+  // ── Seed users ──────────────────────────────────────────
+  await run(`INSERT INTO users (username, password, role) VALUES ('mj','password','staff') ON CONFLICT (username) DO UPDATE SET role='staff'`);
+  await run(`INSERT INTO users (username, password, role) VALUES ('jh','password','staff') ON CONFLICT (username) DO UPDATE SET role='staff'`);
+  await run(`INSERT INTO users (username, password, role) VALUES ('violon','password','admin') ON CONFLICT (username) DO UPDATE SET role='admin'`);
+  await run(`DELETE FROM users WHERE username NOT IN ('mj','jh','violon')`);
 
-  // Backfill direction
-  try {
-    db.run(`UPDATE letters SET document_direction = 'receiving', received_at = created_at WHERE document_direction IS NULL AND sender_name IS NOT NULL AND sender_name != ''`);
-    db.run(`UPDATE letters SET document_direction = 'sending', sent_at = created_at WHERE document_direction IS NULL`);
-    db.run(`UPDATE letters SET sent_at = created_at WHERE document_direction = 'sending' AND sent_at IS NULL`);
-  } catch (_) {}
-
-  // Fix misspelled name
-  try {
-    db.run(`UPDATE action_tickets SET assigned_to = REPLACE(assigned_to, 'Constantito', 'Constantino') WHERE assigned_to LIKE '%Constantito%'`);
-    db.run(`UPDATE letter_statuses SET signed_by = REPLACE(signed_by, 'Constantito', 'Constantino') WHERE signed_by LIKE '%Constantito%'`);
-  } catch (_) {}
-
-  saveDb();
-
-  // ── Seed / migrate users ────────────────────────────────
-  // mj, jh → staff (create + track only) | violon → admin (full access)
-  run('INSERT OR IGNORE INTO users (username, password, role) VALUES (?, ?, ?)', ['mj', 'password', 'staff']);
-  run('INSERT OR IGNORE INTO users (username, password, role) VALUES (?, ?, ?)', ['jh', 'password', 'staff']);
-  run('INSERT OR IGNORE INTO users (username, password, role) VALUES (?, ?, ?)', ['violon', 'password', 'admin']);
-  // Ensure correct roles on every boot
-  run('UPDATE users SET role = ? WHERE username = ?', ['staff', 'mj']);
-  run('UPDATE users SET role = ? WHERE username = ?', ['staff', 'jh']);
-  run('UPDATE users SET role = ? WHERE username = ?', ['admin', 'violon']);
-  // Seed default document types
-  const defaultTypes = ['Letter', 'Certificate', 'Memo', 'Report', 'Disbursement Voucher'];
+  // ── Seed document types ─────────────────────────────────
+  const defaultTypes = ['Letter','Certificate','Memo','Report','Disbursement Voucher'];
   for (const name of defaultTypes) {
-    try { run('INSERT OR IGNORE INTO document_types (name, is_custom) VALUES (?, 0)', [name]); } catch (_) {}
+    await run(`INSERT INTO document_types (name, is_custom) VALUES ($1, 0) ON CONFLICT (name) DO NOTHING`, [name]);
   }
-
-  // Remove any other legacy users
-  run("DELETE FROM users WHERE username NOT IN ('mj', 'jh', 'violon')");
-
-  // Backfill created_by for legacy docs (null → 'mj' as default)
-  try {
-    // First try to get real username from activity logs
-    const logs = all("SELECT letter_id, performed_by FROM activity_logs WHERE action = 'document_created'");
-    for (const { letter_id, performed_by } of logs) {
-      if (performed_by && performed_by !== 'system') {
-        run('UPDATE letters SET created_by = ? WHERE id = ? AND (created_by IS NULL OR created_by = "")', [performed_by, letter_id]);
-      }
-    }
-    // Remaining nulls (created before user tracking) → default 'mj'
-    run("UPDATE letters SET created_by = 'mj' WHERE created_by IS NULL OR created_by = ''");
-    saveDb();
-    console.log('created_by backfill complete.');
-  } catch (e) { console.error('created_by backfill error:', e); }
-
-  try {
-    const existingLetters = all('SELECT * FROM letters');
-    for (const letter of existingLetters) {
-      const hasLog = get('SELECT id FROM activity_logs WHERE letter_id = ? AND action = ?', [letter.id, 'document_created']);
-      if (!hasLog) {
-        run('INSERT INTO activity_logs (id, letter_id, action, description, performed_by, created_at) VALUES (?, ?, ?, ?, ?, ?)',
-          [crypto.randomUUID(), letter.id, 'document_created', `Document "${letter.title}" (${letter.reference_number}) created`, 'system', letter.created_at]);
-      }
-    }
-    saveDb();
-    console.log('Activity logs backfilled.');
-  } catch (e) { console.error('Backfill error:', e); }
 
   console.log('Database ready.');
+}
 
-  // ── Activity Log helper ─────────────────────────────────
+// ── Boot ──────────────────────────────────────────────────
+initDb().then(() => {
+
+  // ── Activity Log helper ───────────────────────────────
   function logActivity(letterId, action, description, performedBy) {
-    try {
-      run('INSERT INTO activity_logs (id, letter_id, action, description, performed_by, created_at) VALUES (?, ?, ?, ?, ?, ?)',
-        [crypto.randomUUID(), letterId, action, description, performedBy, now()]);
-    } catch (_) {}
+    pool.query(
+      'INSERT INTO activity_logs (id, letter_id, action, description, performed_by, created_at) VALUES ($1,$2,$3,$4,$5,$6)',
+      [crypto.randomUUID(), letterId, action, description, performedBy, now()]
+    ).catch(() => {});
   }
 
-  // ── Auth middleware ─────────────────────────────────────
-  function requireAuth(req, res, next) {
+  // ── Auth middleware ───────────────────────────────────
+  async function requireAuth(req, res, next) {
     const token = req.headers['authorization']?.replace('Bearer ', '');
     if (!token) return res.status(401).json({ error: 'Unauthorized' });
-    const session = get('SELECT token, user_id FROM sessions WHERE token = ?', [token]);
+    const session = await get('SELECT token, user_id FROM sessions WHERE token = $1', [token]);
     if (!session) return res.status(401).json({ error: 'Unauthorized' });
     req.userId = session.user_id;
-    req.userRole = get('SELECT role FROM users WHERE username = ?', [session.user_id])?.role || 'staff';
+    const userRow = await get('SELECT role FROM users WHERE username = $1', [session.user_id]);
+    req.userRole = userRow?.role || 'staff';
     next();
   }
 
@@ -241,7 +160,6 @@ initSqlJs().then((SQL) => {
 
   app.use(cors({
     origin: (origin, cb) => {
-      // allow no-origin requests (curl, mobile) and matched origins
       if (!origin || allowedOrigins.includes(origin)) return cb(null, true);
       cb(new Error(`CORS blocked: ${origin}`));
     },
@@ -252,106 +170,108 @@ initSqlJs().then((SQL) => {
   app.get('/', (_req, res) => res.json({ status: 'DocuTrack Server is running' }));
   app.get('/health', (_req, res) => res.json({ status: 'ok' }));
 
-  // ── Auth ────────────────────────────────────────────────
-  app.post('/api/login', (req, res) => {
+  // ── Auth ──────────────────────────────────────────────
+  app.post('/api/login', async (req, res) => {
     const { username, password } = req.body;
     if (!username || !password) return res.status(400).json({ error: 'Missing credentials' });
-    const user = get('SELECT * FROM users WHERE username = ?', [username]);
+    const user = await get('SELECT * FROM users WHERE username = $1', [username]);
     if (!user || user.password !== password)
       return res.status(401).json({ error: 'Invalid username or password' });
     const token = crypto.randomBytes(32).toString('hex');
-    run('INSERT OR REPLACE INTO sessions (token, user_id, created_at) VALUES (?, ?, ?)', [token, username, now()]);
+    await run('INSERT INTO sessions (token, user_id, created_at) VALUES ($1,$2,$3) ON CONFLICT (token) DO UPDATE SET user_id=$2', [token, username, now()]);
     res.json({ token, username, role: user.role });
   });
 
-  app.post('/api/logout', (req, res) => {
+  app.post('/api/logout', async (req, res) => {
     const token = req.headers['authorization']?.replace('Bearer ', '');
-    if (token) run('DELETE FROM sessions WHERE token = ?', [token]);
+    if (token) await run('DELETE FROM sessions WHERE token = $1', [token]);
     res.json({ success: true });
   });
 
-  app.post('/api/change-password', requireAuth, (req, res) => {
+  app.post('/api/change-password', requireAuth, async (req, res) => {
     const { currentPassword, newPassword } = req.body;
     if (!currentPassword || !newPassword) return res.status(400).json({ error: 'Missing fields' });
-    const user = get('SELECT * FROM users WHERE username = ?', [req.userId]);
+    const user = await get('SELECT * FROM users WHERE username = $1', [req.userId]);
     if (!user || user.password !== currentPassword)
       return res.status(401).json({ error: 'Current password is incorrect' });
     if (newPassword.length < 6)
       return res.status(400).json({ error: 'New password must be at least 6 characters' });
-    run('UPDATE users SET password = ? WHERE username = ?', [newPassword, req.userId]);
+    await run('UPDATE users SET password = $1 WHERE username = $2', [newPassword, req.userId]);
     res.json({ success: true });
   });
 
-  // ── Public endpoint (no auth) ────────────────────────────
-  app.get('/api/public/letters', (req, res) => {
-    res.json(all('SELECT id, reference_number, title, document_subject, document_type, document_direction, created_at, required_statuses, sender_name, sender_office FROM letters WHERE archived = 0 ORDER BY created_at DESC'));
+  // ── Public endpoints ──────────────────────────────────
+  app.get('/api/public/letters', async (_req, res) => {
+    res.json(await all('SELECT id, reference_number, title, document_subject, document_type, document_direction, created_at, required_statuses, sender_name, sender_office FROM letters WHERE archived = 0 ORDER BY created_at DESC'));
   });
 
-  // ── Document Types ───────────────────────────────────────
-  app.get('/api/document-types', requireAuth, (req, res) => {
-    res.json(all('SELECT id, name, is_custom FROM document_types ORDER BY is_custom ASC, name ASC'));
+  app.get('/api/public/letters/:id/statuses', async (req, res) => {
+    res.json(await all('SELECT * FROM letter_statuses WHERE letter_id = $1 ORDER BY signed_at ASC', [req.params.id]));
   });
 
-  app.post('/api/document-types', requireAuth, (req, res) => {
+  // ── Document Types ────────────────────────────────────
+  app.get('/api/document-types', requireAuth, async (_req, res) => {
+    res.json(await all('SELECT id, name, is_custom FROM document_types ORDER BY is_custom ASC, name ASC'));
+  });
+
+  app.post('/api/document-types', requireAuth, async (req, res) => {
     const { name } = req.body;
     if (!name || !name.trim()) return res.status(400).json({ error: 'Name is required' });
     const trimmed = name.trim();
     try {
-      run('INSERT OR IGNORE INTO document_types (name, is_custom) VALUES (?, 1)', [trimmed]);
-      const row = get('SELECT id, name, is_custom FROM document_types WHERE name = ?', [trimmed]);
-      res.json(row);
+      await run('INSERT INTO document_types (name, is_custom) VALUES ($1, 1) ON CONFLICT (name) DO NOTHING', [trimmed]);
+      res.json(await get('SELECT id, name, is_custom FROM document_types WHERE name = $1', [trimmed]));
     } catch (e) {
       res.status(500).json({ error: 'Failed to save document type' });
     }
   });
 
-  app.get('/api/public/letters/:id/statuses', (req, res) => {
-    res.json(all('SELECT * FROM letter_statuses WHERE letter_id = ? ORDER BY signed_at ASC', [req.params.id]));
+  // ── Letters ───────────────────────────────────────────
+  app.get('/api/letters', requireAuth, async (_req, res) => {
+    res.json(await all('SELECT * FROM letters WHERE archived = 0 ORDER BY created_at DESC'));
   });
 
-  // ── Letters ─────────────────────────────────────────────
-  app.get('/api/letters', requireAuth, (req, res) => {
-    res.json(all('SELECT * FROM letters WHERE archived = 0 ORDER BY created_at DESC'));
+  app.get('/api/letters/archived', requireAuth, async (_req, res) => {
+    res.json(await all('SELECT * FROM letters WHERE archived = 1 ORDER BY archived_at DESC'));
   });
 
-  app.get('/api/letters/archived', requireAuth, (req, res) => {
-    res.json(all('SELECT * FROM letters WHERE archived = 1 ORDER BY archived_at DESC'));
-  });
-
-  app.get('/api/letters/:id', requireAuth, (req, res) => {
-    const letter = get('SELECT * FROM letters WHERE id = ?', [req.params.id]);
+  app.get('/api/letters/:id', requireAuth, async (req, res) => {
+    const letter = await get('SELECT * FROM letters WHERE id = $1', [req.params.id]);
     if (!letter) return res.status(404).json({ error: 'Not found' });
     res.json(letter);
   });
 
-  app.post('/api/letters', requireAuth, (req, res) => {
+  app.post('/api/letters', requireAuth, async (req, res) => {
     const id = crypto.randomUUID();
     const { reference_number, title, document_subject, document_type, handler_pin, description,
       sender_name, sender_office, sender_phone, sender_email, required_statuses, document_direction } = req.body;
     const sent_at = document_direction === 'sending' ? now() : null;
     const received_at = document_direction === 'receiving' ? now() : null;
-    run(
-      'INSERT INTO letters (id, reference_number, title, document_subject, document_type, handler_pin, description, sender_name, sender_office, sender_phone, sender_email, required_statuses, document_direction, sent_at, received_at, created_by, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+    await run(
+      `INSERT INTO letters (id, reference_number, title, document_subject, document_type, handler_pin,
+        description, sender_name, sender_office, sender_phone, sender_email, required_statuses,
+        document_direction, sent_at, received_at, created_by, created_at)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17)`,
       [id, reference_number, title, document_subject || '', document_type || 'letter', handler_pin,
        description || '', sender_name || '', sender_office || '', sender_phone || '', sender_email || '',
        required_statuses || 'noted,approved,reviewed', document_direction || null, sent_at, received_at, req.userId, now()]
     );
     logActivity(id, 'document_created', `Document "${title}" (${reference_number}) created`, req.userId);
-    res.json(get('SELECT * FROM letters WHERE id = ?', [id]));
+    res.json(await get('SELECT * FROM letters WHERE id = $1', [id]));
   });
 
-  app.patch('/api/letters/:id', requireAuth, (req, res) => {
+  app.patch('/api/letters/:id', requireAuth, async (req, res) => {
     try {
       const fields = req.body;
-      const allowed = ['file_url', 'file_name', 'title', 'description', 'handler_pin', 'document_type',
-        'document_subject', 'sender_name', 'sender_office', 'sender_phone', 'sender_email',
-        'required_statuses', 'document_direction', 'sent_at', 'received_at'];
+      const allowed = ['file_url','file_name','title','description','handler_pin','document_type',
+        'document_subject','sender_name','sender_office','sender_phone','sender_email',
+        'required_statuses','document_direction','sent_at','received_at'];
       const updates = Object.keys(fields).filter(k => allowed.includes(k));
       if (updates.length === 0) return res.status(400).json({ error: 'No valid fields to update' });
-      const setClauses = updates.map(k => `${k} = ?`).join(', ');
+      const setClauses = updates.map((k, i) => `${k} = $${i + 1}`).join(', ');
       const values = updates.map(k => fields[k] ?? null);
-      run(`UPDATE letters SET ${setClauses} WHERE id = ?`, [...values, req.params.id]);
-      const letter = get('SELECT * FROM letters WHERE id = ?', [req.params.id]);
+      await run(`UPDATE letters SET ${setClauses} WHERE id = $${updates.length + 1}`, [...values, req.params.id]);
+      const letter = await get('SELECT * FROM letters WHERE id = $1', [req.params.id]);
       if (!letter) return res.status(404).json({ error: 'Not found' });
       logActivity(req.params.id, 'document_updated', `Document info updated`, req.userId);
       res.json(letter);
@@ -361,33 +281,32 @@ initSqlJs().then((SQL) => {
     }
   });
 
-  app.delete('/api/letters/:id', requireAuth, (req, res) => {
-    run('DELETE FROM letter_statuses WHERE letter_id = ?', [req.params.id]);
-    run('DELETE FROM letters WHERE id = ?', [req.params.id]);
+  app.delete('/api/letters/:id', requireAuth, async (req, res) => {
+    await run('DELETE FROM letter_statuses WHERE letter_id = $1', [req.params.id]);
+    await run('DELETE FROM letters WHERE id = $1', [req.params.id]);
     res.json({ success: true });
   });
 
-  app.patch('/api/letters/:id/archive', requireAuth, (req, res) => {
-    run('UPDATE letters SET archived = 1, archived_at = ? WHERE id = ?', [now(), req.params.id]);
+  app.patch('/api/letters/:id/archive', requireAuth, async (req, res) => {
+    await run('UPDATE letters SET archived = 1, archived_at = $1 WHERE id = $2', [now(), req.params.id]);
     logActivity(req.params.id, 'document_archived', `Document archived`, req.userId);
     res.json({ success: true });
   });
 
-  app.patch('/api/letters/:id/unarchive', requireAuth, (req, res) => {
-    run('UPDATE letters SET archived = 0, archived_at = NULL WHERE id = ?', [req.params.id]);
+  app.patch('/api/letters/:id/unarchive', requireAuth, async (req, res) => {
+    await run('UPDATE letters SET archived = 0, archived_at = NULL WHERE id = $1', [req.params.id]);
     logActivity(req.params.id, 'document_unarchived', `Document restored from archive`, req.userId);
     res.json({ success: true });
   });
 
-  // ── Email sent tracking ─────────────────────────────────
-  app.patch('/api/letters/:id/email-sent', requireAuth, (req, res) => {
-    run('UPDATE letters SET email_sent_at = ? WHERE id = ?', [now(), req.params.id]);
-    const letter = get('SELECT * FROM letters WHERE id = ?', [req.params.id]);
+  app.patch('/api/letters/:id/email-sent', requireAuth, async (req, res) => {
+    await run('UPDATE letters SET email_sent_at = $1 WHERE id = $2', [now(), req.params.id]);
+    const letter = await get('SELECT * FROM letters WHERE id = $1', [req.params.id]);
     logActivity(req.params.id, 'email_sent', `Email notification sent`, req.userId);
     res.json(letter);
   });
 
-  // ── Send email via SMTP ─────────────────────────────────
+  // ── Send email ────────────────────────────────────────
   app.post('/api/send-email', requireAuth, async (req, res) => {
     const { to, subject, body, letterId } = req.body;
     if (!to || !subject || !body) return res.status(400).json({ error: 'Missing required fields' });
@@ -399,7 +318,7 @@ initSqlJs().then((SQL) => {
     try {
       const transporter = nodemailer.createTransport({ service: 'gmail', auth: { user: emailUser, pass: emailPass } });
       await transporter.sendMail({ from: `"${emailName}" <${emailUser}>`, to, subject, text: body });
-      if (letterId) run('UPDATE letters SET email_sent_at = ? WHERE id = ?', [now(), letterId]);
+      if (letterId) await run('UPDATE letters SET email_sent_at = $1 WHERE id = $2', [now(), letterId]);
       res.json({ success: true });
     } catch (err) {
       console.error('Email send error:', err);
@@ -407,26 +326,26 @@ initSqlJs().then((SQL) => {
     }
   });
 
-  // ── Upload ──────────────────────────────────────────────
-  // ── Upload — serve files directly from Railway ──────────
+  // ── File uploads ──────────────────────────────────────
   const UPLOADS_DIR = path.join(__dirname, 'uploads');
   if (!fs.existsSync(UPLOADS_DIR)) fs.mkdirSync(UPLOADS_DIR, { recursive: true });
 
-  // Serve uploaded files publicly (no auth needed so browser can preview)
   app.use('/uploads', (req, res, next) => {
     res.setHeader('X-Frame-Options', 'ALLOWALL');
     res.setHeader('Content-Security-Policy', "frame-ancestors *");
     next();
   }, express.static(UPLOADS_DIR));
 
-  const diskStorage = multer.diskStorage({
-    destination: (_req, _file, cb) => cb(null, UPLOADS_DIR),
-    filename: (_req, file, cb) => {
-      const ext = path.extname(file.originalname);
-      cb(null, `${Date.now()}-${crypto.randomBytes(6).toString('hex')}${ext}`);
-    },
+  const diskUpload = multer({
+    storage: multer.diskStorage({
+      destination: (_req, _file, cb) => cb(null, UPLOADS_DIR),
+      filename: (_req, file, cb) => {
+        const ext = path.extname(file.originalname);
+        cb(null, `${Date.now()}-${crypto.randomBytes(6).toString('hex')}${ext}`);
+      },
+    }),
+    limits: { fileSize: 100 * 1024 * 1024 },
   });
-  const diskUpload = multer({ storage: diskStorage, limits: { fileSize: 100 * 1024 * 1024 } });
 
   app.post('/api/upload', requireAuth, diskUpload.single('file'), (req, res) => {
     try {
@@ -434,72 +353,74 @@ initSqlJs().then((SQL) => {
       const baseUrl = process.env.RAILWAY_PUBLIC_DOMAIN
         ? `https://${process.env.RAILWAY_PUBLIC_DOMAIN}`
         : `http://localhost:${PORT}`;
-      const fileUrl = `${baseUrl}/uploads/${req.file.filename}`;
-      res.json({ file_url: fileUrl, file_name: req.file.originalname });
+      res.json({ file_url: `${baseUrl}/uploads/${req.file.filename}`, file_name: req.file.originalname });
     } catch (err) {
-      console.error('Upload error:', err);
       res.status(500).json({ error: err.message || 'Upload failed' });
     }
   });
 
-  // ── Activity Logs ───────────────────────────────────────
-  app.get('/api/letters/:id/activity-logs', requireAuth, (req, res) => {
-    res.json(all('SELECT * FROM activity_logs WHERE letter_id = ? ORDER BY created_at ASC', [req.params.id]));
+  // ── Activity Logs ─────────────────────────────────────
+  app.get('/api/letters/:id/activity-logs', requireAuth, async (req, res) => {
+    res.json(await all('SELECT * FROM activity_logs WHERE letter_id = $1 ORDER BY created_at ASC', [req.params.id]));
   });
 
-  app.get('/api/activity-logs', requireAuth, (req, res) => {
+  app.get('/api/activity-logs', requireAuth, async (req, res) => {
     const limit = parseInt(req.query.limit) || 200;
     const action = req.query.action || null;
     if (action) {
-      res.json(all(
-        'SELECT al.*, l.reference_number, l.title FROM activity_logs al LEFT JOIN letters l ON al.letter_id = l.id WHERE al.action = ? ORDER BY al.created_at DESC LIMIT ?',
+      res.json(await all(
+        'SELECT al.*, l.reference_number, l.title FROM activity_logs al LEFT JOIN letters l ON al.letter_id = l.id WHERE al.action = $1 ORDER BY al.created_at DESC LIMIT $2',
         [action, limit]
       ));
     } else {
-      res.json(all(
-        'SELECT al.*, l.reference_number, l.title FROM activity_logs al LEFT JOIN letters l ON al.letter_id = l.id ORDER BY al.created_at DESC LIMIT ?',
+      res.json(await all(
+        'SELECT al.*, l.reference_number, l.title FROM activity_logs al LEFT JOIN letters l ON al.letter_id = l.id ORDER BY al.created_at DESC LIMIT $1',
         [limit]
       ));
     }
   });
 
-  // ── Statuses ────────────────────────────────────────────
-  app.get('/api/letters/:id/statuses', requireAuth, (req, res) => {
-    res.json(all('SELECT * FROM letter_statuses WHERE letter_id = ? ORDER BY signed_at ASC', [req.params.id]));
+  // ── Statuses ──────────────────────────────────────────
+  app.get('/api/letters/:id/statuses', requireAuth, async (req, res) => {
+    res.json(await all('SELECT * FROM letter_statuses WHERE letter_id = $1 ORDER BY signed_at ASC', [req.params.id]));
   });
 
-  app.post('/api/letters/:id/statuses', requireAuth, (req, res) => {
+  app.post('/api/letters/:id/statuses', requireAuth, async (req, res) => {
     const items = req.body;
     for (const row of items) {
-      run('INSERT INTO letter_statuses (id, letter_id, status_type, signed_by, notes, review_file_url, review_file_name, signed_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
-        [crypto.randomUUID(), req.params.id, row.status_type, row.signed_by, row.notes || '', row.review_file_url || null, row.review_file_name || null, now()]);
+      await run(
+        'INSERT INTO letter_statuses (id, letter_id, status_type, signed_by, notes, review_file_url, review_file_name, signed_at) VALUES ($1,$2,$3,$4,$5,$6,$7,$8)',
+        [crypto.randomUUID(), req.params.id, row.status_type, row.signed_by, row.notes || '', row.review_file_url || null, row.review_file_name || null, now()]
+      );
       logActivity(req.params.id, 'status_added', `Status "${row.status_type}" added by ${row.signed_by}`, req.userId);
     }
-    res.json(all('SELECT * FROM letter_statuses WHERE letter_id = ? ORDER BY signed_at ASC', [req.params.id]));
+    res.json(await all('SELECT * FROM letter_statuses WHERE letter_id = $1 ORDER BY signed_at ASC', [req.params.id]));
   });
 
-  // ── Action Tickets ──────────────────────────────────────
-  app.get('/api/letters/:id/action-tickets', requireAuth, (req, res) => {
-    res.json(all('SELECT * FROM action_tickets WHERE letter_id = ? ORDER BY created_at DESC', [req.params.id]));
+  // ── Action Tickets ────────────────────────────────────
+  app.get('/api/letters/:id/action-tickets', requireAuth, async (req, res) => {
+    res.json(await all('SELECT * FROM action_tickets WHERE letter_id = $1 ORDER BY created_at DESC', [req.params.id]));
   });
 
-  app.post('/api/letters/:id/action-tickets', requireAuth, (req, res) => {
+  app.post('/api/letters/:id/action-tickets', requireAuth, async (req, res) => {
     const { assigned_by, assigned_to, action_notes, due_date } = req.body;
     if (!assigned_by || !assigned_to) return res.status(400).json({ error: 'assigned_by and assigned_to are required' });
     const id = crypto.randomUUID();
     const year = new Date().getFullYear();
-    const countRow = get('SELECT COUNT(*) as cnt FROM action_tickets');
-    const seq = (countRow?.cnt ?? 0) + 1;
+    const countRow = await get('SELECT COUNT(*) as cnt FROM action_tickets');
+    const seq = (parseInt(countRow?.cnt) ?? 0) + 1;
     const ticket_number = `ACT-${year}-${String(seq).padStart(4, '0')}`;
-    run('INSERT INTO action_tickets (id, letter_id, ticket_number, assigned_by, assigned_to, action_notes, due_date, status, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
-      [id, req.params.id, ticket_number, assigned_by, assigned_to, action_notes || '', due_date || null, 'pending', now()]);
+    await run(
+      'INSERT INTO action_tickets (id, letter_id, ticket_number, assigned_by, assigned_to, action_notes, due_date, status, created_at) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)',
+      [id, req.params.id, ticket_number, assigned_by, assigned_to, action_notes || '', due_date || null, 'pending', now()]
+    );
     logActivity(req.params.id, 'ticket_created', `Action ticket ${ticket_number} assigned to ${assigned_to} by ${assigned_by}`, req.userId);
-    res.json(get('SELECT * FROM action_tickets WHERE id = ?', [id]));
+    res.json(await get('SELECT * FROM action_tickets WHERE id = $1', [id]));
   });
 
-  app.patch('/api/action-tickets/:id/complete', requireAuth, (req, res) => {
-    run('UPDATE action_tickets SET status = ?, completed_at = ? WHERE id = ?', ['completed', now(), req.params.id]);
-    const ticket = get('SELECT * FROM action_tickets WHERE id = ?', [req.params.id]);
+  app.patch('/api/action-tickets/:id/complete', requireAuth, async (req, res) => {
+    await run('UPDATE action_tickets SET status = $1, completed_at = $2 WHERE id = $3', ['completed', now(), req.params.id]);
+    const ticket = await get('SELECT * FROM action_tickets WHERE id = $1', [req.params.id]);
     if (!ticket) return res.status(404).json({ error: 'Not found' });
     logActivity(ticket.letter_id, 'ticket_completed', `Action ticket ${ticket.ticket_number} marked as completed`, req.userId);
     res.json(ticket);
@@ -507,11 +428,7 @@ initSqlJs().then((SQL) => {
 
   app.listen(PORT, '0.0.0.0', () => console.log(`DocuTrack Server running on port ${PORT}`));
 
-
-
 }).catch(err => {
   console.error('Failed to initialize database:', err);
   process.exit(1);
 });
-
-
