@@ -26,8 +26,9 @@ export default function HandlerUpdate({ letterId, onBack }: HandlerUpdateProps) 
   const isStaff = role === 'staff' || role === 'receiver';
 
   const toInlineUrl = (url: string) => {
-    if (url.includes('res.cloudinary.com') && url.includes('/raw/upload/') && !url.includes('fl_attachment')) {
-      return url.replace('/raw/upload/', '/raw/upload/fl_attachment:false/');
+    // Force Cloudinary to serve file inline so browser can render it natively
+    if (url.includes('res.cloudinary.com') && url.includes('/upload/') && !url.includes('fl_attachment')) {
+      return url.replace('/upload/', '/upload/fl_attachment:false/');
     }
     return url;
   };

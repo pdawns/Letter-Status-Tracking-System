@@ -192,8 +192,8 @@ export default function DocumentLibrary({ onDocumentSelected, onViewDocumentInfo
   };
 
   const toInlineUrl = (url: string) => {
-    if (url.includes('res.cloudinary.com') && url.includes('/raw/upload/') && !url.includes('fl_attachment')) {
-      return url.replace('/raw/upload/', '/raw/upload/fl_attachment:false/');
+    if (url.includes('res.cloudinary.com') && url.includes('/upload/') && !url.includes('fl_attachment')) {
+      return url.replace('/upload/', '/upload/fl_attachment:false/');
     }
     return url;
   };
