@@ -25,6 +25,17 @@ export default function HandlerUpdate({ letterId, onBack }: HandlerUpdateProps) 
   const isViolon = role === 'admin';
   const isStaff = role === 'staff' || role === 'receiver';
 
+  const getProxiedUrl = (url: string) => {
+    // If it's a Cloudinary URL, proxy it through our server to bypass auth issues
+    if (url.includes('res.cloudinary.com')) {
+      const apiBase = import.meta.env.VITE_API_URL || '';
+      const baseUrl = apiBase && !apiBase.startsWith('http') ? `https://${apiBase}` : apiBase;
+      const apiUrl = baseUrl ? `${baseUrl.replace(/\/$/, '')}/api` : '/api';
+      return `${apiUrl}/proxy-file?url=${encodeURIComponent(url)}`;
+    }
+    return url;
+  };
+
   const [letter, setLetter] = useState<Letter | null>(null);
   const [statuses, setStatuses] = useState<LetterStatus[]>([]);
   const [actionTickets, setActionTickets] = useState<ActionTicket[]>([]);
@@ -356,7 +367,7 @@ export default function HandlerUpdate({ letterId, onBack }: HandlerUpdateProps) 
                   {/* PDF file card */}
                   {reviewStatus!.review_file_url ? (
                     <button
-                      onClick={() => window.open(reviewStatus!.review_file_url!, '_blank', 'noopener,noreferrer')}
+                      onClick={() => window.open(getProxiedUrl(reviewStatus!.review_file_url!), '_blank', 'noopener,noreferrer')}
                       className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all text-left"
                       style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.25)' }}
                       onMouseEnter={e => (e.currentTarget.style.background = 'rgba(239,68,68,0.15)')}
@@ -463,7 +474,7 @@ export default function HandlerUpdate({ letterId, onBack }: HandlerUpdateProps) 
                   </div>
                   {reviewStatus!.review_file_url && (
                     <button
-                      onClick={() => window.open(reviewStatus!.review_file_url!, '_blank', 'noopener,noreferrer')}
+                      onClick={() => window.open(getProxiedUrl(reviewStatus!.review_file_url!), '_blank', 'noopener,noreferrer')}
                       className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all text-left"
                       style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.25)' }}
                       onMouseEnter={e => (e.currentTarget.style.background = 'rgba(239,68,68,0.15)')}

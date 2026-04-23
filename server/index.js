@@ -392,36 +392,69 @@ app.post('/api/upload', requireAuth, upload.single('file'), async (req, res) => 
   try {
     if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
     const ext = path.extname(req.file.originalname).toLowerCase().replace('.', '');
-    const docExts = ['pdf','doc','docx','xls','xlsx','ppt','pptx'];
-    const resourceType = docExts.includes(ext) ? 'raw' : 'auto';
-
+    
+    // Use 'auto' for all files - Cloudinary will handle them properly
+    // For PDFs, this allows them to be served publicly without auth issues
     const result = await new Promise((resolve, reject) => {
       const stream = cloudinary.uploader.upload_stream(
         {
-          resource_type: resourceType,
+          resource_type: 'auto',
           folder: 'dts-uploads',
           use_filename: true,
           unique_filename: true,
-          format: ext || undefined,
-          type: 'upload',
           access_mode: 'public',
+          type: 'upload',
+          // For PDFs, add flags to ensure they can be viewed inline
+          flags: ext === 'pdf' ? 'attachment' : undefined,
         },
         (err, result) => err ? reject(err) : resolve(result)
       );
       Readable.from(req.file.buffer).pipe(stream);
     });
 
-    // For raw resources, Cloudinary may strip the extension from secure_url.
-    // Ensure the URL ends with the correct extension so browsers open it properly.
-    let fileUrl = result.secure_url;
-    if (ext && !fileUrl.toLowerCase().endsWith(`.${ext}`)) {
-      fileUrl = `${fileUrl}.${ext}`;
-    }
+    // Use the secure_url directly - it should be publicly accessible now
+    const fileUrl = result.secure_url;
 
     res.json({ file_url: fileUrl, file_name: req.file.originalname });
   } catch (e) {
     console.error('Upload error:', e);
     res.status(500).json({ error: e.message || 'Upload failed' });
+  }
+});
+
+// ── Proxy endpoint for viewing Cloudinary files ───────────
+app.get('/api/proxy-file', async (req, res) => {
+  try {
+    const { url } = req.query;
+    if (!url || typeof url !== 'string') {
+      return res.status(400).json({ error: 'Missing url parameter' });
+    }
+
+    // Only allow Cloudinary URLs for security
+    if (!url.includes('res.cloudinary.com')) {
+      return res.status(403).json({ error: 'Only Cloudinary URLs are allowed' });
+    }
+
+    // Fetch the file from Cloudinary
+    const fetch = (await import('node-fetch')).default;
+    const response = await fetch(url);
+    
+    if (!response.ok) {
+      return res.status(response.status).json({ error: 'Failed to fetch file from Cloudinary' });
+    }
+
+    // Forward the content type and stream the file
+    const contentType = response.headers.get('content-type');
+    if (contentType) {
+      res.setHeader('Content-Type', contentType);
+    }
+    res.setHeader('Content-Disposition', 'inline');
+    
+    // Stream the response
+    response.body.pipe(res);
+  } catch (e) {
+    console.error('Proxy error:', e);
+    res.status(500).json({ error: e.message || 'Proxy failed' });
   }
 });
 

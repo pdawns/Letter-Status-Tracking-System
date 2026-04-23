@@ -43,6 +43,17 @@ export default function DocumentInfo({ letterId, onBack }: DocumentInfoProps) {
     }
   };
 
+  const getProxiedUrl = (url: string) => {
+    // If it's a Cloudinary URL, proxy it through our server to bypass auth issues
+    if (url.includes('res.cloudinary.com')) {
+      const apiBase = import.meta.env.VITE_API_URL || '';
+      const baseUrl = apiBase && !apiBase.startsWith('http') ? `https://${apiBase}` : apiBase;
+      const apiUrl = baseUrl ? `${baseUrl.replace(/\/$/, '')}/api` : '/api';
+      return `${apiUrl}/proxy-file?url=${encodeURIComponent(url)}`;
+    }
+    return url;
+  };
+
   const viewDocument = () => {
     if (!document?.file_url) return;
     const url = document.file_url;
@@ -50,8 +61,8 @@ export default function DocumentInfo({ letterId, onBack }: DocumentInfoProps) {
     const isOffice = url.match(/\.(doc|docx|xls|xlsx|ppt|pptx)(\?|$)/i);
     
     if (isPdf) {
-      // Open PDF directly - browser will handle it
-      window.open(url, '_blank', 'noopener,noreferrer');
+      // Open PDF through proxy
+      window.open(getProxiedUrl(url), '_blank', 'noopener,noreferrer');
     } else if (isOffice) {
       // Use Google Docs viewer for Office files
       window.open(`https://docs.google.com/viewer?url=${encodeURIComponent(url)}&embedded=false`, '_blank');
@@ -293,7 +304,7 @@ export default function DocumentInfo({ letterId, onBack }: DocumentInfoProps) {
                   if (isPdf) return (
                     <div style={{ background: 'rgba(0,0,0,0.2)' }}>
                       <iframe 
-                        src={url} 
+                        src={getProxiedUrl(url)} 
                         title="PDF Preview" 
                         className="w-full border-0" 
                         style={{ height: '600px', background: '#525659' }}
@@ -309,7 +320,7 @@ export default function DocumentInfo({ letterId, onBack }: DocumentInfoProps) {
                                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
                                 </svg>
                                 <p class="text-sm font-medium" style="color: rgba(var(--accent-text-rgb),0.7)">PDF preview failed to load.</p>
-                                <button onclick="window.open('${url}', '_blank')" class="flex items-center gap-1.5 text-white px-4 py-2 rounded-lg text-xs mt-1" style="background-color: var(--primary)">
+                                <button onclick="window.open('${getProxiedUrl(url)}', '_blank')" class="flex items-center gap-1.5 text-white px-4 py-2 rounded-lg text-xs mt-1" style="background-color: var(--primary)">
                                   <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
                                   Open PDF in New Tab
                                 </button>
