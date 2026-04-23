@@ -193,11 +193,12 @@ export default function DocumentLibrary({ onDocumentSelected, onViewDocumentInfo
 
   const viewDocument = (doc: Letter) => {
     if (!doc.file_url) return;
-    const isOfficeFile = doc.file_url.match(/\.(doc|docx|xls|xlsx|ppt|pptx)$/i);
-    if (isOfficeFile) {
-      window.open(`https://docs.google.com/viewer?url=${encodeURIComponent(doc.file_url)}&embedded=false`, '_blank');
+    const url = doc.file_url;
+    const isImage = url.match(/\.(png|jpe?g|gif|webp|bmp|svg)(\?|$)/i);
+    if (isImage) {
+      window.open(url, '_blank', 'noopener,noreferrer');
     } else {
-      window.open(doc.file_url, '_blank', 'noopener,noreferrer');
+      window.open(`https://docs.google.com/viewer?url=${encodeURIComponent(url)}&embedded=false`, '_blank');
     }
   };
 
