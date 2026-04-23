@@ -43,15 +43,22 @@ export default function DocumentInfo({ letterId, onBack }: DocumentInfoProps) {
     }
   };
 
+  const toInlineUrl = (url: string) => {
+    // Force Cloudinary to serve file inline (not as attachment) so browser can render it
+    if (url.includes('res.cloudinary.com') && url.includes('/raw/upload/') && !url.includes('fl_attachment')) {
+      return url.replace('/raw/upload/', '/raw/upload/fl_attachment:false/');
+    }
+    return url;
+  };
+
   const viewDocument = () => {
     if (!document?.file_url) return;
     const url = document.file_url;
     const isOffice = url.match(/\.(doc|docx|xls|xlsx|ppt|pptx)(\?|$)/i);
-    const isPdf = url.match(/\.pdf(\?|$)/i) || url.includes('/raw/upload/') || url.includes('/image/upload/');
-    if (isOffice || isPdf) {
+    if (isOffice) {
       window.open(`https://docs.google.com/viewer?url=${encodeURIComponent(url)}&embedded=false`, '_blank');
     } else {
-      window.open(url, '_blank', 'noopener,noreferrer');
+      window.open(toInlineUrl(url), '_blank', 'noopener,noreferrer');
     }
   };
 
@@ -289,7 +296,7 @@ export default function DocumentInfo({ letterId, onBack }: DocumentInfoProps) {
                     <div className="flex flex-col items-center justify-center py-12 gap-3" style={{ background: 'rgba(0,0,0,0.2)' }}>
                       <FileText className="w-12 h-12 opacity-30" style={{ color: 'var(--accent)' }} />
                       <p className="text-sm font-medium" style={{ color: 'rgba(var(--accent-text-rgb),0.7)' }}>PDF preview is not available inline.</p>
-                      <button onClick={() => window.open(url, '_blank', 'noopener,noreferrer')} className="flex items-center gap-1.5 text-white px-4 py-2 rounded-lg text-xs mt-1" style={{ backgroundColor: 'var(--primary)' }}>
+                      <button onClick={() => window.open(toInlineUrl(url), '_blank', 'noopener,noreferrer')} className="flex items-center gap-1.5 text-white px-4 py-2 rounded-lg text-xs mt-1" style={{ backgroundColor: 'var(--primary)' }}>
                         <Eye className="w-3.5 h-3.5" /> Open PDF in New Tab
                       </button>
                     </div>

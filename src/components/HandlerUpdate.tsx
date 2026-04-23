@@ -25,6 +25,13 @@ export default function HandlerUpdate({ letterId, onBack }: HandlerUpdateProps) 
   const isViolon = role === 'admin';
   const isStaff = role === 'staff' || role === 'receiver';
 
+  const toInlineUrl = (url: string) => {
+    if (url.includes('res.cloudinary.com') && url.includes('/raw/upload/') && !url.includes('fl_attachment')) {
+      return url.replace('/raw/upload/', '/raw/upload/fl_attachment:false/');
+    }
+    return url;
+  };
+
   const [letter, setLetter] = useState<Letter | null>(null);
   const [statuses, setStatuses] = useState<LetterStatus[]>([]);
   const [actionTickets, setActionTickets] = useState<ActionTicket[]>([]);
@@ -356,7 +363,7 @@ export default function HandlerUpdate({ letterId, onBack }: HandlerUpdateProps) 
                   {/* PDF file card */}
                   {reviewStatus!.review_file_url ? (
                     <button
-                      onClick={() => window.open(reviewStatus!.review_file_url!, '_blank', 'noopener,noreferrer')}
+                      onClick={() => window.open(toInlineUrl(reviewStatus!.review_file_url!), '_blank', 'noopener,noreferrer')}
                       className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all text-left"
                       style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.25)' }}
                       onMouseEnter={e => (e.currentTarget.style.background = 'rgba(239,68,68,0.15)')}
@@ -463,7 +470,7 @@ export default function HandlerUpdate({ letterId, onBack }: HandlerUpdateProps) 
                   </div>
                   {reviewStatus!.review_file_url && (
                     <button
-                      onClick={() => window.open(reviewStatus!.review_file_url!, '_blank', 'noopener,noreferrer')}
+                      onClick={() => window.open(toInlineUrl(reviewStatus!.review_file_url!), '_blank', 'noopener,noreferrer')}
                       className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all text-left"
                       style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.25)' }}
                       onMouseEnter={e => (e.currentTarget.style.background = 'rgba(239,68,68,0.15)')}

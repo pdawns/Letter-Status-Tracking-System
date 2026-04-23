@@ -191,9 +191,22 @@ export default function DocumentLibrary({ onDocumentSelected, onViewDocumentInfo
     }));
   };
 
+  const toInlineUrl = (url: string) => {
+    if (url.includes('res.cloudinary.com') && url.includes('/raw/upload/') && !url.includes('fl_attachment')) {
+      return url.replace('/raw/upload/', '/raw/upload/fl_attachment:false/');
+    }
+    return url;
+  };
+
   const viewDocument = (doc: Letter) => {
     if (!doc.file_url) return;
-    window.open(doc.file_url, '_blank', 'noopener,noreferrer');
+    const url = doc.file_url;
+    const isOffice = url.match(/\.(doc|docx|xls|xlsx|ppt|pptx)(\?|$)/i);
+    if (isOffice) {
+      window.open(`https://docs.google.com/viewer?url=${encodeURIComponent(url)}&embedded=false`, '_blank');
+    } else {
+      window.open(toInlineUrl(url), '_blank', 'noopener,noreferrer');
+    }
   };
 
   const openActivityLog = async (doc: Letter) => {
