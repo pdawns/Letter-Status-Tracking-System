@@ -14,15 +14,35 @@ interface SidebarProps {
 }
 
 const allMenuItems = [
-  { id: 'dashboard' as View, label: 'Dashboard', icon: LayoutDashboard, roles: ['staff', 'admin'] },
+  { id: 'dashboard' as View, label: 'Dashboard', icon: LayoutDashboard, roles: ['staff', 'admin', 'viewer'] },
   { id: 'document-tracking' as View, label: 'Create Document', icon: FilePlus, roles: ['staff', 'admin'] },
-  { id: 'tracking' as View, label: 'Track Document', icon: Search, roles: ['staff', 'admin'] },
+  { id: 'tracking' as View, label: 'Track Document', icon: Search, roles: ['staff', 'admin', 'viewer'] },
   { id: 'archive' as View, label: 'Archive', icon: Archive, roles: ['admin'] },
   { id: 'settings' as View, label: 'Settings', icon: Settings, roles: ['admin'] },
 ];
 
 export default function Sidebar({ currentView, onViewChange, onLogout, role = 'staff', menuOpen, onMenuToggle }: SidebarProps) {
   const menuItems = allMenuItems.filter(item => item.roles.includes(role));
+
+  // Helper function to get display name from username
+  const getDisplayName = (username: string | null): string => {
+    if (!username) return 'Staff';
+    
+    // Special case for ptomisor@pto
+    if (username === 'ptomisor@pto') return 'PTO';
+    
+    // Handle email-like usernames (e.g., "jonarleen.cabago@pto")
+    if (username.includes('@')) {
+      const beforeAt = username.split('@')[0];
+      const parts = beforeAt.split('.');
+      // Return last name with first letter capitalized (e.g., "Cabago")
+      const lastName = parts.length > 1 ? parts[parts.length - 1] : parts[0];
+      return lastName.charAt(0).toUpperCase() + lastName.slice(1).toLowerCase();
+    }
+    
+    // For simple usernames, just return capitalized
+    return username.charAt(0).toUpperCase() + username.slice(1);
+  };
 
   const handleNav = (id: View) => {
     onViewChange(id);
@@ -69,18 +89,18 @@ export default function Sidebar({ currentView, onViewChange, onLogout, role = 's
           <div>
             <p className="text-white font-bold text-base leading-tight tracking-wide">DocuTrack</p>
             <p className="text-xs mt-0.5" style={{ color: 'var(--accent)' }}>
-              {localStorage.getItem('dts_username') || 'staff'}
+              {getDisplayName(localStorage.getItem('dts_username'))}
             </p>
             <span className="text-xs px-1.5 py-0.5 rounded-md mt-1 inline-block" style={{
-              background: role === 'admin' ? 'rgba(168,85,247,0.15)' : 'rgba(var(--accent-rgb),0.15)',
-              color: role === 'admin' ? '#d8b4fe' : 'var(--accent)',
-              border: `1px solid ${role === 'admin' ? 'rgba(168,85,247,0.3)' : 'rgba(var(--accent-rgb),0.2)'}`,
+              background: role === 'admin' ? 'rgba(168,85,247,0.15)' : role === 'viewer' ? 'rgba(59,130,246,0.15)' : 'rgba(var(--accent-rgb),0.15)',
+              color: role === 'admin' ? '#d8b4fe' : role === 'viewer' ? '#93c5fd' : 'var(--accent)',
+              border: `1px solid ${role === 'admin' ? 'rgba(168,85,247,0.3)' : role === 'viewer' ? 'rgba(59,130,246,0.3)' : 'rgba(var(--accent-rgb),0.2)'}`,
               fontSize: '9px',
               fontWeight: 600,
               textTransform: 'uppercase',
               letterSpacing: '0.05em',
             }}>
-              {role === 'admin' ? 'Prov. Treasurer' : 'Staff'}
+              {role === 'admin' ? 'Prov. Treasurer' : role === 'viewer' ? 'Viewer' : 'Staff'}
             </span>
           </div>
           <button

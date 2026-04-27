@@ -17,6 +17,26 @@ export default function TopBar({ onHome, onNavigateToLetter, onMenuToggle, publi
   const settings = loadSettings();
   const [now, setNow] = useState(new Date());
 
+  // Helper function to get display name from username
+  const getDisplayName = (username: string | null): string => {
+    if (!username) return 'Staff';
+    
+    // Special case for ptomisor@pto
+    if (username === 'ptomisor@pto') return 'PTO';
+    
+    // Handle email-like usernames (e.g., "jonarleen.cabago@pto")
+    if (username.includes('@')) {
+      const beforeAt = username.split('@')[0];
+      const parts = beforeAt.split('.');
+      // Return last name with first letter capitalized (e.g., "Cabago")
+      const lastName = parts.length > 1 ? parts[parts.length - 1] : parts[0];
+      return lastName.charAt(0).toUpperCase() + lastName.slice(1).toLowerCase();
+    }
+    
+    // For simple usernames, just return capitalized
+    return username.charAt(0).toUpperCase() + username.slice(1);
+  };
+
   useEffect(() => {
     const t = setInterval(() => setNow(new Date()), 1000);
     return () => clearInterval(t);
@@ -105,8 +125,8 @@ export default function TopBar({ onHome, onNavigateToLetter, onMenuToggle, publi
               className="flex items-center gap-1.5 rounded-full px-3 py-1.5 transition-all active:scale-95"
               style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(var(--accent-rgb), 0.2)' }}>
               <User className="w-3.5 h-3.5 text-white" />
-              <span className="text-white text-xs font-medium hidden sm:inline capitalize">
-                {localStorage.getItem('dts_username') || 'Staff'}
+              <span className="text-white text-xs font-medium hidden sm:inline">
+                {getDisplayName(localStorage.getItem('dts_username'))}
               </span>
             </button>
           </>
