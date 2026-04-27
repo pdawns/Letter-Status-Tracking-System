@@ -1,5 +1,5 @@
 ﻿import { useState, useEffect, useRef } from 'react';
-import { Settings as SettingsIcon, Building2, Palette, Cloud, Info, Upload, Check, ClipboardList, RefreshCw, Search, KeyRound } from 'lucide-react';
+import { Settings as SettingsIcon, Building2, Palette, Cloud, Info, Upload, Check, ClipboardList, RefreshCw, Search, KeyRound, Users } from 'lucide-react';
 import { getAllActivityLogs, ActivityLog, changePassword } from '../lib/api';
 import { THEMES, ThemeKey, getTheme, setTheme } from '../lib/theme';
 
@@ -44,7 +44,15 @@ function saveSettings(s: AppSettings) {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(s));
 }
 
-type Tab = 'office' | 'theme' | 'cloudinary' | 'about' | 'activitylog' | 'password';
+type Tab = 'office' | 'theme' | 'cloudinary' | 'about' | 'activitylog' | 'password' | 'activeusers';
+
+interface ActiveSession {
+  username: string;
+  role: string;
+  login_time: string;
+  minutes_active: number;
+  token_preview: string;
+}
 
 export default function Settings() {
   const [tab, setTab] = useState<Tab>('office');
@@ -70,8 +78,14 @@ export default function Settings() {
   const [pwSuccess, setPwSuccess] = useState(false);
   const [pwLoading, setPwLoading] = useState(false);
 
+  // Active Users state
+  const [activeSessions, setActiveSessions] = useState<ActiveSession[]>([]);
+  const [sessionsLoading, setSessionsLoading] = useState(false);
+  const [totalActive, setTotalActive] = useState(0);
+
   useEffect(() => {
     if (tab === 'activitylog') fetchLogs();
+    if (tab === 'activeusers') fetchActiveSessions();
   }, [tab]);
 
   const fetchLogs = async () => {
@@ -83,6 +97,26 @@ export default function Settings() {
       console.error(err);
     } finally {
       setLogsLoading(false);
+    }
+  };
+
+  const fetchActiveSessions = async () => {
+    setSessionsLoading(true);
+    try {
+      const token = localStorage.getItem('dts_token');
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/dev/active-sessions`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (!response.ok) throw new Error('Failed to fetch sessions');
+      const data = await response.json();
+      setActiveSessions(data.sessions || []);
+      setTotalActive(data.total_active || 0);
+    } catch (err) {
+      console.error(err);
+      setActiveSessions([]);
+      setTotalActive(0);
+    } finally {
+      setSessionsLoading(false);
     }
   };
 
@@ -103,12 +137,15 @@ export default function Settings() {
     reader.readAsDataURL(file);
   };
 
+  const userRole = localStorage.getItem('dts_role') || 'staff';
+  
   const tabs: { id: Tab; label: string; icon: React.ElementType }[] = [
     { id: 'office', label: 'Office Info', icon: Building2 },
     { id: 'theme', label: 'System Theme', icon: Palette },
     { id: 'cloudinary', label: 'Cloudinary Config', icon: Cloud },
     { id: 'activitylog', label: 'Activity Log', icon: ClipboardList },
     { id: 'password', label: 'Change Password', icon: KeyRound },
+    ...(userRole === 'developer' ? [{ id: 'activeusers' as Tab, label: 'Active Users', icon: Users }] : []),
     { id: 'about', label: 'About', icon: Info },
   ];
 
@@ -531,6 +568,104 @@ export default function Settings() {
           </div>
         )}
 
+        {/* Active Users (Admin Only) */}
+        {tab === 'activeusers' && (
+          <div>
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <h2 className="text-base font-bold" style={{ color: 'var(--accent-text)' }}>Active Users</h2>
+                <p className="text-xs mt-1" style={{ color: 'rgba(var(--accent-rgb),0.6)' }}>
+                  Currently logged in users • {totalActive} active session{totalActive !== 1 ? 's' : ''}
+                </p>
+              </div>
+              <button
+                onClick={fetchActiveSessions}
+                className="flex items-center gap-1 text-xs px-3 py-1.5 rounded-lg transition-colors"
+                style={{ background: 'var(--input-bg)', border: '1px solid rgba(var(--accent-rgb),0.2)', color: 'rgba(var(--accent-text-rgb),0.65)' }}
+                onMouseEnter={(e) => (e.currentTarget.style.background = 'rgba(var(--accent-rgb),0.1)')}
+                onMouseLeave={(e) => (e.currentTarget.style.background = 'var(--input-bg)')}
+              >
+                <RefreshCw className="w-3 h-3" />
+                Refresh
+              </button>
+            </div>
+
+            {sessionsLoading ? (
+              <div className="flex justify-center py-10">
+                <div className="animate-spin rounded-full h-7 w-7 border-b-2" style={{ borderColor: 'var(--accent)' }} />
+              </div>
+            ) : activeSessions.length === 0 ? (
+              <div className="text-center py-10">
+                <Users className="w-10 h-10 mx-auto mb-2" style={{ color: 'rgba(var(--accent-rgb),0.3)' }} />
+                <p className="text-sm" style={{ color: 'rgba(var(--accent-text-rgb),0.5)' }}>No active sessions</p>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {activeSessions.map((session, idx) => {
+                  const isCurrentUser = session.username === localStorage.getItem('dts_username');
+                  const roleColors: Record<string, string> = {
+                    developer: 'bg-purple-100 text-purple-700',
+                    admin: 'bg-red-100 text-red-700',
+                    staff: 'bg-blue-100 text-blue-700',
+                    viewer: 'bg-gray-100 text-gray-700',
+                  };
+                  const roleColor = roleColors[session.role] || 'bg-gray-100 text-gray-600';
+                  
+                  return (
+                    <div
+                      key={idx}
+                      className="flex items-center gap-3 p-3 rounded-lg transition-colors"
+                      style={{ 
+                        border: isCurrentUser ? '1px solid rgba(var(--accent-rgb),0.3)' : '1px solid rgba(var(--accent-rgb),0.1)',
+                        background: isCurrentUser ? 'rgba(var(--accent-rgb),0.05)' : 'transparent'
+                      }}
+                      onMouseEnter={(e) => !isCurrentUser && (e.currentTarget.style.background = 'rgba(var(--accent-rgb),0.05)')}
+                      onMouseLeave={(e) => !isCurrentUser && (e.currentTarget.style.background = 'transparent')}
+                    >
+                      <div className="flex-shrink-0">
+                        <div className="w-10 h-10 rounded-full flex items-center justify-center" 
+                          style={{ background: 'rgba(var(--accent-rgb),0.15)', border: '1px solid rgba(var(--accent-rgb),0.25)' }}>
+                          <Users className="w-5 h-5" style={{ color: 'var(--accent)' }} />
+                        </div>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                          <p className="text-sm font-medium" style={{ color: 'var(--accent-text)' }}>
+                            {session.username}
+                          </p>
+                          {isCurrentUser && (
+                            <span className="text-xs px-1.5 py-0.5 rounded font-medium" 
+                              style={{ background: 'rgba(var(--accent-rgb),0.15)', color: 'var(--accent)' }}>
+                              You
+                            </span>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-2 mt-1">
+                          <span className={`text-xs px-2 py-0.5 rounded font-medium ${roleColor}`}>
+                            {session.role}
+                          </span>
+                          <span className="text-xs" style={{ color: 'rgba(var(--accent-rgb),0.6)' }}>
+                            • Active for {session.minutes_active} min{session.minutes_active !== 1 ? 's' : ''}
+                          </span>
+                        </div>
+                        <p className="text-xs mt-1" style={{ color: 'rgba(var(--accent-rgb),0.5)' }}>
+                          Logged in: {new Date(session.login_time).toLocaleString()}
+                        </p>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+
+            <div className="mt-4 p-3 rounded-lg" style={{ background: 'rgba(139,92,246,0.1)', border: '1px solid rgba(139,92,246,0.2)' }}>
+              <p className="text-xs" style={{ color: 'rgba(var(--accent-rgb),0.7)' }}>
+                <span className="font-semibold" style={{ color: '#a78bfa' }}>🔒 Developer-Only Feature:</span> This monitoring tool shows all active login sessions in real-time. Sessions persist until logout or server restart. Only accessible with developer credentials.
+              </p>
+            </div>
+          </div>
+        )}
+
         {/* About */}
         {tab === 'about' && (
           <div className="space-y-4">
@@ -555,7 +690,7 @@ export default function Settings() {
         )}
 
         {/* Save Button */}
-        {tab !== 'about' && tab !== 'activitylog' && tab !== 'password' && (
+        {tab !== 'about' && tab !== 'activitylog' && tab !== 'password' && tab !== 'activeusers' && (
           <button
             onClick={handleSave}
             className="mt-6 w-full flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-medium text-white transition-colors"

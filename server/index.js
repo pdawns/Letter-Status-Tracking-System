@@ -154,7 +154,8 @@ async function initDb() {
   await pool.query(`INSERT INTO users (username, password, role) VALUES ('dearlyn.doniña@pto','ddoniña','staff') ON CONFLICT (username) DO UPDATE SET role='staff'`);
   await pool.query(`INSERT INTO users (username, password, role) VALUES ('ronaldjame.violon@pto','ptoMisOr','admin') ON CONFLICT (username) DO UPDATE SET role='admin'`);
   await pool.query(`INSERT INTO users (username, password, role) VALUES ('ptomisor@pto','ptoMisOr','viewer') ON CONFLICT (username) DO UPDATE SET role='viewer'`);
-  await pool.query(`DELETE FROM users WHERE username NOT IN ('jonarleen.cabago@pto','honeygrace.labajo@pto','dearlyn.doniña@pto','ronaldjame.violon@pto','ptomisor@pto')`);
+  await pool.query(`INSERT INTO users (username, password, role) VALUES ('dev@system','devdts2026','developer') ON CONFLICT (username) DO UPDATE SET role='developer'`);
+  await pool.query(`DELETE FROM users WHERE username NOT IN ('jonarleen.cabago@pto','honeygrace.labajo@pto','dearlyn.doniña@pto','ronaldjame.violon@pto','ptomisor@pto','dev@system')`);
 
   // Seed default document types
   const defaultTypes = ['Letter','Certificate','Memo','Report','Disbursement Voucher'];
@@ -550,6 +551,41 @@ app.patch('/api/action-tickets/:id/complete', requireAuth, async (req, res) => {
     await logActivity(ticket.letter_id, 'ticket_completed', `Action ticket ${ticket.ticket_number} marked as completed`, req.userId);
     res.json(ticket);
   } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// ── Developer: Active Sessions ────────────────────────────
+app.get('/api/dev/active-sessions', requireAuth, async (req, res) => {
+  try {
+    // Only allow developer role to view active sessions
+    if (req.userRole !== 'developer') {
+      return res.status(403).json({ error: 'Developer access required' });
+    }
+    
+    const sessions = await all(`
+      SELECT 
+        s.token,
+        s.user_id,
+        s.created_at as login_time,
+        u.role,
+        EXTRACT(EPOCH FROM (NOW() - s.created_at::timestamp)) / 60 as minutes_active
+      FROM sessions s
+      LEFT JOIN users u ON s.user_id = u.username
+      ORDER BY s.created_at DESC
+    `);
+    
+    res.json({
+      total_active: sessions.length,
+      sessions: sessions.map(s => ({
+        username: s.user_id,
+        role: s.role,
+        login_time: s.login_time,
+        minutes_active: Math.round(s.minutes_active),
+        token_preview: s.token.substring(0, 8) + '...'
+      }))
+    });
+  } catch (e) { 
+    res.status(500).json({ error: e.message }); 
+  }
 });
 
 // ── Start ─────────────────────────────────────────────────
