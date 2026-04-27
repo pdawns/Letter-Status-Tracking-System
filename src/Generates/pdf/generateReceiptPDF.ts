@@ -196,42 +196,34 @@ export async function generateReceiptPDF(
     if (statuses.length > 0) {
       const ns = statuses[0];
       const boxX = 10;
-      const boxW = 160;
       const labelW = 32;
-      const valW = boxW - labelW - 4;
-      const pad = 2.5;
       const rlh = 4.5;
-      const noteLines = ns.notes ? pdf.splitTextToSize(fixNamePdf(ns.notes), valW) : [];
-      const rowCount = 2 + (ns.notes ? noteLines.length : 0);
-      const boxH = pad * 2 + rowCount * rlh;
-
-      pdf.setDrawColor(0, 69, 38);
-      pdf.setLineWidth(0.4);
-      pdf.rect(boxX, yPosition, boxW, boxH);
 
       pdf.setFontSize(8);
-      let ry = yPosition + pad + rlh - 1;
+      let ry = yPosition;
 
       pdf.setFont('helvetica', 'bold'); pdf.setTextColor(60, 60, 60);
-      pdf.text('Signed by:', boxX + 2, ry);
+      pdf.text('Signed by:', boxX, ry);
       pdf.setFont('helvetica', 'normal'); pdf.setTextColor(0, 0, 0);
       pdf.text(fixNamePdf(ns.signed_by), boxX + labelW, ry);
       ry += rlh;
 
       pdf.setFont('helvetica', 'bold'); pdf.setTextColor(60, 60, 60);
-      pdf.text('Date & Time:', boxX + 2, ry);
+      pdf.text('Date & Time:', boxX, ry);
       pdf.setFont('helvetica', 'normal'); pdf.setTextColor(0, 0, 0);
       pdf.text(new Date(ns.signed_at).toLocaleString(), boxX + labelW, ry);
       ry += rlh;
 
       if (ns.notes) {
         pdf.setFont('helvetica', 'bold'); pdf.setTextColor(60, 60, 60);
-        pdf.text('Notes:', boxX + 2, ry);
+        pdf.text('Notes:', boxX, ry);
         pdf.setFont('helvetica', 'normal'); pdf.setTextColor(0, 0, 0);
+        const noteLines = pdf.splitTextToSize(fixNamePdf(ns.notes), 128);
         noteLines.forEach((line: string, i: number) => pdf.text(line, boxX + labelW, ry + i * rlh));
+        ry += noteLines.length * rlh;
       }
 
-      yPosition += boxH + 3;
+      yPosition = ry + 3;
     } else {
       pdf.setFontSize(8);
       pdf.setFont('helvetica', 'italic');
