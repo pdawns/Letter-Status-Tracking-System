@@ -5,7 +5,7 @@ import { Letter, LetterStatus } from '../types';
 import { CheckCircle, Clock, Download, ArrowLeft, ArrowUpFromLine, RotateCcw, X } from 'lucide-react';
 import { generateReceiptPDF, downloadPDF } from '../Generates/pdf';
 import { fixName } from '../lib/fixNames';
-import logo1 from '../../images/LOGO1.jpg';
+
 
 interface ReceiptProps {
   letterId: string;
@@ -158,179 +158,160 @@ export default function Receipt({ letterId, onBack }: ReceiptProps) {
           </button>
         </div>
 
-        <div className="rounded-2xl shadow-xl p-5 print:shadow-none print:p-0" style={{ background: '#ffffff', border: '1px solid #e5e7eb' }}>
-          {/* Header Section */}
-          <div className="text-center mb-5 pb-4 print:mb-4 print:pb-3" style={{ borderBottom: '2px solid #e5e7eb' }}>
-            <div className="flex justify-center mb-3">
-              <div className="rounded-full overflow-hidden" style={{ width: 64, height: 64, border: '2px solid #d1d5db' }}>
-                <img src={logo1} alt="PTO Logo" className="w-full h-full object-cover" />
+        <div className="receipt-print-card rounded-2xl shadow-xl p-4 print:shadow-none print:p-0" style={{ background: '#ffffff', border: '1px solid #e5e7eb' }}>
+          {/* Header Section — letterhead style, compact */}
+          <div className="mb-3 pb-3" style={{ borderBottom: '3px double #1e3a5f' }}>
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-1.5 flex-shrink-0">
+                <img src="/bagong-pilipinas-v4.png" alt="Bagong Pilipinas" className="object-contain" style={{ width: 52, height: 52 }} />
+                <img src="/LOGO2.png" alt="Province of Misamis Oriental" className="object-contain" style={{ width: 52, height: 52 }} />
+              </div>
+              <div className="flex-1 text-center px-1">
+                <p className="text-[10px]" style={{ color: '#374151' }}>Republic of the Philippines</p>
+                <p className="text-xs font-bold uppercase" style={{ color: '#1e3a5f' }}>Province of Misamis Oriental</p>
+                <p className="text-sm font-extrabold uppercase leading-tight" style={{ color: '#1e3a5f' }}>Office of the Provincial Treasurer</p>
+                <p className="text-[9px] mt-0.5" style={{ color: '#6b7280' }}>www.misamisoriental.gov.ph</p>
+              </div>
+              <div className="flex items-center gap-1.5 flex-shrink-0">
+                <img src="/LOGO1.png" alt="Misamis Oriental Seal" className="object-contain" style={{ width: 52, height: 52 }} />
+                <img src="/LOGO3.jpg" alt="Unity - The Road to Progress" className="object-contain" style={{ width: 52, height: 52 }} />
               </div>
             </div>
-            <h1 className="text-xl font-bold mb-1 print:text-lg" style={{ color: '#111827' }}>Document Tracking Receipt</h1>
-            <p className="font-medium text-sm print:text-xs" style={{ color: '#6b7280' }}>Official Status Record</p>
-            <p className="text-xs mt-1 print:text-[10px]" style={{ color: '#9ca3af' }}>
-              This is the official record of all signatures and status updates on this document
-            </p>
           </div>
 
-          {/* Document Information and QR Code Section */}
-          <div className="mb-5 pb-4 print:mb-4 print:pb-3" style={{ borderBottom: '2px solid #e5e7eb' }}>
-            <div className="flex flex-row gap-4 print:gap-3">
-              <div className="flex-1 min-w-0">
-                <h2 className="text-base font-bold mb-3 print:text-sm" style={{ color: '#111827' }}>Document Information</h2>
-                <div className="space-y-2 print:space-y-2">
-                  <div className="grid grid-cols-2 gap-3 print:gap-2">
-                    <div className="print:break-inside-avoid">
-                      <p className="text-[10px] font-semibold uppercase tracking-wide mb-1" style={{ color: '#6b7280' }}>Reference Number</p>
-                      <p className="text-sm font-bold print:text-xs" style={{ color: '#111827' }}>{letter.reference_number}</p>
-                    </div>
-                    <div className="print:break-inside-avoid">
-                      <p className="text-[10px] font-semibold uppercase tracking-wide mb-1" style={{ color: '#6b7280' }}>Status</p>
-                      <p className="text-sm font-bold print:text-xs">
-                        {allComplete
-                          ? <span style={{ color: '#16a34a' }}>✓ Complete</span>
-                          : <span style={{ color: '#d97706' }}>⏳ In Progress</span>}
-                      </p>
-                    </div>
+          {/* Document Information + QR side by side, compact */}
+          <div className="mb-3 pb-3" style={{ borderBottom: '1px solid #e5e7eb' }}>
+            <div className="flex flex-row gap-3">
+              <div className="flex-1 min-w-0 space-y-1.5">
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <p className="text-[9px] font-semibold uppercase tracking-wide" style={{ color: '#6b7280' }}>Reference No.</p>
+                    <p className="text-xs font-bold" style={{ color: '#111827' }}>{letter.reference_number}</p>
                   </div>
-                  <div className="print:break-inside-avoid">
-                    <p className="text-[10px] font-semibold uppercase tracking-wide mb-1" style={{ color: '#6b7280' }}>Title</p>
-                    <p className="font-medium text-sm print:text-xs" style={{ color: '#111827' }}>{letter.title}</p>
+                  <div>
+                    <p className="text-[9px] font-semibold uppercase tracking-wide" style={{ color: '#6b7280' }}>Status</p>
+                    <p className="text-xs font-bold">
+                      {allComplete ? <span style={{ color: '#16a34a' }}>✓ Complete</span> : <span style={{ color: '#d97706' }}>⏳ In Progress</span>}
+                    </p>
                   </div>
-                  {letter.document_type && (
-                    <div className="print:break-inside-avoid">
-                      <p className="text-[10px] font-semibold uppercase tracking-wide mb-1" style={{ color: '#6b7280' }}>Document Type</p>
-                      <p className="capitalize text-sm print:text-xs" style={{ color: '#111827' }}>{letter.document_type}</p>
-                    </div>
-                  )}
-                  {letter.document_subject && (
-                    <div className="print:break-inside-avoid">
-                      <p className="text-[10px] font-semibold uppercase tracking-wide mb-1" style={{ color: '#6b7280' }}>Subject</p>
-                      <p className="text-sm print:text-xs" style={{ color: '#111827' }}>{letter.document_subject}</p>
-                    </div>
-                  )}
-                  {letter.description && (
-                    <div className="print:break-inside-avoid">
-                      <p className="text-[10px] font-semibold uppercase tracking-wide mb-1" style={{ color: '#6b7280' }}>Description</p>
-                      <p className="text-sm print:text-xs" style={{ color: '#111827' }}>{letter.description}</p>
-                    </div>
-                  )}
-                  <div className="print:break-inside-avoid">
-                    <p className="text-[10px] font-semibold uppercase tracking-wide mb-1" style={{ color: '#6b7280' }}>Created Date</p>
-                    <p className="text-sm print:text-xs" style={{ color: '#111827' }}>{new Date(letter.created_at).toLocaleDateString()}</p>
-                  </div>
-                  {letter.document_direction === 'sending' && (
-                    <div className="print:break-inside-avoid">
-                      <p className="text-[10px] font-semibold uppercase tracking-wide mb-1" style={{ color: '#6b7280' }}>Date Sent</p>
-                      <p className="text-sm print:text-xs" style={{ color: '#111827' }}>{new Date(letter.sent_at || letter.created_at).toLocaleString()}</p>
-                    </div>
-                  )}
-                  {letter.document_direction === 'receiving' && (() => {
-                    const reviewStatus = statuses.find(s => s.status_type === 'for review' || s.status_type === 'reviewed');
-                    return reviewStatus ? (
-                      <div className="print:break-inside-avoid">
-                        <p className="text-[10px] font-semibold uppercase tracking-wide mb-1" style={{ color: '#6b7280' }}>Date Received</p>
-                        <p className="text-sm print:text-xs" style={{ color: '#111827' }}>{new Date(reviewStatus.signed_at).toLocaleString()}</p>
-                      </div>
-                    ) : null;
-                  })()}
                 </div>
+                <div>
+                  <p className="text-[9px] font-semibold uppercase tracking-wide" style={{ color: '#6b7280' }}>Title</p>
+                  <p className="text-xs font-medium" style={{ color: '#111827' }}>{letter.title}</p>
+                </div>
+                {letter.document_type && (
+                  <div>
+                    <p className="text-[9px] font-semibold uppercase tracking-wide" style={{ color: '#6b7280' }}>Document Type</p>
+                    <p className="capitalize text-xs" style={{ color: '#111827' }}>{letter.document_type}</p>
+                  </div>
+                )}
+                {letter.document_subject && (
+                  <div>
+                    <p className="text-[9px] font-semibold uppercase tracking-wide" style={{ color: '#6b7280' }}>Subject</p>
+                    <p className="text-xs" style={{ color: '#111827' }}>{letter.document_subject}</p>
+                  </div>
+                )}
+                <div>
+                  <p className="text-[9px] font-semibold uppercase tracking-wide" style={{ color: '#6b7280' }}>Created Date</p>
+                  <p className="text-xs" style={{ color: '#111827' }}>{new Date(letter.created_at).toLocaleDateString()}</p>
+                </div>
+                {letter.document_direction === 'sending' && (
+                  <div>
+                    <p className="text-[9px] font-semibold uppercase tracking-wide" style={{ color: '#6b7280' }}>Date Sent</p>
+                    <p className="text-xs" style={{ color: '#111827' }}>{new Date(letter.sent_at || letter.created_at).toLocaleString()}</p>
+                  </div>
+                )}
+                {letter.document_direction === 'receiving' && (() => {
+                  const reviewStatus = statuses.find(s => s.status_type === 'for review' || s.status_type === 'reviewed');
+                  return reviewStatus ? (
+                    <div>
+                      <p className="text-[9px] font-semibold uppercase tracking-wide" style={{ color: '#6b7280' }}>Date Received</p>
+                      <p className="text-xs" style={{ color: '#111827' }}>{new Date(reviewStatus.signed_at).toLocaleString()}</p>
+                    </div>
+                  ) : null;
+                })()}
               </div>
               {/* QR Code */}
-              <div className="flex-shrink-0 flex flex-col items-center justify-start w-36">
-                <h2 className="text-sm font-bold mb-2 print:text-xs" style={{ color: '#111827' }}>Reference QR Code</h2>
-                <div className="flex flex-col items-center">
-                  <div className="p-2 rounded print:p-1 bg-white">
-                    <QRCodeSVG value={`${window.location.origin}/?ref=${letter.reference_number}&type=${letter.document_type || 'document'}&id=${letter.id}`} size={100} level="H" className="print:w-16 print:h-16" />
-                  </div>
-                  <p className="text-[10px] mt-1 text-center print:text-[8px]" style={{ color: '#9ca3af' }}>Scan to track</p>
+              <div className="flex-shrink-0 flex flex-col items-center justify-start" style={{ width: 90 }}>
+                <p className="text-[9px] font-bold mb-1" style={{ color: '#111827' }}>QR Code</p>
+                <div className="p-1 bg-white rounded" style={{ border: '1px solid #d1d5db' }}>
+                  <QRCodeSVG value={`${window.location.origin}/?ref=${letter.reference_number}&type=${letter.document_type || 'document'}&id=${letter.id}`} size={72} level="H" />
                 </div>
+                <p className="text-[8px] mt-0.5 text-center" style={{ color: '#9ca3af' }}>Scan to track</p>
               </div>
             </div>
           </div>
 
-          {/* Noted By Section */}
-          <div className="mb-5 print:mb-4">
-            <h2 className="text-base font-bold mb-3 print:text-sm" style={{ color: '#111827' }}>Noted By</h2>
-            {notedStatus ? (
-              <div className="rounded-xl p-3 print:p-2 print:break-inside-avoid" style={{ background: '#f0fdf4', border: '1.5px solid #86efac' }}>
-                <div className="flex items-start gap-2">
-                  <div className="mt-1 flex-shrink-0">
-                    <CheckCircle className="w-5 h-5 print:w-4 print:h-4" style={{ color: '#16a34a' }} />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <h3 className="font-bold text-sm mb-1 print:text-xs" style={{ color: '#111827' }}>Noted By</h3>
-                    <div className="space-y-1 text-xs print:text-[10px]" style={{ color: '#374151' }}>
+          {/* Noted By + Bangon logo side by side */}
+          <div className="mb-3 flex items-start gap-3">
+            <div className="flex-1 min-w-0">
+              <p className="text-[9px] font-semibold uppercase tracking-wide mb-1.5" style={{ color: '#111827' }}>Noted By</p>
+              {notedStatus ? (
+                <div className="rounded-lg p-2" style={{ background: '#f0fdf4', border: '1px solid #86efac' }}>
+                  <div className="flex items-start gap-1.5">
+                    <CheckCircle className="w-3.5 h-3.5 mt-0.5 flex-shrink-0" style={{ color: '#16a34a' }} />
+                    <div className="text-[10px] space-y-0.5" style={{ color: '#374151' }}>
                       <p><span className="font-semibold">Signed by:</span> {fixName(notedStatus.signed_by)}</p>
                       <p><span className="font-semibold">Date & Time:</span> {new Date(notedStatus.signed_at).toLocaleString()}</p>
                       {notedStatus.notes && <p><span className="font-semibold">Notes:</span> {fixName(notedStatus.notes)}</p>}
                     </div>
                   </div>
                 </div>
-              </div>
-            ) : (
-              <div className="rounded-xl p-3 print:p-2" style={{ background: '#f9fafb', border: '1.5px solid #e5e7eb' }}>
-                <div className="flex items-start gap-2">
-                  <div className="mt-1 flex-shrink-0">
-                    <Clock className="w-5 h-5 print:w-4 print:h-4" style={{ color: '#9ca3af' }} />
-                  </div>
-                  <div className="flex-1">
-                    <h3 className="font-bold text-sm mb-1 print:text-xs" style={{ color: '#374151' }}>Awaiting Notation</h3>
-                    <p className="text-xs print:text-[10px]" style={{ color: '#9ca3af' }}>Document has not been noted by Sir Ronald yet</p>
+              ) : (
+                <div className="rounded-lg p-2" style={{ background: '#f9fafb', border: '1px solid #e5e7eb' }}>
+                  <div className="flex items-center gap-1.5">
+                    <Clock className="w-3.5 h-3.5 flex-shrink-0" style={{ color: '#9ca3af' }} />
+                    <p className="text-[10px]" style={{ color: '#9ca3af' }}>Awaiting notation by Sir Ronald</p>
                   </div>
                 </div>
-              </div>
-            )}
+              )}
+            </div>
+            {/* Bangon logo beside Noted By */}
+            <div className="flex-shrink-0 pt-4">
+              <img src="/bangon-misor-gov.png" alt="Bangon Mis.Or." className="object-contain" style={{ width: 72, height: 72 }} />
+            </div>
           </div>
 
           {/* Released / Returned Section */}
           {isStaff && (
-            <div className="mb-5 print:hidden">
-              {/* Already actioned — show result */}
+            <div className="mb-3 print:hidden">
               {hasAction ? (
-                <div className="rounded-xl p-3 flex items-start gap-3" style={{
+                <div className="rounded-lg p-2 flex items-start gap-2" style={{
                   background: releasedStatus ? '#eff6ff' : '#fef2f2',
-                  border: releasedStatus ? '1.5px solid #93c5fd' : '1.5px solid #fca5a5',
+                  border: releasedStatus ? '1px solid #93c5fd' : '1px solid #fca5a5',
                 }}>
                   <div className="mt-0.5 flex-shrink-0">
                     {releasedStatus
-                      ? <ArrowUpFromLine className="w-5 h-5" style={{ color: '#2563eb' }} />
-                      : <RotateCcw className="w-5 h-5" style={{ color: '#dc2626' }} />}
+                      ? <ArrowUpFromLine className="w-4 h-4" style={{ color: '#2563eb' }} />
+                      : <RotateCcw className="w-4 h-4" style={{ color: '#dc2626' }} />}
                   </div>
                   <div>
-                    <p className="text-sm font-bold" style={{ color: releasedStatus ? '#1d4ed8' : '#b91c1c' }}>
+                    <p className="text-xs font-bold" style={{ color: releasedStatus ? '#1d4ed8' : '#b91c1c' }}>
                       {releasedStatus ? 'Document For Released' : 'Document Returned'}
                     </p>
-                    <p className="text-xs mt-0.5" style={{ color: '#6b7280' }}>
+                    <p className="text-[10px] mt-0.5" style={{ color: '#6b7280' }}>
                       By: {releasedStatus?.signed_by ?? returnedStatus?.signed_by} · {new Date((releasedStatus ?? returnedStatus)!.signed_at).toLocaleString()}
                     </p>
-                    {returnedStatus?.notes && (
-                      <p className="text-xs mt-0.5" style={{ color: '#6b7280' }}>Reason: {returnedStatus.notes}</p>
-                    )}
+                    {returnedStatus?.notes && <p className="text-[10px]" style={{ color: '#6b7280' }}>Reason: {returnedStatus.notes}</p>}
                   </div>
                 </div>
               ) : (
-                /* Action buttons */
                 <div>
-                  <p className="text-xs font-semibold uppercase tracking-wide mb-2" style={{ color: '#6b7280' }}>Document Action</p>
-                  <div className="flex gap-3">
-                    <button
-                      onClick={() => setShowReleasedConfirm(true)}
-                      className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-semibold text-white transition-colors"
+                  <p className="text-[9px] font-semibold uppercase tracking-wide mb-1.5" style={{ color: '#6b7280' }}>Document Action</p>
+                  <div className="flex gap-2">
+                    <button onClick={() => setShowReleasedConfirm(true)}
+                      className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-semibold text-white transition-colors"
                       style={{ backgroundColor: 'var(--primary)' }}
-                      onMouseEnter={e => (e.currentTarget.style.backgroundColor = 'var(--primary-hover, var(--accent))')}
-                      onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'var(--primary)')}
-                    >
-                      <ArrowUpFromLine className="w-4 h-4" /> For Released
+                      onMouseEnter={e => (e.currentTarget.style.backgroundColor = 'var(--accent)')}
+                      onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'var(--primary)')}>
+                      <ArrowUpFromLine className="w-3.5 h-3.5" /> For Released
                     </button>
-                    <button
-                      onClick={() => setShowReturnedConfirm(true)}
-                      className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-semibold transition-colors"
-                      style={{ background: 'transparent', border: '1.5px solid var(--primary)', color: 'var(--primary)' }}
+                    <button onClick={() => setShowReturnedConfirm(true)}
+                      className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-semibold transition-colors"
+                      style={{ background: 'transparent', border: '1px solid var(--primary)', color: 'var(--primary)' }}
                       onMouseEnter={e => { e.currentTarget.style.background = 'rgba(var(--primary-rgb),0.08)'; }}
-                      onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; }}
-                    >
-                      <RotateCcw className="w-4 h-4" /> Returned
+                      onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; }}>
+                      <RotateCcw className="w-3.5 h-3.5" /> Returned
                     </button>
                   </div>
                 </div>
@@ -338,11 +319,19 @@ export default function Receipt({ letterId, onBack }: ReceiptProps) {
             </div>
           )}
 
-          {/* Footer Section */}
-          <div className="pt-4 text-center text-xs print:pt-3 print:border-t print:text-[10px]" style={{ borderTop: '1px solid #e5e7eb', color: '#9ca3af' }}>
-            <p className="font-medium" style={{ color: '#6b7280' }}>This is an official tracking receipt</p>
-            <p className="mt-1">Generated on {new Date().toLocaleString()}</p>
-            <p className="mt-1">DocuTrack — Provincial Treasurer's Office</p>
+          {/* Footer Section — centered text + logo */}
+          <div className="pt-2" style={{ borderTop: '1px solid #e5e7eb' }}>
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex-1 text-center text-[9px]" style={{ color: '#6b7280' }}>
+                <p className="font-semibold uppercase text-[10px]" style={{ color: '#374151' }}>Office of the Provincial Treasurer</p>
+                <p>1st Floor, Provincial Capitol Building, Provincial Capitol Compound</p>
+                <p>Don Apolinar Velez St., Cagayan de Oro City &nbsp;|&nbsp; Email: misor.pto@gmail.com</p>
+                <p className="mt-0.5" style={{ color: '#9ca3af' }}>Generated on {new Date().toLocaleString()}</p>
+              </div>
+              <div className="flex-shrink-0">
+                <img src="/bangon-misor-gov.png" alt="Bangon Mis.Or." className="object-contain" style={{ width: 68, height: 68 }} />
+              </div>
+            </div>
           </div>
         </div>
       </div>

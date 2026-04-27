@@ -38,3 +38,57 @@
   scrollbar-width: thin;
   scrollbar-color: var(--scroll-thumb) transparent;
 }
+
+@media print {
+  @page { margin: 10mm 12mm; size: A4 portrait; }
+
+  /* Hide everything, then reveal only the letter card */
+  body { background: white !important; }
+  body * { visibility: hidden; }
+
+  .letter-print-card,
+  .letter-print-card * { visibility: visible !important; }
+
+  .letter-print-card {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    box-shadow: none !important;
+    border: none !important;
+    border-radius: 0 !important;
+  }
+
+  .receipt-print-card,
+  .receipt-print-card * { visibility: visible !important; }
+
+  .receipt-print-card {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    padding: 12px !important;
+    box-shadow: none !important;
+    border: none !important;
+    border-radius: 0 !important;
+  }
+
+  .print\:hidden { display: none !important; }
+
+  /* Pin letter footer to bottom of page */
+  .letter-print-footer {
+    position: fixed !important;
+    bottom: 0 !important;
+    left: 0 !important;
+    width: 100% !important;
+    background: white !important;
+    border-top: 1px solid #e5e7eb !important;
+    padding: 8px 32px !important;
+    box-sizing: border-box !important;
+  }
+}
