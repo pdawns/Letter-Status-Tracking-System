@@ -22,7 +22,7 @@ const REVIEWERS = [SIR_LENMARK, MAAM_FLOR, 'Other'];
 
 export default function HandlerUpdate({ letterId, onBack }: HandlerUpdateProps) {
   const role = getRole();
-  const isViolon = role === 'admin';
+  const isViolon = role === 'admin' || role === 'developer';
   const isStaff = role === 'staff' || role === 'receiver';
 
   const getProxiedUrl = (url: string) => {

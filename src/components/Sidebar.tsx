@@ -14,11 +14,11 @@ interface SidebarProps {
 }
 
 const allMenuItems = [
-  { id: 'dashboard' as View, label: 'Dashboard', icon: LayoutDashboard, roles: ['staff', 'admin', 'viewer'] },
-  { id: 'document-tracking' as View, label: 'Create Document', icon: FilePlus, roles: ['staff', 'admin'] },
-  { id: 'tracking' as View, label: 'Track Document', icon: Search, roles: ['staff', 'admin', 'viewer'] },
-  { id: 'archive' as View, label: 'Archive', icon: Archive, roles: ['admin'] },
-  { id: 'settings' as View, label: 'Settings', icon: Settings, roles: ['admin'] },
+  { id: 'dashboard' as View, label: 'Dashboard', icon: LayoutDashboard, roles: ['staff', 'admin', 'viewer', 'developer'] },
+  { id: 'document-tracking' as View, label: 'Create Document', icon: FilePlus, roles: ['staff', 'admin', 'developer'] },
+  { id: 'tracking' as View, label: 'Track Document', icon: Search, roles: ['staff', 'admin', 'viewer', 'developer'] },
+  { id: 'archive' as View, label: 'Archive', icon: Archive, roles: ['admin', 'developer'] },
+  { id: 'settings' as View, label: 'Settings', icon: Settings, roles: ['admin', 'developer'] },
 ];
 
 export default function Sidebar({ currentView, onViewChange, onLogout, role = 'staff', menuOpen, onMenuToggle }: SidebarProps) {
@@ -92,15 +92,15 @@ export default function Sidebar({ currentView, onViewChange, onLogout, role = 's
               {getDisplayName(localStorage.getItem('dts_username'))}
             </p>
             <span className="text-xs px-1.5 py-0.5 rounded-md mt-1 inline-block" style={{
-              background: role === 'admin' ? 'rgba(168,85,247,0.15)' : role === 'viewer' ? 'rgba(59,130,246,0.15)' : 'rgba(var(--accent-rgb),0.15)',
-              color: role === 'admin' ? '#d8b4fe' : role === 'viewer' ? '#93c5fd' : 'var(--accent)',
-              border: `1px solid ${role === 'admin' ? 'rgba(168,85,247,0.3)' : role === 'viewer' ? 'rgba(59,130,246,0.3)' : 'rgba(var(--accent-rgb),0.2)'}`,
+              background: role === 'developer' ? 'rgba(139,92,246,0.15)' : role === 'admin' ? 'rgba(168,85,247,0.15)' : role === 'viewer' ? 'rgba(59,130,246,0.15)' : 'rgba(var(--accent-rgb),0.15)',
+              color: role === 'developer' ? '#c4b5fd' : role === 'admin' ? '#d8b4fe' : role === 'viewer' ? '#93c5fd' : 'var(--accent)',
+              border: `1px solid ${role === 'developer' ? 'rgba(139,92,246,0.3)' : role === 'admin' ? 'rgba(168,85,247,0.3)' : role === 'viewer' ? 'rgba(59,130,246,0.3)' : 'rgba(var(--accent-rgb),0.2)'}`,
               fontSize: '9px',
               fontWeight: 600,
               textTransform: 'uppercase',
               letterSpacing: '0.05em',
             }}>
-              {role === 'admin' ? 'Prov. Treasurer' : role === 'viewer' ? 'Viewer' : 'Staff'}
+              {role === 'developer' ? '🔒 Developer' : role === 'admin' ? 'Prov. Treasurer' : role === 'viewer' ? 'Viewer' : 'Staff'}
             </span>
           </div>
           <button
