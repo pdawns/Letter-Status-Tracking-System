@@ -149,10 +149,12 @@ async function initDb() {
   }
 
   // Seed users
-  await pool.query(`INSERT INTO users (username, password, role) VALUES ('mj','password','staff') ON CONFLICT (username) DO UPDATE SET role='staff'`);
-  await pool.query(`INSERT INTO users (username, password, role) VALUES ('jh','password','staff') ON CONFLICT (username) DO UPDATE SET role='staff'`);
-  await pool.query(`INSERT INTO users (username, password, role) VALUES ('violon','password','admin') ON CONFLICT (username) DO UPDATE SET role='admin'`);
-  await pool.query(`DELETE FROM users WHERE username NOT IN ('mj','jh','violon')`);
+  await pool.query(`INSERT INTO users (username, password, role) VALUES ('jonarleen.cabago@pto','jcabago','staff') ON CONFLICT (username) DO UPDATE SET role='staff'`);
+  await pool.query(`INSERT INTO users (username, password, role) VALUES ('honaygrace.labajo@pto','hglabajo','staff') ON CONFLICT (username) DO UPDATE SET role='staff'`);
+  await pool.query(`INSERT INTO users (username, password, role) VALUES ('dearlyn.doñina@pto','ddoñina','staff') ON CONFLICT (username) DO UPDATE SET role='staff'`);
+  await pool.query(`INSERT INTO users (username, password, role) VALUES ('ronaldjame.violon@pto','ptoMisOr','admin') ON CONFLICT (username) DO UPDATE SET role='admin'`);
+  await pool.query(`INSERT INTO users (username, password, role) VALUES ('ptomisor@pto','ptoMisOr','viewer') ON CONFLICT (username) DO UPDATE SET role='viewer'`);
+  await pool.query(`DELETE FROM users WHERE username NOT IN ('jonarleen.cabago@pto','honaygrace.labajo@pto','dearlyn.doñina@pto','ronaldjame.violon@pto','ptomisor@pto')`);
 
   // Seed default document types
   const defaultTypes = ['Letter','Certificate','Memo','Report','Disbursement Voucher'];

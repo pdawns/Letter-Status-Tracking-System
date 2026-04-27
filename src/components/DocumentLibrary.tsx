@@ -75,6 +75,22 @@ interface DocumentLibraryProps {
   statusFilter?: 'pending' | 'completed';
 }
 
+// Helper function to extract last name from username
+function getLastName(username: string): string {
+  if (!username) return '';
+  
+  // Handle email-like usernames (e.g., "jonarleen.cabago@pto")
+  if (username.includes('@')) {
+    const beforeAt = username.split('@')[0];
+    const parts = beforeAt.split('.');
+    // Return the last part before @ (e.g., "cabago" from "jonarleen.cabago")
+    return parts.length > 1 ? parts[parts.length - 1].charAt(0).toUpperCase() + parts[parts.length - 1].slice(1) : beforeAt;
+  }
+  
+  // For simple usernames, just return capitalized
+  return username.charAt(0).toUpperCase() + username.slice(1);
+}
+
 export default function DocumentLibrary({ onDocumentSelected, onViewDocumentInfo, onBack, statusFilter }: DocumentLibraryProps) {
   const [documents, setDocuments] = useState<Letter[]>([]);
   const [filteredDocuments, setFilteredDocuments] = useState<Letter[]>([]);
@@ -377,7 +393,7 @@ export default function DocumentLibrary({ onDocumentSelected, onViewDocumentInfo
                         style={{ background: 'rgba(var(--accent-rgb),0.1)', border: '1px solid rgba(var(--accent-rgb),0.2)', color: 'rgba(var(--accent-text-rgb),0.7)' }}>
                         <span style={{ color: 'rgba(var(--accent-rgb),0.6)' }}>✍️</span>
                         <span>Created by</span>
-                        <span className="font-semibold" style={{ color: 'var(--accent)' }}>{doc.created_by}</span>
+                        <span className="font-semibold" style={{ color: 'var(--accent)' }}>{getLastName(doc.created_by)}</span>
                       </div>
                     )}
 
