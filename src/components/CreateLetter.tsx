@@ -11,14 +11,22 @@ interface DropdownOption { value: string; label: string; }
 
 function CustomDropdown({ value, onChange, options, placeholder }: { value: string; onChange: (v: string) => void; options: DropdownOption[]; placeholder?: string }) {
   const [open, setOpen] = useState(false);
+  const [search, setSearch] = useState('');
   const ref = useRef<HTMLDivElement>(null);
+  const searchRef = useRef<HTMLInputElement>(null);
   const selected = options.find(o => o.value === value);
+  const filtered = options.filter(o => o.label.toLowerCase().includes(search.toLowerCase()));
 
   useEffect(() => {
-    const handler = (e: MouseEvent) => { if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false); };
+    const handler = (e: MouseEvent) => { if (ref.current && !ref.current.contains(e.target as Node)) { setOpen(false); setSearch(''); } };
     document.addEventListener('mousedown', handler);
     return () => document.removeEventListener('mousedown', handler);
   }, []);
+
+  useEffect(() => {
+    if (open) setTimeout(() => searchRef.current?.focus(), 50);
+    else setSearch('');
+  }, [open]);
 
   return (
     <div ref={ref} className="relative">
@@ -29,18 +37,36 @@ function CustomDropdown({ value, onChange, options, placeholder }: { value: stri
         <ChevronDown className="w-4 h-4 flex-shrink-0 transition-transform" style={{ color: 'var(--accent)', transform: open ? 'rotate(180deg)' : 'rotate(0deg)' }} />
       </button>
       {open && (
-        <div className="absolute top-full mt-1.5 left-0 z-50 w-full min-w-max rounded-xl overflow-hidden"
+        <div className="absolute top-full mt-1.5 left-0 z-50 w-full rounded-xl overflow-hidden"
           style={{ background: 'var(--card-bg)', backdropFilter: 'blur(24px)', WebkitBackdropFilter: 'blur(24px)', border: '1px solid rgba(var(--accent-rgb),0.25)', boxShadow: '0 8px 32px rgba(0,0,0,0.5)' }}>
-          {options.map(opt => (
-            <button key={opt.value} type="button" onClick={() => { onChange(opt.value); setOpen(false); }}
-              className="w-full flex items-center justify-between px-4 py-2.5 text-sm text-left transition-colors whitespace-nowrap"
-              style={{ color: opt.value === value ? 'var(--accent-text)' : 'rgba(var(--accent-text-rgb),0.65)', background: opt.value === value ? 'rgba(var(--accent-rgb),0.15)' : 'transparent', fontWeight: opt.value === value ? 600 : 400 }}
-              onMouseEnter={e => { if (opt.value !== value) e.currentTarget.style.background = 'rgba(var(--accent-rgb),0.08)'; }}
-              onMouseLeave={e => { if (opt.value !== value) e.currentTarget.style.background = 'transparent'; }}>
-              <span>{opt.label}</span>
-              {opt.value === value && <Check className="w-3.5 h-3.5 ml-4" style={{ color: 'var(--accent)' }} />}
-            </button>
-          ))}
+          {/* Search input */}
+          <div className="p-2" style={{ borderBottom: '1px solid rgba(var(--accent-rgb),0.15)' }}>
+            <input
+              ref={searchRef}
+              type="text"
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              placeholder="Search office..."
+              className="w-full px-3 py-1.5 text-sm rounded-lg focus:outline-none"
+              style={{ background: 'rgba(var(--accent-rgb),0.08)', border: '1px solid rgba(var(--accent-rgb),0.2)', color: 'var(--accent-text)' }}
+            />
+          </div>
+          {/* Options list */}
+          <div style={{ maxHeight: '200px', overflowY: 'auto' }}>
+            {filtered.length === 0
+              ? <p className="px-4 py-3 text-sm" style={{ color: 'rgba(var(--accent-rgb),0.5)' }}>No results found.</p>
+              : filtered.map(opt => (
+                <button key={opt.value} type="button" onClick={() => { onChange(opt.value); setOpen(false); setSearch(''); }}
+                  className="w-full flex items-center justify-between px-4 py-2.5 text-sm text-left transition-colors"
+                  style={{ color: opt.value === value ? 'var(--accent-text)' : 'rgba(var(--accent-text-rgb),0.65)', background: opt.value === value ? 'rgba(var(--accent-rgb),0.15)' : 'transparent', fontWeight: opt.value === value ? 600 : 400 }}
+                  onMouseEnter={e => { if (opt.value !== value) e.currentTarget.style.background = 'rgba(var(--accent-rgb),0.08)'; }}
+                  onMouseLeave={e => { if (opt.value !== value) e.currentTarget.style.background = 'transparent'; }}>
+                  <span>{opt.label}</span>
+                  {opt.value === value && <Check className="w-3.5 h-3.5 ml-4" style={{ color: 'var(--accent)' }} />}
+                </button>
+              ))
+            }
+          </div>
         </div>
       )}
     </div>
@@ -56,8 +82,8 @@ function FieldLabel({ children }: { children: React.ReactNode }) {
 
 function Card({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <div className="rounded-2xl overflow-hidden" style={{ background: 'rgba(var(--accent-rgb),0.08)', border: '1px solid rgba(var(--accent-rgb),0.22)' }}>
-      <div className="px-4 py-2.5" style={{ background: 'rgba(var(--accent-rgb),0.15)', borderBottom: '1px solid rgba(var(--accent-rgb),0.18)' }}>
+    <div className="rounded-2xl" style={{ background: 'rgba(var(--accent-rgb),0.08)', border: '1px solid rgba(var(--accent-rgb),0.22)', overflow: 'visible' }}>
+      <div className="px-4 py-2.5 rounded-t-2xl" style={{ background: 'rgba(var(--accent-rgb),0.15)', borderBottom: '1px solid rgba(var(--accent-rgb),0.18)' }}>
         <p className="text-xs font-semibold uppercase tracking-wide" style={{ color: 'var(--accent)' }}>{title}</p>
       </div>
       <div className="p-4 space-y-3">{children}</div>
@@ -274,7 +300,7 @@ export default function CreateLetter({ onLetterCreated, onToast }: CreateLetterP
           </div>
 
           {/* ── RIGHT COLUMN ── */}
-          <div className="space-y-3">
+          <div className="space-y-3" style={{ overflow: 'visible' }}>
             <Card title="Transmittal Direction">
               <p className="text-xs" style={{ color: 'rgba(var(--accent-rgb),0.6)' }}>Is this document being sent out or received?</p>
               <div className="grid grid-cols-2 gap-3">
