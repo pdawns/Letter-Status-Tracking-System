@@ -119,6 +119,11 @@ function App() {
       const allowed: typeof view[] = ['dashboard', 'document-tracking', 'tracking', 'track', 'handler', 'letter-view'];
       if (!allowed.includes(v)) return;
     }
+    // Viewer role can access dashboard and tracking-related views
+    if (role === 'viewer') {
+      const allowed: typeof view[] = ['dashboard', 'tracking', 'library', 'track'];
+      if (!allowed.includes(v)) return;
+    }
     setView(v);
   };
 
@@ -183,7 +188,17 @@ function App() {
     )}
     {(!isLoggedIn || showLanding) && !showPublicDashboard && (
       <LandingPage
-        onEnter={() => { setIsLoggedIn(true); setShowLanding(false); setRole(getRole()); setToast({ message: `Welcome back, ${localStorage.getItem('dts_username') || 'staff'}!`, type: 'success' }); }}
+        onEnter={() => { 
+          setIsLoggedIn(true); 
+          setShowLanding(false); 
+          const userRole = getRole();
+          setRole(userRole);
+          // Redirect viewer role to dashboard (they can see public dashboard)
+          if (userRole === 'viewer') {
+            setView('dashboard');
+          }
+          setToast({ message: `Welcome back, ${localStorage.getItem('dts_username') || 'staff'}!`, type: 'success' }); 
+        }}
         onViewUpdates={() => setShowPublicDashboard(true)}
       />
     )}
@@ -222,12 +237,12 @@ function App() {
 
         {view === 'dashboard' && (
           <Dashboard
-            onStatusFilter={showPublicDashboard ? undefined : (filter) => {
+            onStatusFilter={showPublicDashboard || role === 'viewer' ? undefined : (filter) => {
               setLibraryStatusFilter(filter);
               setPreviousView('dashboard');
               setView('library');
             }}
-            publicMode={showPublicDashboard}
+            publicMode={showPublicDashboard || role === 'viewer'}
           />
         )}
 
@@ -327,6 +342,7 @@ function App() {
               }
             }}
             statusFilter={libraryStatusFilter}
+            viewerMode={role === 'viewer'}
           />
         )}
 

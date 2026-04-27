@@ -73,6 +73,7 @@ interface DocumentLibraryProps {
   onViewDocumentInfo: (letterId: string) => void;
   onBack: () => void;
   statusFilter?: 'pending' | 'completed';
+  viewerMode?: boolean;
 }
 
 // Helper function to extract last name from username
@@ -91,7 +92,7 @@ function getLastName(username: string): string {
   return username.charAt(0).toUpperCase() + username.slice(1);
 }
 
-export default function DocumentLibrary({ onDocumentSelected, onViewDocumentInfo, onBack, statusFilter }: DocumentLibraryProps) {
+export default function DocumentLibrary({ onDocumentSelected, onViewDocumentInfo, onBack, statusFilter, viewerMode }: DocumentLibraryProps) {
   const [documents, setDocuments] = useState<Letter[]>([]);
   const [filteredDocuments, setFilteredDocuments] = useState<Letter[]>([]);
   const [loading, setLoading] = useState(true);
@@ -172,6 +173,11 @@ export default function DocumentLibrary({ onDocumentSelected, onViewDocumentInfo
 
   const filterDocuments = () => {
     let filtered = documents;
+
+    // Viewer mode: show only Memo documents
+    if (viewerMode) {
+      filtered = filtered.filter((doc) => doc.document_type === 'memo');
+    }
 
     if (localStatusFilter === 'completed') {
       filtered = filtered.filter((doc) => completedIds.has(doc.id));
@@ -276,9 +282,14 @@ export default function DocumentLibrary({ onDocumentSelected, onViewDocumentInfo
           <div className="flex items-center gap-2 mb-4">
             <FileText className="w-6 h-6" style={{ color: 'var(--accent)' }} />
             <h1 className="text-2xl font-bold" style={{ color: 'var(--accent-text)' }}>
-              {localStatusFilter === 'pending' ? 'Pending Documents' : localStatusFilter === 'completed' ? 'Completed Documents' : 'Document Library'}
+              {viewerMode ? 'Memo Documents' : localStatusFilter === 'pending' ? 'Pending Documents' : localStatusFilter === 'completed' ? 'Completed Documents' : 'Document Library'}
             </h1>
           </div>
+          {viewerMode && (
+            <div className="mb-3 px-3 py-2 rounded-lg text-xs" style={{ background: 'rgba(var(--accent-rgb),0.12)', border: '1px solid rgba(var(--accent-rgb),0.25)', color: 'var(--accent)' }}>
+              📋 Viewing Memo/Memorandum documents only
+            </div>
+          )}
 
           <div className="space-y-3 mb-4">
             <div className="relative">
@@ -294,11 +305,13 @@ export default function DocumentLibrary({ onDocumentSelected, onViewDocumentInfo
             </div>
 
             <div className="flex flex-wrap gap-2">
-              <FilterDropdown
-                value={typeFilter}
-                onChange={setTypeFilter}
-                options={typeOptions}
-              />
+              {!viewerMode && (
+                <FilterDropdown
+                  value={typeFilter}
+                  onChange={setTypeFilter}
+                  options={typeOptions}
+                />
+              )}
               <FilterDropdown
                 value={localStatusFilter}
                 onChange={setLocalStatusFilter}
@@ -417,28 +430,32 @@ export default function DocumentLibrary({ onDocumentSelected, onViewDocumentInfo
                       </div>
 
                       <div className="flex gap-1.5 flex-shrink-0">
-                        <button
-                          onClick={() => openActivityLog(doc)}
-                          className="flex items-center gap-1 px-3 py-1.5 rounded-lg transition-all text-xs font-medium"
-                          style={{ background: 'rgba(var(--accent-rgb),0.12)', border: '1px solid rgba(var(--accent-rgb),0.25)', color: 'var(--accent)' }}
-                          onMouseEnter={e => { e.currentTarget.style.background = 'rgba(var(--accent-rgb),0.22)'; e.currentTarget.style.borderColor = 'rgba(var(--accent-rgb),0.45)'; }}
-                          onMouseLeave={e => { e.currentTarget.style.background = 'rgba(var(--accent-rgb),0.12)'; e.currentTarget.style.borderColor = 'rgba(var(--accent-rgb),0.25)'; }}
-                          title="View activity log"
-                        >
-                          <ClipboardList className="w-3 h-3" />
-                          <span className="hidden sm:inline">Log</span>
-                        </button>
-                        <button
-                          onClick={() => onViewDocumentInfo(doc.id)}
-                          className="flex items-center gap-1 px-3 py-1.5 rounded-lg transition-all text-xs font-medium"
-                          style={{ background: 'rgba(var(--accent-rgb),0.12)', border: '1px solid rgba(var(--accent-rgb),0.25)', color: 'var(--accent)' }}
-                          onMouseEnter={e => { e.currentTarget.style.background = 'rgba(var(--accent-rgb),0.22)'; e.currentTarget.style.borderColor = 'rgba(var(--accent-rgb),0.45)'; }}
-                          onMouseLeave={e => { e.currentTarget.style.background = 'rgba(var(--accent-rgb),0.12)'; e.currentTarget.style.borderColor = 'rgba(var(--accent-rgb),0.25)'; }}
-                          title="View document info"
-                        >
-                          <Info className="w-3 h-3" />
-                          <span className="hidden sm:inline">Info</span>
-                        </button>
+                        {!viewerMode && (
+                          <button
+                            onClick={() => openActivityLog(doc)}
+                            className="flex items-center gap-1 px-3 py-1.5 rounded-lg transition-all text-xs font-medium"
+                            style={{ background: 'rgba(var(--accent-rgb),0.12)', border: '1px solid rgba(var(--accent-rgb),0.25)', color: 'var(--accent)' }}
+                            onMouseEnter={e => { e.currentTarget.style.background = 'rgba(var(--accent-rgb),0.22)'; e.currentTarget.style.borderColor = 'rgba(var(--accent-rgb),0.45)'; }}
+                            onMouseLeave={e => { e.currentTarget.style.background = 'rgba(var(--accent-rgb),0.12)'; e.currentTarget.style.borderColor = 'rgba(var(--accent-rgb),0.25)'; }}
+                            title="View activity log"
+                          >
+                            <ClipboardList className="w-3 h-3" />
+                            <span className="hidden sm:inline">Log</span>
+                          </button>
+                        )}
+                        {!viewerMode && (
+                          <button
+                            onClick={() => onViewDocumentInfo(doc.id)}
+                            className="flex items-center gap-1 px-3 py-1.5 rounded-lg transition-all text-xs font-medium"
+                            style={{ background: 'rgba(var(--accent-rgb),0.12)', border: '1px solid rgba(var(--accent-rgb),0.25)', color: 'var(--accent)' }}
+                            onMouseEnter={e => { e.currentTarget.style.background = 'rgba(var(--accent-rgb),0.22)'; e.currentTarget.style.borderColor = 'rgba(var(--accent-rgb),0.45)'; }}
+                            onMouseLeave={e => { e.currentTarget.style.background = 'rgba(var(--accent-rgb),0.12)'; e.currentTarget.style.borderColor = 'rgba(var(--accent-rgb),0.25)'; }}
+                            title="View document info"
+                          >
+                            <Info className="w-3 h-3" />
+                            <span className="hidden sm:inline">Info</span>
+                          </button>
+                        )}
                         {doc.file_url && (
                           <button
                             onClick={() => viewDocument(doc)}
@@ -463,18 +480,20 @@ export default function DocumentLibrary({ onDocumentSelected, onViewDocumentInfo
                           <Download className="w-3 h-3" />
                           <span className="hidden sm:inline">Track</span>
                         </button>
-                        <button
-                          onClick={() => setConfirmArchive(doc)}
-                          disabled={archivingId === doc.id}
-                          className="flex items-center gap-1 px-3 py-1.5 rounded-lg transition-all text-xs font-medium disabled:opacity-50"
-                          style={{ background: 'rgba(251,191,36,0.1)', border: '1px solid rgba(251,191,36,0.25)', color: '#fcd34d' }}
-                          onMouseEnter={e => { e.currentTarget.style.background = 'rgba(251,191,36,0.2)'; e.currentTarget.style.borderColor = 'rgba(251,191,36,0.45)'; }}
-                          onMouseLeave={e => { e.currentTarget.style.background = 'rgba(251,191,36,0.1)'; e.currentTarget.style.borderColor = 'rgba(251,191,36,0.25)'; }}
-                          title="Archive document"
-                        >
-                          <Archive className="w-3 h-3" />
-                          <span className="hidden sm:inline">Archive</span>
-                        </button>
+                        {!viewerMode && (
+                          <button
+                            onClick={() => setConfirmArchive(doc)}
+                            disabled={archivingId === doc.id}
+                            className="flex items-center gap-1 px-3 py-1.5 rounded-lg transition-all text-xs font-medium disabled:opacity-50"
+                            style={{ background: 'rgba(251,191,36,0.1)', border: '1px solid rgba(251,191,36,0.25)', color: '#fcd34d' }}
+                            onMouseEnter={e => { e.currentTarget.style.background = 'rgba(251,191,36,0.2)'; e.currentTarget.style.borderColor = 'rgba(251,191,36,0.45)'; }}
+                            onMouseLeave={e => { e.currentTarget.style.background = 'rgba(251,191,36,0.1)'; e.currentTarget.style.borderColor = 'rgba(251,191,36,0.25)'; }}
+                            title="Archive document"
+                          >
+                            <Archive className="w-3 h-3" />
+                            <span className="hidden sm:inline">Archive</span>
+                          </button>
+                        )}
                       </div>
                     </div>
                   </div>
