@@ -116,7 +116,7 @@ function App() {
   // Restrict staff role to their allowed views
   const safeSetView = (v: typeof view) => {
     if (role === 'staff') {
-      const allowed: typeof view[] = ['dashboard', 'document-tracking', 'tracking', 'track', 'handler', 'letter-view'];
+      const allowed: typeof view[] = ['dashboard', 'document-tracking', 'tracking', 'track', 'handler', 'letter-view', 'settings'];
       if (!allowed.includes(v)) return;
     }
     // Viewer role can access dashboard and tracking-related views
