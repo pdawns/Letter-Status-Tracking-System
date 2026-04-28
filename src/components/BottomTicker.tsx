@@ -19,7 +19,14 @@ export default function BottomTicker() {
       setLetters(data);
       const fetchStatus = isPublic ? getPublicStatusesForLetter : getStatusesForLetter;
       const map: Record<string, LetterStatus[]> = {};
-      await Promise.all(data.map(async (l) => { map[l.id] = await fetchStatus(l.id); }));
+      await Promise.all(data.map(async (l) => {
+        try {
+          const result = await fetchStatus(l.id);
+          map[l.id] = Array.isArray(result) ? result : [];
+        } catch {
+          map[l.id] = [];
+        }
+      }));
       setStatusMap(map);
     } catch (e) { console.error(e); }
   }, []);

@@ -55,6 +55,16 @@ export default function HandlerUpdate({ letterId, onBack }: HandlerUpdateProps) 
   const reviewDropdownRef = useRef<HTMLDivElement>(null);
   const [showAssignConfirm, setShowAssignConfirm] = useState(false);
 
+  // Re-assignment state
+  const [showReassignForm, setShowReassignForm] = useState(false);
+  const [reassignTo, setReassignTo] = useState('');
+  const [reassignOther, setReassignOther] = useState('');
+  const [reassignDueDate, setReassignDueDate] = useState('');
+  const [reassignInstruction, setReassignInstruction] = useState('');
+  const [reassignDropdownOpen, setReassignDropdownOpen] = useState(false);
+  const reassignDropdownRef = useRef<HTMLDivElement>(null);
+  const [showReassignConfirm, setShowReassignConfirm] = useState(false);
+
   // Step 2 state — Staff marks reviewed
   const [reviewNotes, setReviewNotes] = useState('');
   const [reviewChecked, setReviewChecked] = useState(false);
@@ -67,6 +77,9 @@ export default function HandlerUpdate({ letterId, onBack }: HandlerUpdateProps) 
   const [approvalNotes, setApprovalNotes] = useState('');
   const [showApprovalConfirm, setShowApprovalConfirm] = useState(false);
 
+  // Optional re-assign after review confirm (staff-triggered)
+  const [wantsReassign, setWantsReassign] = useState<boolean | null>(null);
+
   const [previewTicket, setPreviewTicket] = useState<ActionTicket | null>(null);
 
   useEffect(() => { fetchData(); }, [letterId]);
@@ -75,6 +88,8 @@ export default function HandlerUpdate({ letterId, onBack }: HandlerUpdateProps) 
     const handler = (e: MouseEvent) => {
       if (reviewDropdownRef.current && !reviewDropdownRef.current.contains(e.target as Node))
         setReviewDropdownOpen(false);
+      if (reassignDropdownRef.current && !reassignDropdownRef.current.contains(e.target as Node))
+        setReassignDropdownOpen(false);
     };
     document.addEventListener('mousedown', handler);
     return () => document.removeEventListener('mousedown', handler);
@@ -107,7 +122,7 @@ export default function HandlerUpdate({ letterId, onBack }: HandlerUpdateProps) 
   };
 
   // ── Derived state ─────────────────────────────────────────
-  const assignedTicket = actionTickets[0] ?? null;
+  const assignedTicket = actionTickets.length > 0 ? actionTickets[actionTickets.length - 1] : null;
   const isAssigned = actionTickets.length > 0;
   const assignedTo = assignedTicket ? fixName(assignedTicket.assigned_to) : '';
 
@@ -139,6 +154,29 @@ export default function HandlerUpdate({ letterId, onBack }: HandlerUpdateProps) 
     finally { setSaving(false); }
   };
 
+  // ── Re-assignment: Violon re-assigns for additional review ──
+  const handleReassignSubmit = async () => {
+    setShowReassignConfirm(false);
+    setSaving(true);
+    const finalReviewer = reassignTo === 'Other' ? reassignOther.trim() : reassignTo;
+    try {
+      await createActionTicket(letterId, {
+        assigned_by: SIR_RONALD,
+        assigned_to: finalReviewer,
+        action_notes: reassignInstruction || 'Additional review required.',
+        due_date: reassignDueDate || undefined,
+      });
+      await fetchData();
+      setShowReassignForm(false);
+      setReassignTo('');
+      setReassignOther('');
+      setReassignDueDate('');
+      setReassignInstruction('');
+      setShowSuccess(true);
+    } catch { setError('Failed to re-assign for review.'); }
+    finally { setSaving(false); }
+  };
+
   // ── Step 2: Staff marks reviewed ─────────────────────────
   const handleReviewSubmit = async () => {
     setShowReviewConfirm(false);
@@ -161,10 +199,24 @@ export default function HandlerUpdate({ letterId, onBack }: HandlerUpdateProps) 
         review_file_url,
         review_file_name,
       }]);
+      // If staff opted to re-assign, create a new action ticket
+      if (wantsReassign === true && reassignTo) {
+        const finalReviewer = reassignTo === 'Other' ? reassignOther.trim() : reassignTo;
+        if (finalReviewer) {
+          await createActionTicket(letterId, {
+            assigned_by: assignedTo || SIR_RONALD, // re-assigned by the current reviewer, not Sir Ronald
+            assigned_to: finalReviewer,
+            action_notes: reassignInstruction || 'Additional review required.',
+            due_date: reassignDueDate || undefined,
+          });
+        }
+      }
       await fetchData();
       setReviewChecked(false);
       setReviewNotes('');
       setReviewFile(null);
+      setWantsReassign(null);
+      setReassignTo(''); setReassignOther(''); setReassignDueDate(''); setReassignInstruction('');
       setShowSuccess(true);
     } catch { setError('Failed to save review.'); }
     finally { setSaving(false); setUploadingFile(false); }
@@ -269,17 +321,25 @@ export default function HandlerUpdate({ letterId, onBack }: HandlerUpdateProps) 
             >
               {isAssigned ? (
                 <div className="space-y-2">
-                  <div className="text-xs space-y-0.5" style={{ color: 'rgba(var(--accent-text-rgb),0.75)' }}>
-                    <p>Assigned by: <span className="font-medium" style={{ color: 'var(--accent-text)' }}>{fixName(assignedTicket!.assigned_by)}</span></p>
-                    <p>Assigned to: <span className="font-medium" style={{ color: 'var(--accent-text)' }}>{assignedTo}</span></p>
-                    {assignedTicket!.due_date && (
-                      <p style={{ color: 'rgba(var(--accent-rgb),0.65)' }}>
-                        Due: {new Date(assignedTicket!.due_date).toLocaleDateString('en-PH', { year: 'numeric', month: 'long', day: 'numeric' })}
-                      </p>
-                    )}
-                    {assignedTicket!.action_notes && <p>Instruction: {fixName(assignedTicket!.action_notes)}</p>}
-                  </div>
-                  <button onClick={() => setPreviewTicket(assignedTicket!)}
+                  {/* Show all assignment history */}
+                  {actionTickets.map((ticket, idx) => (
+                    <div key={ticket.id} className="text-xs space-y-0.5 pb-2" style={{ borderBottom: idx < actionTickets.length - 1 ? '1px solid rgba(var(--accent-rgb),0.1)' : 'none', color: 'rgba(var(--accent-text-rgb),0.75)' }}>
+                      {actionTickets.length > 1 && (
+                        <p className="text-xs font-semibold mb-1" style={{ color: 'rgba(var(--accent-rgb),0.5)' }}>
+                          {idx === 0 ? 'Initial Assignment' : `Re-assignment #${idx}`}
+                        </p>
+                      )}
+                      <p>Assigned by: <span className="font-medium" style={{ color: 'var(--accent-text)' }}>{fixName(ticket.assigned_by)}</span></p>
+                      <p>Assigned to: <span className="font-medium" style={{ color: idx === actionTickets.length - 1 ? 'var(--accent)' : 'var(--accent-text)' }}>{fixName(ticket.assigned_to)}</span></p>
+                      {ticket.due_date && (
+                        <p style={{ color: 'rgba(var(--accent-rgb),0.65)' }}>
+                          Due: {new Date(ticket.due_date).toLocaleDateString('en-PH', { year: 'numeric', month: 'long', day: 'numeric' })}
+                        </p>
+                      )}
+                      {ticket.action_notes && <p>Instruction: {fixName(ticket.action_notes)}</p>}
+                    </div>
+                  ))}
+                  <button onClick={() => setPreviewTicket(actionTickets[actionTickets.length - 1]!)}
                     className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium"
                     style={{ background: 'rgba(var(--accent-rgb),0.1)', border: '1px solid rgba(var(--accent-rgb),0.2)', color: 'var(--accent)' }}>
                     <Ticket className="w-3.5 h-3.5" /> View Action Tickler Slip
@@ -388,13 +448,106 @@ export default function HandlerUpdate({ letterId, onBack }: HandlerUpdateProps) 
                   ) : (
                     <p className="text-xs italic" style={{ color: 'rgba(var(--accent-rgb),0.4)' }}>No file attached</p>
                   )}
+                  
+                  {/* Re-assign option for Sir Ronald/Developer */}
+                  {isViolon && (
+                    <div className="pt-2" style={{ borderTop: '1px solid rgba(var(--accent-rgb),0.15)' }}>
+                      <p className="text-xs font-medium mb-2" style={{ color: 'rgba(var(--accent-rgb),0.7)' }}>Need additional review or changes?</p>
+                      
+                      {!showReassignForm ? (
+                        <button
+                          onClick={() => setShowReassignForm(true)}
+                          className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-xl text-xs font-medium transition-all"
+                          style={{ 
+                            background: 'rgba(251,191,36,0.1)', 
+                            border: '1px solid rgba(251,191,36,0.3)', 
+                            color: '#fbbf24' 
+                          }}
+                        >
+                          <Ticket className="w-3.5 h-3.5" />
+                          Re-assign for Additional Review
+                        </button>
+                      ) : (
+                        <div className="space-y-2">
+                          <div className="relative" ref={reassignDropdownRef}>
+                            <button type="button" onClick={() => setReassignDropdownOpen(v => !v)}
+                              className="w-full flex items-center justify-between px-3 py-2.5 text-sm rounded-xl"
+                              style={{ border: reassignTo ? '1px solid rgba(var(--accent-rgb),0.4)' : '1px solid rgba(var(--accent-rgb),0.2)', background: 'var(--input-bg)', color: reassignTo ? 'var(--accent-text)' : 'rgba(var(--accent-rgb),0.5)' }}>
+                              <span className="truncate">{reassignTo || 'Choose reviewer...'}</span>
+                              <ChevronDown className="w-4 h-4 flex-shrink-0 ml-2" style={{ color: 'var(--accent)', transform: reassignDropdownOpen ? 'rotate(180deg)' : 'rotate(0deg)' }} />
+                            </button>
+                            {reassignDropdownOpen && (
+                              <div className="absolute z-20 w-full mt-1 rounded-xl overflow-hidden shadow-lg" style={{ background: 'var(--card-bg)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)', border: '1px solid rgba(var(--accent-rgb),0.2)' }}>
+                                {REVIEWERS.map(name => (
+                                  <button key={name} type="button" onClick={() => { setReassignTo(name); setReassignDropdownOpen(false); }}
+                                    className="w-full flex items-center justify-between px-4 py-3 text-sm text-left"
+                                    style={{ color: reassignTo === name ? 'var(--accent-text)' : 'rgba(var(--accent-text-rgb),0.7)' }}
+                                    onMouseEnter={(e) => (e.currentTarget.style.background = 'rgba(var(--accent-rgb),0.12)')}
+                                    onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}>
+                                    <span>{name}</span>
+                                    {reassignTo === name && <Check className="w-4 h-4" style={{ color: 'var(--accent)' }} />}
+                                  </button>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                          {reassignTo === 'Other' && (
+                            <input
+                              type="text"
+                              value={reassignOther}
+                              onChange={(e) => setReassignOther(e.target.value)}
+                              placeholder="Enter reviewer name..."
+                              className="w-full px-3 py-2 text-sm rounded-xl focus:outline-none"
+                              style={{ background: 'var(--input-bg)', border: '1px solid rgba(var(--accent-rgb),0.2)', color: 'var(--accent-text)' }}
+                            />
+                          )}
+                          <input type="date" value={reassignDueDate} onChange={(e) => setReassignDueDate(e.target.value)}
+                            className="w-full px-3 py-2 text-sm rounded-xl focus:outline-none"
+                            style={{ background: 'var(--input-bg)', border: '1px solid rgba(var(--accent-rgb),0.2)', color: 'var(--accent-text)' }}
+                            title="Due Date / Deadline" />
+                          <textarea value={reassignInstruction} onChange={(e) => setReassignInstruction(e.target.value)}
+                            placeholder="Reason for re-assignment / Additional instructions"
+                            rows={2}
+                            className="w-full px-3 py-2 text-sm rounded-xl resize-none focus:outline-none"
+                            style={{ background: 'var(--input-bg)', border: '1px solid rgba(var(--accent-rgb),0.2)', color: 'var(--accent-text)' }} />
+                          <div className="flex gap-2">
+                            <button
+                              onClick={() => {
+                                setShowReassignForm(false);
+                                setReassignTo('');
+                                setReassignOther('');
+                                setReassignDueDate('');
+                                setReassignInstruction('');
+                              }}
+                              className="flex-1 py-2 rounded-xl text-xs font-medium"
+                              style={{ background: 'rgba(0,0,0,0.2)', border: '1px solid rgba(var(--accent-rgb),0.2)', color: 'rgba(var(--accent-text-rgb),0.6)' }}
+                            >
+                              Cancel
+                            </button>
+                            <button
+                              onClick={() => {
+                                if (!reassignTo) { setError('Please choose a reviewer.'); return; }
+                                if (reassignTo === 'Other' && !reassignOther.trim()) { setError('Please enter the reviewer name.'); return; }
+                                setError(''); setShowReassignConfirm(true);
+                              }}
+                              disabled={saving}
+                              className="flex-1 text-white py-2 rounded-xl text-xs font-medium disabled:opacity-50 flex items-center justify-center gap-2"
+                              style={{ backgroundColor: '#f59e0b' }}
+                            >
+                              <Ticket className="w-3.5 h-3.5" />
+                              Re-assign
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
               ) : isAssigned && isStaff ? (
                 <div className="space-y-2">
                   <div className="px-3 py-2 rounded-xl text-xs" style={{ background: 'rgba(var(--accent-rgb),0.08)', border: '1px solid rgba(var(--accent-rgb),0.18)', color: 'var(--accent)' }}>
                     Document assigned to <span className="font-semibold">{assignedTo}</span> for review. Confirm once reviewed.
-                  </div>
-                  <button type="button" onClick={() => setReviewChecked(v => !v)}
+                  </div>                  <button type="button" onClick={() => { setReviewChecked(v => !v); setWantsReassign(null); }}
                     className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-xl text-xs font-medium transition-all"
                     style={{
                       border: reviewChecked ? '1px solid rgba(var(--accent-rgb),0.45)' : '1px solid rgba(var(--accent-rgb),0.18)',
@@ -406,6 +559,87 @@ export default function HandlerUpdate({ letterId, onBack }: HandlerUpdateProps) 
                   </button>
                   {reviewChecked && (
                     <>
+                      {/* Optional: assign to another reviewer? */}
+                      <div className="rounded-xl p-3 space-y-2" style={{ background: 'rgba(251,191,36,0.08)', border: '1px solid rgba(251,191,36,0.2)' }}>
+                        <p className="text-xs font-medium" style={{ color: 'rgba(var(--accent-text-rgb),0.75)' }}>
+                          Assign to another reviewer? <span style={{ color: 'rgba(var(--accent-rgb),0.5)', fontWeight: 400 }}>(optional)</span>
+                        </p>
+                        <div className="flex gap-2">
+                          <button
+                            type="button"
+                            onClick={() => setWantsReassign(true)}
+                            className="flex-1 py-1.5 rounded-lg text-xs font-medium transition-all"
+                            style={{
+                              background: wantsReassign === true ? 'rgba(251,191,36,0.2)' : 'rgba(0,0,0,0.15)',
+                              border: wantsReassign === true ? '1px solid rgba(251,191,36,0.45)' : '1px solid rgba(var(--accent-rgb),0.15)',
+                              color: wantsReassign === true ? '#fbbf24' : 'rgba(var(--accent-text-rgb),0.55)',
+                            }}
+                          >
+                            Yes, assign
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => { setWantsReassign(false); setReassignTo(''); setReassignOther(''); setReassignDueDate(''); setReassignInstruction(''); }}
+                            className="flex-1 py-1.5 rounded-lg text-xs font-medium transition-all"
+                            style={{
+                              background: wantsReassign === false ? 'rgba(var(--accent-rgb),0.15)' : 'rgba(0,0,0,0.15)',
+                              border: wantsReassign === false ? '1px solid rgba(var(--accent-rgb),0.35)' : '1px solid rgba(var(--accent-rgb),0.15)',
+                              color: wantsReassign === false ? 'var(--accent-text)' : 'rgba(var(--accent-text-rgb),0.55)',
+                            }}
+                          >
+                            No, skip
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Show re-assign form if Yes */}
+                      {wantsReassign === true && (
+                        <div className="space-y-2 rounded-xl p-3" style={{ background: 'rgba(251,191,36,0.05)', border: '1px solid rgba(251,191,36,0.15)' }}>
+                          <p className="text-xs font-semibold mb-1" style={{ color: '#fbbf24' }}>Assign to another reviewer <span style={{ fontWeight: 400, color: 'rgba(251,191,36,0.7)' }}>— on behalf of {assignedTo}</span></p>
+                          <div className="relative" ref={reassignDropdownRef}>
+                            <button type="button" onClick={() => setReassignDropdownOpen(v => !v)}
+                              className="w-full flex items-center justify-between px-3 py-2.5 text-sm rounded-xl"
+                              style={{ border: reassignTo ? '1px solid rgba(var(--accent-rgb),0.4)' : '1px solid rgba(var(--accent-rgb),0.2)', background: 'var(--input-bg)', color: reassignTo ? 'var(--accent-text)' : 'rgba(var(--accent-rgb),0.5)' }}>
+                              <span className="truncate">{reassignTo || 'Choose reviewer...'}</span>
+                              <ChevronDown className="w-4 h-4 flex-shrink-0 ml-2" style={{ color: 'var(--accent)', transform: reassignDropdownOpen ? 'rotate(180deg)' : 'rotate(0deg)' }} />
+                            </button>
+                            {reassignDropdownOpen && (
+                              <div className="absolute z-20 w-full mt-1 rounded-xl overflow-hidden shadow-lg" style={{ background: 'var(--card-bg)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)', border: '1px solid rgba(var(--accent-rgb),0.2)' }}>
+                                {REVIEWERS.map(name => (
+                                  <button key={name} type="button" onClick={() => { setReassignTo(name); setReassignDropdownOpen(false); }}
+                                    className="w-full flex items-center justify-between px-4 py-3 text-sm text-left"
+                                    style={{ color: reassignTo === name ? 'var(--accent-text)' : 'rgba(var(--accent-text-rgb),0.7)' }}
+                                    onMouseEnter={(e) => (e.currentTarget.style.background = 'rgba(var(--accent-rgb),0.12)')}
+                                    onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}>
+                                    <span>{name}</span>
+                                    {reassignTo === name && <Check className="w-4 h-4" style={{ color: 'var(--accent)' }} />}
+                                  </button>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                          {reassignTo === 'Other' && (
+                            <input
+                              type="text"
+                              value={reassignOther}
+                              onChange={(e) => setReassignOther(e.target.value)}
+                              placeholder="Enter reviewer name..."
+                              className="w-full px-3 py-2 text-sm rounded-xl focus:outline-none"
+                              style={{ background: 'var(--input-bg)', border: '1px solid rgba(var(--accent-rgb),0.2)', color: 'var(--accent-text)' }}
+                            />
+                          )}
+                          <input type="date" value={reassignDueDate} onChange={(e) => setReassignDueDate(e.target.value)}
+                            className="w-full px-3 py-2 text-sm rounded-xl focus:outline-none"
+                            style={{ background: 'var(--input-bg)', border: '1px solid rgba(var(--accent-rgb),0.2)', color: 'var(--accent-text)' }}
+                            placeholder="Due date (optional)" />
+                          <textarea value={reassignInstruction} onChange={(e) => setReassignInstruction(e.target.value)}
+                            placeholder="Reason / Instructions (optional)"
+                            rows={2}
+                            className="w-full px-3 py-2 text-sm rounded-xl resize-none focus:outline-none"
+                            style={{ background: 'var(--input-bg)', border: '1px solid rgba(var(--accent-rgb),0.2)', color: 'var(--accent-text)' }} />
+                        </div>
+                      )}
+
                       <input type="text" value={reviewNotes} onChange={(e) => setReviewNotes(e.target.value)}
                         placeholder="Notes (optional)"
                         className="w-full px-3 py-2 text-sm rounded-xl focus:outline-none"
@@ -562,6 +796,29 @@ export default function HandlerUpdate({ letterId, onBack }: HandlerUpdateProps) 
         {approvalNotes && (
           <p className="text-sm mb-1" style={{ color: 'rgba(var(--accent-text-rgb),0.7)' }}>Notes: {approvalNotes}</p>
         )}
+      </ConfirmModal>
+    )}
+
+    {/* Re-assignment confirm */}
+    {showReassignConfirm && (
+      <ConfirmModal title="Re-assign for Additional Review" onCancel={() => setShowReassignConfirm(false)} onConfirm={handleReassignSubmit}>
+        <p className="text-sm mb-1" style={{ color: 'rgba(var(--accent-text-rgb),0.7)' }}>
+          Re-assigned by: <span className="font-medium" style={{ color: 'var(--accent-text)' }}>{SIR_RONALD}</span>
+        </p>
+        <p className="text-sm mb-1" style={{ color: 'rgba(var(--accent-text-rgb),0.7)' }}>
+          Re-assigned to: <span className="font-medium" style={{ color: 'var(--accent-text)' }}>{reassignTo === 'Other' ? reassignOther : reassignTo}</span>
+        </p>
+        {reassignDueDate && (
+          <p className="text-sm mb-1" style={{ color: 'rgba(var(--accent-text-rgb),0.7)' }}>
+            Due: {new Date(reassignDueDate).toLocaleDateString()}
+          </p>
+        )}
+        {reassignInstruction && (
+          <p className="text-sm mb-1" style={{ color: 'rgba(var(--accent-text-rgb),0.7)' }}>Reason: {reassignInstruction}</p>
+        )}
+        <p className="text-xs px-2 py-1 rounded-lg mt-2" style={{ background: 'rgba(251,191,36,0.1)', border: '1px solid rgba(251,191,36,0.2)', color: '#fcd34d' }}>
+          A new Action Tickler Slip will be generated for additional review.
+        </p>
       </ConfirmModal>
     )}
 
