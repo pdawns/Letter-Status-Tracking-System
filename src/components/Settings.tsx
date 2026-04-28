@@ -142,8 +142,8 @@ export default function Settings() {
   const tabs: { id: Tab; label: string; icon: React.ElementType }[] = [
     { id: 'office', label: 'Office Info', icon: Building2 },
     { id: 'theme', label: 'System Theme', icon: Palette },
-    { id: 'cloudinary', label: 'Cloudinary Config', icon: Cloud },
-    { id: 'activitylog', label: 'Activity Log', icon: ClipboardList },
+    ...(userRole !== 'staff' ? [{ id: 'cloudinary' as Tab, label: 'Cloudinary Config', icon: Cloud }] : []),
+    ...(userRole !== 'staff' ? [{ id: 'activitylog' as Tab, label: 'Activity Log', icon: ClipboardList }] : []),
     { id: 'password', label: 'Change Password', icon: KeyRound },
     ...(userRole === 'developer' ? [{ id: 'activeusers' as Tab, label: 'Active Users', icon: Users }] : []),
     { id: 'about', label: 'About', icon: Info },

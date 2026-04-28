@@ -18,7 +18,7 @@ const allMenuItems = [
   { id: 'document-tracking' as View, label: 'Create Document', icon: FilePlus, roles: ['staff', 'admin', 'developer'] },
   { id: 'tracking' as View, label: 'Track Document', icon: Search, roles: ['staff', 'admin', 'viewer', 'developer'] },
   { id: 'archive' as View, label: 'Archive', icon: Archive, roles: ['admin', 'developer'] },
-  { id: 'settings' as View, label: 'Settings', icon: Settings, roles: ['admin', 'developer'] },
+  { id: 'settings' as View, label: 'Settings', icon: Settings, roles: ['admin', 'developer', 'staff'] },
 ];
 
 export default function Sidebar({ currentView, onViewChange, onLogout, role = 'staff', menuOpen, onMenuToggle }: SidebarProps) {
