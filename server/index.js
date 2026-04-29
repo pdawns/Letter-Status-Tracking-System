@@ -155,7 +155,8 @@ async function initDb() {
   await pool.query(`INSERT INTO users (username, password, role) VALUES ('ronaldjame.violon@pto','ptoMisOr','admin') ON CONFLICT (username) DO UPDATE SET role='admin'`);
   await pool.query(`INSERT INTO users (username, password, role) VALUES ('ptomisor@pto','ptoMisOr','viewer') ON CONFLICT (username) DO UPDATE SET role='viewer'`);
   await pool.query(`INSERT INTO users (username, password, role) VALUES ('dev@system','devdts2026','developer') ON CONFLICT (username) DO UPDATE SET role='developer'`);
-  await pool.query(`DELETE FROM users WHERE username NOT IN ('jonarleen.cabago@pto','honeygrace.labajo@pto','dearlyn.doniña@pto','ronaldjame.violon@pto','ptomisor@pto','dev@system')`);
+  await pool.query(`INSERT INTO users (username, password, role) VALUES ('marjorie.abao@pto','mabao','staff') ON CONFLICT (username) DO UPDATE SET role='staff'`);
+  await pool.query(`DELETE FROM users WHERE username NOT IN ('jonarleen.cabago@pto','honeygrace.labajo@pto','dearlyn.doniña@pto','ronaldjame.violon@pto','ptomisor@pto','dev@system','marjorie.abao@pto')`);
 
   // Seed default document types
   const defaultTypes = ['Letter','Certificate','Memo','Report','Disbursement Voucher'];
