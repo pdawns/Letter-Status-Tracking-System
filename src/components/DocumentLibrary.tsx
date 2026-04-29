@@ -105,6 +105,8 @@ export default function DocumentLibrary({ onDocumentSelected, onViewDocumentInfo
   const [completedIds, setCompletedIds] = useState<Set<string>>(new Set());
   const [localStatusFilter, setLocalStatusFilter] = useState<string>(statusFilter ?? 'all');
   const [transmittalFilter, setTransmittalFilter] = useState<string>('all');
+  const [monthFilter, setMonthFilter] = useState<string>('all');
+  const [yearFilter, setYearFilter] = useState<string>('all');
   const [activityDoc, setActivityDoc] = useState<Letter | null>(null);
   const [activityLogs, setActivityLogs] = useState<ActivityLog[]>([]);
   const [activityLoading, setActivityLoading] = useState(false);
@@ -122,7 +124,7 @@ export default function DocumentLibrary({ onDocumentSelected, onViewDocumentInfo
 
   useEffect(() => {
     filterDocuments();
-  }, [documents, searchQuery, typeFilter, sortOrder, completedIds, localStatusFilter, transmittalFilter]);
+  }, [documents, searchQuery, typeFilter, sortOrder, completedIds, localStatusFilter, transmittalFilter, monthFilter, yearFilter]);
 
   const fetchDocuments = async () => {
     try {
@@ -132,13 +134,27 @@ export default function DocumentLibrary({ onDocumentSelected, onViewDocumentInfo
       // Build dynamic type options from actual document types
       const knownTypes = ['letter', 'certificate', 'memo', 'report', 'disbursement_voucher'];
       const knownLabels: Record<string, string> = {
-        letter: 'Letters', certificate: 'Certificates', memo: 'Memos',
-        report: 'Reports', disbursement_voucher: 'Disbursement Voucher',
+        letter: 'Letter', certificate: 'Certificate', memo: 'Memo',
+        report: 'Report', disbursement_voucher: 'Disbursement Voucher',
       };
       const uniqueTypes = [...new Set(data.map(d => d.document_type).filter(Boolean))] as string[];
+      // Deduplicate case-insensitively, prefer the properly-cased version
+      const seenLower = new Map<string, string>();
+      uniqueTypes.forEach(t => {
+        const lower = t.toLowerCase();
+        if (!seenLower.has(lower)) seenLower.set(lower, t);
+        else {
+          // Prefer the one that starts with uppercase
+          const existing = seenLower.get(lower)!;
+          if (t[0] === t[0].toUpperCase() && existing[0] !== existing[0].toUpperCase()) {
+            seenLower.set(lower, t);
+          }
+        }
+      });
+      const deduped = [...seenLower.values()];
       const opts: FilterOption[] = [
         { value: 'all', label: 'All Documents' },
-        ...uniqueTypes.map(t => ({
+        ...deduped.map(t => ({
           value: t,
           label: knownLabels[t] ?? t.charAt(0).toUpperCase() + t.slice(1).replace(/_/g, ' '),
         })).sort((a, b) => {
@@ -186,13 +202,21 @@ export default function DocumentLibrary({ onDocumentSelected, onViewDocumentInfo
     }
 
     if (typeFilter !== 'all') {
-      filtered = filtered.filter((doc) => doc.document_type === typeFilter);
+      filtered = filtered.filter((doc) => doc.document_type?.toLowerCase() === typeFilter.toLowerCase());
     }
 
     if (transmittalFilter === 'incoming') {
       filtered = filtered.filter((doc) => doc.document_direction === 'receiving');
     } else if (transmittalFilter === 'outgoing') {
       filtered = filtered.filter((doc) => doc.document_direction === 'sending');
+    }
+
+    if (yearFilter !== 'all') {
+      filtered = filtered.filter((doc) => new Date(doc.created_at).getFullYear().toString() === yearFilter);
+    }
+
+    if (monthFilter !== 'all') {
+      filtered = filtered.filter((doc) => (new Date(doc.created_at).getMonth() + 1).toString() === monthFilter);
     }
 
     if (searchQuery.trim()) {
@@ -336,6 +360,36 @@ export default function DocumentLibrary({ onDocumentSelected, onViewDocumentInfo
                 options={[
                   { value: 'desc', label: 'Oldest First' },
                   { value: 'asc', label: 'Newest First' },
+                ]}
+              />
+              <FilterDropdown
+                value={monthFilter}
+                onChange={setMonthFilter}
+                options={[
+                  { value: 'all', label: 'All Months' },
+                  { value: '1', label: 'January' },
+                  { value: '2', label: 'February' },
+                  { value: '3', label: 'March' },
+                  { value: '4', label: 'April' },
+                  { value: '5', label: 'May' },
+                  { value: '6', label: 'June' },
+                  { value: '7', label: 'July' },
+                  { value: '8', label: 'August' },
+                  { value: '9', label: 'September' },
+                  { value: '10', label: 'October' },
+                  { value: '11', label: 'November' },
+                  { value: '12', label: 'December' },
+                ]}
+              />
+              <FilterDropdown
+                value={yearFilter}
+                onChange={setYearFilter}
+                options={[
+                  { value: 'all', label: 'All Years' },
+                  ...Array.from({ length: new Date().getFullYear() - 2025 + 1 }, (_, i) => {
+                    const y = (2025 + i).toString();
+                    return { value: y, label: y };
+                  }),
                 ]}
               />
             </div>

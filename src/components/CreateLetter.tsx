@@ -96,6 +96,18 @@ export default function CreateLetter({ onLetterCreated, onToast }: CreateLetterP
   const [otherDocumentType, setOtherDocumentType] = useState('');
   const [dbDocumentTypes, setDbDocumentTypes] = useState<DocumentType[]>([]);
 
+  // Extra fields for Endorsement
+  const [endorsementFor, setEndorsementFor] = useState('');
+  const [endorsementThru, setEndorsementThru] = useState('');
+  const [endorsementFrom, setEndorsementFrom] = useState('');
+
+  // Extra fields for Memo
+  const [memoTo, setMemoTo] = useState('');
+  const [memoOrderNo, setMemoOrderNo] = useState('');
+
+  const isEndorsement = documentType.toLowerCase().includes('endorsement');
+  const isMemo = documentType.toLowerCase().includes('memo');
+
   // Hardcoded offices/departments for incoming sender
   const OFFICES = [
     // Executive & Administration
@@ -178,6 +190,8 @@ export default function CreateLetter({ onLetterCreated, onToast }: CreateLetterP
     if (pin.length < 4) { setError('PIN must be at least 4 characters'); return; }
     if (!reqApproval && !reqReview && !reqInfo && !reqOther) { setError('Please select at least one required action'); return; }
     if (reqOther && !reqOtherText.trim()) { setError('Please specify the "Other" required action'); return; }
+    if (isEndorsement && (!endorsementFor.trim() || !endorsementFrom.trim())) { setError('Please fill in Document For and Document From fields'); return; }
+    if (isMemo && !memoTo.trim()) { setError('Please fill in the "To" field for the Memorandum'); return; }
     setShowConfirm(true);
   };
 
@@ -201,7 +215,14 @@ export default function CreateLetter({ onLetterCreated, onToast }: CreateLetterP
 
       const letter = await insertLetter({
         reference_number: referenceNumber, title,
-        document_subject: subject,
+        document_subject: [
+          subject,
+          isEndorsement && endorsementFor ? `Document For: ${endorsementFor}` : '',
+          isEndorsement && endorsementThru ? `Thru: ${endorsementThru}` : '',
+          isEndorsement && endorsementFrom ? `Document From: ${endorsementFrom}` : '',
+          isMemo && memoOrderNo ? `Memo Order No: ${memoOrderNo}` : '',
+          isMemo && memoTo ? `To: ${memoTo}` : '',
+        ].filter(Boolean).join('\n'),
         document_type: finalDocType,
         handler_pin: pin,
         sender_name: documentDirection === 'receiving' ? senderName : '',
@@ -278,6 +299,54 @@ export default function CreateLetter({ onLetterCreated, onToast }: CreateLetterP
                   className="w-full px-3 py-2.5 text-sm rounded-xl focus:outline-none focus:ring-1 focus:ring-green-600 resize-none"
                   style={inp} placeholder="Purpose of the document..." />
               </div>
+
+              {/* ── Endorsement extra fields ── */}
+              {isEndorsement && (
+                <>
+                  <div style={{ borderTop: '1px solid rgba(var(--accent-rgb),0.15)', paddingTop: '10px' }}>
+                    <p className="text-xs font-semibold uppercase tracking-wide mb-2" style={{ color: 'rgba(var(--accent-rgb),0.7)' }}>Endorsement Details</p>
+                  </div>
+                  <div>
+                    <FieldLabel>Document For <span style={{ color: '#fca5a5' }}>*</span></FieldLabel>
+                    <input type="text" value={endorsementFor} onChange={e => setEndorsementFor(e.target.value)}
+                      className="w-full px-3 py-2.5 text-sm rounded-xl focus:outline-none focus:ring-1 focus:ring-green-600"
+                      style={inp} placeholder="e.g. MR. RONALD JME D. VIOLON, Provincial Treasurer" />
+                  </div>
+                  <div>
+                    <FieldLabel>Thru <span className="font-normal opacity-60">(Optional)</span></FieldLabel>
+                    <input type="text" value={endorsementThru} onChange={e => setEndorsementThru(e.target.value)}
+                      className="w-full px-3 py-2.5 text-sm rounded-xl focus:outline-none focus:ring-1 focus:ring-green-600"
+                      style={inp} placeholder="e.g. GJTU" />
+                  </div>
+                  <div>
+                    <FieldLabel>Document From <span style={{ color: '#fca5a5' }}>*</span></FieldLabel>
+                    <input type="text" value={endorsementFrom} onChange={e => setEndorsementFrom(e.target.value)}
+                      className="w-full px-3 py-2.5 text-sm rounded-xl focus:outline-none focus:ring-1 focus:ring-green-600"
+                      style={inp} placeholder="e.g. ANALIZA U. MISO / CSEA MANAGER FDC MPC" />
+                  </div>
+                </>
+              )}
+
+              {/* ── Memo extra fields ── */}
+              {isMemo && (
+                <>
+                  <div style={{ borderTop: '1px solid rgba(var(--accent-rgb),0.15)', paddingTop: '10px' }}>
+                    <p className="text-xs font-semibold uppercase tracking-wide mb-2" style={{ color: 'rgba(var(--accent-rgb),0.7)' }}>Memorandum Details</p>
+                  </div>
+                  <div>
+                    <FieldLabel>Memorandum Order No. <span className="font-normal opacity-60">(Optional)</span></FieldLabel>
+                    <input type="text" value={memoOrderNo} onChange={e => setMemoOrderNo(e.target.value)}
+                      className="w-full px-3 py-2.5 text-sm rounded-xl focus:outline-none focus:ring-1 focus:ring-green-600"
+                      style={inp} placeholder="e.g. GJTU No. 813 - 2026" />
+                  </div>
+                  <div>
+                    <FieldLabel>To <span style={{ color: '#fca5a5' }}>*</span></FieldLabel>
+                    <input type="text" value={memoTo} onChange={e => setMemoTo(e.target.value)}
+                      className="w-full px-3 py-2.5 text-sm rounded-xl focus:outline-none focus:ring-1 focus:ring-green-600"
+                      style={inp} placeholder="e.g. ALL DEPARTMENT HEADS/CHIEFS OF OFFICES" />
+                  </div>
+                </>
+              )}
             </Card>
 
             <Card title="Attach Document File">

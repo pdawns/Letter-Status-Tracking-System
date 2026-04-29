@@ -158,8 +158,21 @@ async function initDb() {
   await pool.query(`INSERT INTO users (username, password, role) VALUES ('marjorie.abao@pto','mabao','staff') ON CONFLICT (username) DO UPDATE SET role='staff'`);
   await pool.query(`DELETE FROM users WHERE username NOT IN ('jonarleen.cabago@pto','honeygrace.labajo@pto','dearlyn.doniña@pto','ronaldjame.violon@pto','ptomisor@pto','dev@system','marjorie.abao@pto')`);
 
+  // Rename Memo to Memorandum if old name exists
+  await pool.query(`UPDATE document_types SET name = 'Memorandum' WHERE name = 'Memo'`).catch(() => {});
+
+  // Normalize all document_type values in letters to match proper casing in document_types
+  // This fixes duplicates like 'certificate' vs 'Certificate', 'memo' vs 'Memo', etc.
+  const allTypes = await all(`SELECT name FROM document_types`);
+  for (const { name } of allTypes) {
+    await pool.query(
+      `UPDATE letters SET document_type = $1 WHERE LOWER(document_type) = LOWER($1) AND document_type != $1`,
+      [name]
+    ).catch(() => {});
+  }
+
   // Seed default document types
-  const defaultTypes = ['Letter','Certificate','Memo','Report','Disbursement Voucher'];
+  const defaultTypes = ['Letter','Certificate','Memorandum','Report','Disbursement Voucher','Endorsement'];
   for (const name of defaultTypes) {
     await pool.query(`INSERT INTO document_types (name, is_custom) VALUES ($1, 0) ON CONFLICT (name) DO NOTHING`, [name]);
   }
