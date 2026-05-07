@@ -148,8 +148,8 @@ export default function BottomTicker() {
           </span>
           {doc.document_type && (
             <span
-              className="text-[9px] px-1.5 py-0.5 rounded-full capitalize flex-shrink-0"
-              style={{ background: 'rgba(var(--accent-rgb),0.1)', color: 'var(--accent)', border: '1px solid rgba(var(--accent-rgb),0.18)' }}
+              className="text-[9px] px-1.5 py-0.5 rounded-full capitalize flex-shrink-0 font-semibold"
+              style={{ background: 'rgba(var(--accent-rgb),0.15)', color: '#047857', border: '1px solid rgba(var(--accent-rgb),0.25)' }}
             >
               {doc.document_type}
             </span>

@@ -21,6 +21,128 @@
   --scroll-thumb: rgba(156,175,136,0.25);
 }
 
+/* Light mode text adjustments */
+:root.light-mode body {
+  color: #1a202c;
+}
+
+/* Light mode - white text becomes dark */
+:root.light-mode .text-white {
+  color: #1a202c !important;
+}
+
+/* Light mode - inline white text becomes dark */
+:root.light-mode [style*="color: white"],
+:root.light-mode [style*="color:white"],
+:root.light-mode [style*="color: rgba(255,255,255"],
+:root.light-mode [style*="color:rgba(255,255,255"] {
+  color: #1a202c !important;
+}
+
+/* Light mode - adjust opacity for better visibility */
+:root.light-mode [style*="opacity: 0.4"],
+:root.light-mode [style*="opacity:0.4"] {
+  opacity: 0.8 !important;
+}
+
+:root.light-mode [style*="opacity: 0.5"],
+:root.light-mode [style*="opacity:0.5"] {
+  opacity: 0.85 !important;
+}
+
+/* Light mode - accent colored text uses accent-text variable for better contrast */
+:root.light-mode [style*="color: var(--accent)"],
+:root.light-mode [style*="color:var(--accent)"] {
+  color: var(--accent-text) !important;
+}
+
+/* Light mode - primary buttons keep white text */
+:root.light-mode button[style*="background: var(--primary)"],
+:root.light-mode button[style*="backgroundColor: var(--primary)"],
+:root.light-mode button[style*="background:var(--primary)"] {
+  color: white !important;
+}
+
+/* Light mode - bottom ticker (dark background) keeps light text */
+:root.light-mode [style*="background: rgba(0,0,0"] *,
+:root.light-mode [style*="background:rgba(0,0,0"] *,
+:root.light-mode [style*="background: rgb(0,0,0"] *,
+:root.light-mode [style*="background:rgb(0,0,0"] * {
+  color: white !important;
+}
+
+/* Light mode - darken card backgrounds for better contrast */
+:root.light-mode [style*="background: #60a5fa"],
+:root.light-mode [style*="background:#60a5fa"] {
+  background: #2563eb !important;
+}
+
+:root.light-mode [style*="background: #a78bfa"],
+:root.light-mode [style*="background:#a78bfa"] {
+  background: #7c3aed !important;
+}
+
+:root.light-mode [style*="background: #fbbf24"],
+:root.light-mode [style*="background:#fbbf24"] {
+  background: #d97706 !important;
+}
+
+:root.light-mode [style*="background: #34d399"],
+:root.light-mode [style*="background:#34d399"] {
+  background: #059669 !important;
+}
+
+:root.light-mode [style*="background: #f87171"],
+:root.light-mode [style*="background:#f87171"] {
+  background: #dc2626 !important;
+}
+
+:root.light-mode [style*="background: #fb923c"],
+:root.light-mode [style*="background:#fb923c"] {
+  background: #ea580c !important;
+}
+
+/* Light mode - darken text colors for status cards */
+:root.light-mode [style*="color: #60a5fa"],
+:root.light-mode [style*="color:#60a5fa"] {
+  color: #1e40af !important;
+}
+
+:root.light-mode [style*="color: #a78bfa"],
+:root.light-mode [style*="color:#a78bfa"] {
+  color: #6d28d9 !important;
+}
+
+:root.light-mode [style*="color: #fbbf24"],
+:root.light-mode [style*="color:#fbbf24"] {
+  color: #b45309 !important;
+}
+
+:root.light-mode [style*="color: #34d399"],
+:root.light-mode [style*="color:#34d399"] {
+  color: #047857 !important;
+}
+
+:root.light-mode [style*="color: #f87171"],
+:root.light-mode [style*="color:#f87171"] {
+  color: #b91c1c !important;
+}
+
+:root.light-mode [style*="color: #fb923c"],
+:root.light-mode [style*="color:#fb923c"] {
+  color: #c2410c !important;
+}
+
+:root.light-mode [style*="color: #fca5a5"],
+:root.light-mode [style*="color:#fca5a5"] {
+  color: #991b1b !important;
+}
+
+:root.light-mode [style*="color: #6ee7b7"],
+:root.light-mode [style*="color:#6ee7b7"] {
+  color: #065f46 !important;
+}
+
 * {
   font-family: Arial, sans-serif;
 }

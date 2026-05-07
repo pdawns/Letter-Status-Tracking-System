@@ -1,5 +1,5 @@
 import { FileText, Clock, CheckCircle, ArrowDownToLine, ArrowUpFromLine, AlertTriangle, CalendarDays, ChevronDown, UserCheck, Building2, Trophy, Timer, BarChart3, Search, X } from 'lucide-react';
-import { useEffect, useState, useCallback, useMemo } from 'react';
+import { useEffect, useState, useCallback, useMemo, useRef } from 'react';
 import { getLetters, getStatusesForLetter, getPublicLetters, getPublicStatusesForLetter } from '../lib/api';
 import { Letter, LetterStatus } from '../types';
 
@@ -14,7 +14,72 @@ type StatusView = 'pending' | 'completed';
 const TYPE_COLORS = ['#60a5fa', '#a78bfa', '#fbbf24', '#34d399', '#f87171', 'var(--accent)', '#fb923c'];
 const SIR_LINMARK = 'Linmark G. Benlot';
 const SIR_RONALD  = 'RONALD JAME D. VIOLON';
-const PAGES = ['Overview', 'Office Performance'];
+const PAGES = ['Overview', 'Office Performance', 'Track'];
+
+interface FilterOption { value: string; label: string; }
+
+function FilterDropdown({ value, onChange, options }: { value: string; onChange: (v: string) => void; options: FilterOption[] }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+  const selected = options.find(o => o.value === value);
+
+  useEffect(() => {
+    const handler = (e: MouseEvent) => { if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false); };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, []);
+
+  return (
+    <div ref={ref} className="relative">
+      <button
+        type="button"
+        onClick={() => setOpen(v => !v)}
+        className="flex items-center gap-2 pl-3 pr-2.5 py-2 text-sm font-medium rounded-xl transition-all whitespace-nowrap"
+        style={{
+          background: open ? 'rgba(var(--primary-rgb),0.7)' : 'var(--card-bg)',
+          border: open ? '1px solid rgba(var(--accent-rgb),0.5)' : '1px solid rgba(var(--accent-rgb),0.25)',
+          color: 'var(--accent-text)',
+          backdropFilter: 'blur(8px)',
+        }}
+      >
+        <span>{selected?.label}</span>
+        <ChevronDown className="w-3.5 h-3.5 transition-transform" style={{ color: 'var(--accent)', transform: open ? 'rotate(180deg)' : 'rotate(0deg)' }} />
+      </button>
+
+      {open && (
+        <div
+          className="absolute top-full mt-1.5 left-0 z-50 min-w-max rounded-xl overflow-hidden"
+          style={{
+            background: 'var(--card-bg)',
+            backdropFilter: 'blur(24px)',
+            WebkitBackdropFilter: 'blur(24px)',
+            border: '1px solid rgba(var(--accent-rgb),0.25)',
+            boxShadow: '0 8px 32px rgba(0,0,0,0.5)',
+          }}
+        >
+          {options.map(opt => (
+            <button
+              key={opt.value}
+              type="button"
+              onClick={() => { onChange(opt.value); setOpen(false); }}
+              className="w-full flex items-center justify-between px-4 py-2.5 text-sm text-left transition-colors whitespace-nowrap"
+              style={{
+                color: opt.value === value ? 'var(--accent-text)' : 'rgba(var(--accent-text-rgb),0.65)',
+                background: opt.value === value ? 'rgba(var(--accent-rgb),0.15)' : 'transparent',
+                fontWeight: opt.value === value ? 600 : 400,
+              }}
+              onMouseEnter={e => { if (opt.value !== value) e.currentTarget.style.background = 'rgba(var(--accent-rgb),0.08)'; }}
+              onMouseLeave={e => { if (opt.value !== value) e.currentTarget.style.background = 'transparent'; }}
+            >
+              <span>{opt.label}</span>
+              {opt.value === value && <span style={{ color: 'var(--accent)', fontSize: '10px' }}>✓</span>}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
 
 export default function Dashboard({ onStatusFilter, publicMode }: DashboardProps) {
   const [letters, setLetters]     = useState<Letter[]>([]);
@@ -28,6 +93,7 @@ export default function Dashboard({ onStatusFilter, publicMode }: DashboardProps
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResult, setSearchResult] = useState<{ letter: typeof letters[0]; statuses: LetterStatus[] } | null | 'not-found'>(null);
   const [searching, setSearching]     = useState(false);
+  const [trackFilters, setTrackFilters] = useState({ direction: '', office: '', createdBy: '', month: '', year: '' });
 
   const loadData = useCallback(async () => {
     try {
@@ -429,7 +495,7 @@ export default function Dashboard({ onStatusFilter, publicMode }: DashboardProps
           style={{ transform: `translateX(-${page * (100 / PAGES.length)}%)`, width: `${PAGES.length * 100}%`, height: '100%', alignItems: 'stretch' }}>
 
           {/* ══ PAGE 0: Overview ══ */}
-          <div className="flex flex-col gap-3 px-4 pb-2 overflow-hidden" style={{ width: '50%', height: '100%' }}>
+          <div className="flex flex-col gap-3 px-4 pb-2 overflow-hidden" style={{ width: `${100 / PAGES.length}%`, height: '100%' }}>
 
             {/* Stat cards */}
             <div className="flex gap-2 flex-shrink-0">
@@ -759,7 +825,7 @@ export default function Dashboard({ onStatusFilter, publicMode }: DashboardProps
           </div>{/* end PAGE 0 */}
 
           {/* ══ PAGE 1: Office Performance ══ */}
-          <div className="flex flex-col gap-3 px-4 pb-2 overflow-hidden" style={{ width: '50%', height: '100%' }}>
+          <div className="flex flex-col gap-3 px-4 pb-2 overflow-hidden" style={{ width: `${100 / PAGES.length}%`, height: '100%' }}>
 
             <div className="flex items-center gap-2 flex-shrink-0">
               <BarChart3 className="w-4 h-4" style={{ color: 'var(--accent)' }} />
@@ -950,6 +1016,292 @@ export default function Dashboard({ onStatusFilter, publicMode }: DashboardProps
 
             </div>
           </div>{/* end PAGE 1 */}
+
+          {/* ══ PAGE 2: Track ══ */}
+          <div className="flex flex-col gap-3 px-4 pb-2 overflow-hidden" style={{ width: `${100 / PAGES.length}%`, height: '100%' }}>
+
+            <div className="flex items-center justify-between gap-2 flex-shrink-0">
+              <div className="flex items-center gap-2">
+                <FileText className="w-4 h-4" style={{ color: 'var(--accent)' }} />
+                <span className="text-sm font-bold" style={{ color: 'var(--accent-text)' }}>Document Tracking</span>
+                <span className="ml-2 text-[10px] px-2 py-0.5 rounded-full"
+                  style={{ background: 'rgba(var(--accent-rgb),0.12)', color: 'var(--accent)', border: '1px solid rgba(var(--accent-rgb),0.2)' }}>
+                  {(() => {
+                    let count = letters.length;
+                    if (trackFilters.direction) count = letters.filter(l => l.document_direction === trackFilters.direction).length;
+                    if (trackFilters.office) count = letters.filter(l => l.sender_office === trackFilters.office).length;
+                    if (trackFilters.createdBy) count = letters.filter(l => l.created_by === trackFilters.createdBy).length;
+                    if (trackFilters.month) count = letters.filter(l => new Date(l.created_at).getMonth() === parseInt(trackFilters.month)).length;
+                    if (trackFilters.year) count = letters.filter(l => new Date(l.created_at).getFullYear() === parseInt(trackFilters.year)).length;
+                    return count;
+                  })()} documents
+                </span>
+              </div>
+            </div>
+
+            {/* Filters - Using FilterDropdown Component */}
+            <div className="flex items-center gap-2 flex-shrink-0 flex-wrap">
+              {/* Direction Filter */}
+              <FilterDropdown
+                value={trackFilters.direction}
+                onChange={(v) => setTrackFilters(prev => ({ ...prev, direction: v }))}
+                options={[
+                  { value: '', label: 'All Directions' },
+                  { value: 'receiving', label: 'Incoming' },
+                  { value: 'sending', label: 'Outgoing' },
+                ]}
+              />
+
+              {/* Office Filter */}
+              <FilterDropdown
+                value={trackFilters.office}
+                onChange={(v) => setTrackFilters(prev => ({ ...prev, office: v }))}
+                options={[
+                  { value: '', label: 'All Offices' },
+                  ...Array.from(new Set(letters.map(l => l.sender_office).filter(Boolean))).sort().map(office => ({
+                    value: office!,
+                    label: office!
+                  }))
+                ]}
+              />
+
+              {/* Created By Filter */}
+              <FilterDropdown
+                value={trackFilters.createdBy}
+                onChange={(v) => setTrackFilters(prev => ({ ...prev, createdBy: v }))}
+                options={[
+                  { value: '', label: 'All Users' },
+                  ...Array.from(new Set(letters.map(l => l.created_by).filter(Boolean))).sort().map(user => ({
+                    value: user!,
+                    label: user!
+                  }))
+                ]}
+              />
+
+              {/* Month Filter */}
+              <FilterDropdown
+                value={trackFilters.month}
+                onChange={(v) => setTrackFilters(prev => ({ ...prev, month: v }))}
+                options={[
+                  { value: '', label: 'All Months' },
+                  { value: '0', label: 'January' },
+                  { value: '1', label: 'February' },
+                  { value: '2', label: 'March' },
+                  { value: '3', label: 'April' },
+                  { value: '4', label: 'May' },
+                  { value: '5', label: 'June' },
+                  { value: '6', label: 'July' },
+                  { value: '7', label: 'August' },
+                  { value: '8', label: 'September' },
+                  { value: '9', label: 'October' },
+                  { value: '10', label: 'November' },
+                  { value: '11', label: 'December' },
+                ]}
+              />
+
+              {/* Year Filter */}
+              <FilterDropdown
+                value={trackFilters.year}
+                onChange={(v) => setTrackFilters(prev => ({ ...prev, year: v }))}
+                options={[
+                  { value: '', label: 'All Years' },
+                  ...Array.from(new Set(letters.map(l => new Date(l.created_at).getFullYear()))).sort((a, b) => b - a).map(year => ({
+                    value: year.toString(),
+                    label: year.toString()
+                  }))
+                ]}
+              />
+
+              {/* Clear Filters Button */}
+              {(trackFilters.direction || trackFilters.office || trackFilters.createdBy || trackFilters.month || trackFilters.year) && (
+                <button
+                  onClick={() => setTrackFilters({ direction: '', office: '', createdBy: '', month: '', year: '' })}
+                  className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-semibold transition-all active:scale-95"
+                  style={{ background: 'rgba(239,68,68,0.15)', border: '1px solid rgba(239,68,68,0.4)', color: '#f87171' }}>
+                  <X className="w-3.5 h-3.5" />
+                  Clear
+                </button>
+              )}
+            </div>
+
+            <div className="flex-1 min-h-0 rounded-2xl overflow-hidden" style={{
+              background: 'var(--card-bg)',
+              backdropFilter: 'blur(20px)',
+              WebkitBackdropFilter: 'blur(20px)',
+              border: '1px solid rgba(var(--accent-rgb),0.18)',
+              borderRadius: '16px',
+            }}>
+              <div className="h-full flex flex-col">
+                {/* Table Header */}
+                <div className="flex items-center px-4 py-2 flex-shrink-0" style={{ 
+                  borderBottom: '2px solid rgba(var(--accent-rgb),0.2)', 
+                  background: 'rgba(var(--accent-rgb),0.05)' 
+                }}>
+                  <div className="text-center flex-shrink-0" style={{ flex: '0 0 10%', minWidth: '80px' }}>
+                    <span className="text-[11px] font-bold uppercase tracking-wide" style={{ color: 'var(--accent-text)' }}>From</span>
+                  </div>
+                  <div className="text-center flex-shrink-0" style={{ flex: '0 0 18%', minWidth: '140px' }}>
+                    <span className="text-[11px] font-bold uppercase tracking-wide" style={{ color: 'var(--accent-text)' }}>Office</span>
+                  </div>
+                  <div className="text-center flex-shrink-0" style={{ flex: '0 0 14%', minWidth: '110px' }}>
+                    <span className="text-[11px] font-bold uppercase tracking-wide" style={{ color: 'var(--accent-text)' }}>Doc No.</span>
+                  </div>
+                  <div className="text-center flex-shrink-0" style={{ flex: '0 0 10%', minWidth: '80px' }}>
+                    <span className="text-[11px] font-bold uppercase tracking-wide" style={{ color: 'var(--accent-text)' }}>Type</span>
+                  </div>
+                  <div className="text-center flex-shrink-0" style={{ flex: '0 0 10%', minWidth: '85px' }}>
+                    <span className="text-[11px] font-bold uppercase tracking-wide" style={{ color: 'var(--accent-text)' }}>Direction</span>
+                  </div>
+                  <div className="text-center flex-shrink-0" style={{ flex: '0 0 10%', minWidth: '85px' }}>
+                    <span className="text-[11px] font-bold uppercase tracking-wide" style={{ color: 'var(--accent-text)' }}>Status</span>
+                  </div>
+                  <div className="text-center flex-shrink-0" style={{ flex: '0 0 12%', minWidth: '90px' }}>
+                    <span className="text-[11px] font-bold uppercase tracking-wide" style={{ color: 'var(--accent-text)' }}>Date</span>
+                  </div>
+                  <div className="text-center flex-shrink-0" style={{ flex: '0 0 10%', minWidth: '80px' }}>
+                    <span className="text-[11px] font-bold uppercase tracking-wide" style={{ color: 'var(--accent-text)' }}>Created By</span>
+                  </div>
+                </div>
+
+                {/* Table Body */}
+                <div className="flex-1 overflow-y-auto">
+                  {(() => {
+                    // Apply filters
+                    let filteredLetters = [...letters];
+                    
+                    if (trackFilters.direction) {
+                      filteredLetters = filteredLetters.filter(l => l.document_direction === trackFilters.direction);
+                    }
+                    if (trackFilters.office) {
+                      filteredLetters = filteredLetters.filter(l => l.sender_office === trackFilters.office);
+                    }
+                    if (trackFilters.createdBy) {
+                      filteredLetters = filteredLetters.filter(l => l.created_by === trackFilters.createdBy);
+                    }
+                    if (trackFilters.month) {
+                      filteredLetters = filteredLetters.filter(l => new Date(l.created_at).getMonth() === parseInt(trackFilters.month));
+                    }
+                    if (trackFilters.year) {
+                      filteredLetters = filteredLetters.filter(l => new Date(l.created_at).getFullYear() === parseInt(trackFilters.year));
+                    }
+
+                    filteredLetters.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+
+                    if (filteredLetters.length === 0) {
+                      return (
+                        <div className="flex flex-col items-center justify-center h-full gap-2 opacity-40">
+                          <FileText className="w-10 h-10" style={{ color: 'var(--accent)' }} />
+                          <p className="text-sm" style={{ color: 'rgba(var(--accent-rgb),0.7)' }}>
+                            {letters.length === 0 ? 'No documents yet' : 'No documents match the filters'}
+                          </p>
+                        </div>
+                      );
+                    }
+
+                    return filteredLetters.map((l, idx) => {
+                      const done = isCompleted(l);
+                      const statusColor = done ? 'var(--accent)' : '#fbbf24';
+                      const directionColor = l.document_direction === 'receiving' ? '#60a5fa' : '#a78bfa';
+                      const directionLabel = l.document_direction === 'receiving' ? 'Incoming' : 'Outgoing';
+                      
+                      // Extract last name from created_by (handle email format like "jonarleen.cabago@pto")
+                      const getLastName = (fullName: string | undefined) => {
+                        if (!fullName) return 'N/A';
+                        
+                        // Handle email-like usernames (e.g., "jonarleen.cabago@pto")
+                        if (fullName.includes('@')) {
+                          const beforeAt = fullName.split('@')[0];
+                          const parts = beforeAt.split('.');
+                          // Return the last part before @ (e.g., "cabago" from "jonarleen.cabago")
+                          if (parts.length > 1) {
+                            const lastName = parts[parts.length - 1];
+                            return lastName.charAt(0).toUpperCase() + lastName.slice(1);
+                          }
+                          return beforeAt;
+                        }
+                        
+                        // For regular names, get last word
+                        const parts = fullName.trim().split(/\s+/);
+                        return parts.length > 0 ? parts[parts.length - 1] : fullName;
+                      };
+                      
+                      return (
+                        <div key={l.id} className="flex items-center px-4 py-2 transition-all"
+                          style={{ 
+                            borderBottom: '1px solid rgba(var(--accent-rgb),0.1)', 
+                            background: idx % 2 === 0 ? 'rgba(var(--accent-rgb),0.02)' : 'transparent' 
+                          }}
+                          onMouseEnter={e => e.currentTarget.style.background = 'rgba(var(--accent-rgb),0.08)'}
+                          onMouseLeave={e => e.currentTarget.style.background = idx % 2 === 0 ? 'rgba(var(--accent-rgb),0.02)' : 'transparent'}>
+                          
+                          {/* From Name */}
+                          <div className="min-w-0 flex-shrink-0 px-2 flex justify-center items-center" style={{ flex: '0 0 10%', minWidth: '80px' }}>
+                            <p className="text-xs truncate font-medium text-center" style={{ color: 'var(--accent-text)' }}>
+                              {l.sender_name || 'N/A'}
+                            </p>
+                          </div>
+
+                          {/* Office */}
+                          <div className="min-w-0 flex-shrink-0 px-2 flex justify-center items-center" style={{ flex: '0 0 18%', minWidth: '140px' }}>
+                            <p className="text-xs truncate font-medium text-center" style={{ color: 'var(--accent-text)' }}>
+                              {l.sender_office || 'N/A'}
+                            </p>
+                          </div>
+
+                          {/* Document No */}
+                          <div className="min-w-0 flex-shrink-0 px-2 flex justify-center items-center" style={{ flex: '0 0 14%', minWidth: '110px' }}>
+                            <p className="text-xs font-bold truncate text-center" style={{ color: 'var(--accent-text)' }}>
+                              {l.reference_number}
+                            </p>
+                          </div>
+
+                          {/* Type */}
+                          <div className="min-w-0 flex justify-center items-center flex-shrink-0 px-2" style={{ flex: '0 0 10%', minWidth: '80px' }}>
+                            <span className="text-[10px] px-2.5 py-1 rounded-full capitalize inline-block font-semibold"
+                              style={{ background: 'rgba(var(--accent-rgb),0.25)', color: 'var(--accent-text)', border: '1px solid rgba(var(--accent-rgb),0.4)' }}>
+                              {l.document_type || 'Other'}
+                            </span>
+                          </div>
+
+                          {/* Direction */}
+                          <div className="min-w-0 flex justify-center items-center flex-shrink-0 px-2" style={{ flex: '0 0 10%', minWidth: '85px' }}>
+                            <span className="text-[10px] px-2.5 py-1 rounded-full inline-block font-semibold"
+                              style={{ background: `${directionColor}20`, color: directionColor, border: `1px solid ${directionColor}40` }}>
+                              {directionLabel}
+                            </span>
+                          </div>
+
+                          {/* Status */}
+                          <div className="min-w-0 flex justify-center items-center flex-shrink-0 px-2" style={{ flex: '0 0 10%', minWidth: '85px' }}>
+                            <span className="text-[10px] px-2.5 py-1 rounded-full inline-block font-semibold"
+                              style={{ background: done ? 'rgba(var(--accent-rgb),0.2)' : 'rgba(251,191,36,0.2)', color: statusColor, border: done ? '1px solid rgba(var(--accent-rgb),0.4)' : '1px solid rgba(251,191,36,0.4)' }}>
+                              {done ? 'Completed' : 'Pending'}
+                            </span>
+                          </div>
+
+                          {/* Date Created */}
+                          <div className="min-w-0 flex-shrink-0 px-2 flex justify-center items-center" style={{ flex: '0 0 12%', minWidth: '90px' }}>
+                            <p className="text-[10px] font-medium text-center" style={{ color: 'var(--accent-text)' }}>
+                              {new Date(l.created_at).toLocaleDateString('en-PH', { month: 'short', day: 'numeric', year: 'numeric' })}
+                            </p>
+                          </div>
+
+                          {/* Created By - Last Name Only */}
+                          <div className="min-w-0 flex-shrink-0 px-2 flex justify-center items-center" style={{ flex: '0 0 10%', minWidth: '80px' }}>
+                            <p className="text-[10px] truncate font-medium text-center" style={{ color: 'var(--accent-text)' }}>
+                              {getLastName(l.created_by || '')}
+                            </p>
+                          </div>
+
+                        </div>
+                      );
+                    });
+                  })()}
+                </div>
+              </div>
+            </div>
+
+          </div>{/* end PAGE 2 */}
 
         </div>{/* end slide track */}
       </div>{/* end slide container */}

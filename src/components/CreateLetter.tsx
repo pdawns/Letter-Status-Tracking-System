@@ -9,7 +9,7 @@ interface CreateLetterProps {
 
 interface DropdownOption { value: string; label: string; }
 
-function CustomDropdown({ value, onChange, options, placeholder }: { value: string; onChange: (v: string) => void; options: DropdownOption[]; placeholder?: string }) {
+function CustomDropdown({ value, onChange, options, placeholder, searchPlaceholder }: { value: string; onChange: (v: string) => void; options: DropdownOption[]; placeholder?: string; searchPlaceholder?: string }) {
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState('');
   const ref = useRef<HTMLDivElement>(null);
@@ -46,7 +46,7 @@ function CustomDropdown({ value, onChange, options, placeholder }: { value: stri
               type="text"
               value={search}
               onChange={e => setSearch(e.target.value)}
-              placeholder="Search office..."
+              placeholder={searchPlaceholder || "Search..."}
               className="w-full px-3 py-1.5 text-sm rounded-lg focus:outline-none"
               style={{ background: 'rgba(var(--accent-rgb),0.08)', border: '1px solid rgba(var(--accent-rgb),0.2)', color: 'var(--accent-text)' }}
             />
@@ -105,8 +105,67 @@ export default function CreateLetter({ onLetterCreated, onToast }: CreateLetterP
   const [memoTo, setMemoTo] = useState('');
   const [memoOrderNo, setMemoOrderNo] = useState('');
 
+  // Extra fields for Letter
+  const [letterFor, setLetterFor] = useState('');
+  const [letterThru, setLetterThru] = useState('');
+  const [letterFrom, setLetterFrom] = useState('');
+  const [letterSubject, setLetterSubject] = useState('');
+  const [letterOffice, setLetterOffice] = useState('');
+  const [letterOtherOffice, setLetterOtherOffice] = useState('');
+  const [letterSequence, setLetterSequence] = useState('');
+  const [letterUnique, setLetterUnique] = useState('');
+
+  // Convert office name to acronym (first letter of each word)
+  const officeToAcronym = (officeName: string): string => {
+    if (!officeName) return '';
+    
+    // Remove common words that shouldn't be in acronym
+    const skipWords = ['of', 'the', 'and', 'for', 'in', 'on', 'at', 'to', 'a', 'an'];
+    
+    return officeName
+      .split(/[\s-]+/) // Split by space or hyphen
+      .filter(word => word.length > 0 && !skipWords.includes(word.toLowerCase()))
+      .map(word => word[0].toUpperCase())
+      .join('');
+  };
+
+  // Generate Document No. for Letter
+  const generateLetterDocNo = () => {
+    const office = letterOffice === 'other' ? letterOtherOffice : letterOffice;
+    if (!office || !letterSequence || !letterUnique) return '';
+    
+    const officeAcronym = officeToAcronym(office);
+    
+    return `PGMO-${officeAcronym}-${letterSequence}-${letterUnique}`;
+  };
+
+  const letterDocNo = generateLetterDocNo();
+
+  const [referenceNumber, setReferenceNumber] = useState('');
+  const [title, setTitle] = useState('');
+  const [subject, setSubject] = useState('');
+  const [pin, setPin] = useState('');
+  const [file, setFile] = useState<File | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [fileWarning, setFileWarning] = useState('');
+  const [showConfirm, setShowConfirm] = useState(false);
+  const [showSuccess, setShowSuccess] = useState(false);
+  const [createdRefNumber, setCreatedRefNumber] = useState('');
+  const [documentDirection, setDocumentDirection] = useState<'sending' | 'receiving' | ''>('');
+  const [senderName, setSenderName] = useState('');
+  const [senderOffice, setSenderOffice] = useState('');
+  const [senderPhone, setSenderPhone] = useState('');
+  const [senderEmail, setSenderEmail] = useState('');
+  const [reqApproval, setReqApproval] = useState(false);
+  const [reqReview, setReqReview] = useState(false);
+  const [reqInfo, setReqInfo] = useState(false);
+  const [reqOther, setReqOther] = useState(false);
+  const [reqOtherText, setReqOtherText] = useState('');
+
   const isEndorsement = documentType.toLowerCase().includes('endorsement');
   const isMemo = documentType.toLowerCase().includes('memo');
+  const isLetter = documentType.toLowerCase().includes('letter');
 
   // Hardcoded offices/departments for incoming sender
   const OFFICES = [
@@ -139,35 +198,37 @@ export default function CreateLetter({ onLetterCreated, onToast }: CreateLetterP
   ];
 
   useEffect(() => {
-    getDocumentTypes().then(setDbDocumentTypes).catch(() => {});
+    getDocumentTypes()
+      .then(types => {
+        console.log('Loaded document types:', types);
+        if (types && types.length > 0) {
+          setDbDocumentTypes(types);
+        } else {
+          // Fallback to default types if API fails or returns empty
+          console.warn('No document types from API, using fallback defaults');
+          setDbDocumentTypes([
+            { id: 1, name: 'Letter', is_custom: 0 },
+            { id: 2, name: 'Certificate', is_custom: 0 },
+            { id: 3, name: 'Memorandum', is_custom: 0 },
+            { id: 4, name: 'Report', is_custom: 0 },
+            { id: 5, name: 'Disbursement Voucher', is_custom: 0 },
+            { id: 6, name: 'Endorsement', is_custom: 0 },
+          ]);
+        }
+      })
+      .catch(err => {
+        console.error('Failed to load document types:', err);
+        // Use fallback defaults on error
+        setDbDocumentTypes([
+          { id: 1, name: 'Letter', is_custom: 0 },
+          { id: 2, name: 'Certificate', is_custom: 0 },
+          { id: 3, name: 'Memorandum', is_custom: 0 },
+          { id: 4, name: 'Report', is_custom: 0 },
+          { id: 5, name: 'Disbursement Voucher', is_custom: 0 },
+          { id: 6, name: 'Endorsement', is_custom: 0 },
+        ]);
+      });
   }, []);
-  const [title, setTitle] = useState('');
-  const [subject, setSubject] = useState('');
-  const [pin, setPin] = useState('');
-  const [file, setFile] = useState<File | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-  const [fileWarning, setFileWarning] = useState('');
-  const [showConfirm, setShowConfirm] = useState(false);
-  const [showSuccess, setShowSuccess] = useState(false);
-  const [createdRefNumber, setCreatedRefNumber] = useState('');
-  const [documentDirection, setDocumentDirection] = useState<'sending' | 'receiving' | ''>('');
-  const [senderName, setSenderName] = useState('');
-  const [senderOffice, setSenderOffice] = useState('');
-  const [senderPhone, setSenderPhone] = useState('');
-  const [senderEmail, setSenderEmail] = useState('');
-  const [reqApproval, setReqApproval] = useState(false);
-  const [reqReview, setReqReview] = useState(false);
-  const [reqInfo, setReqInfo] = useState(false);
-  const [reqOther, setReqOther] = useState(false);
-  const [reqOtherText, setReqOtherText] = useState('');
-
-  const generateReferenceNumber = () => {
-    const year = new Date().getFullYear();
-    const prefix = documentType.toLowerCase().includes('cert') ? 'CERT' : 'DOC';
-    const random = Math.floor(Math.random() * 10000).toString().padStart(4, '0');
-    return `${prefix}-${year}-${random}`;
-  };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0];
@@ -183,6 +244,7 @@ export default function CreateLetter({ onLetterCreated, onToast }: CreateLetterP
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    if (!referenceNumber.trim()) { setError('Please enter a reference number'); return; }
     if (!documentDirection) { setError('Please select whether this document is for sending or receiving'); return; }
     if (!title || !pin || !file) { setError('Please fill in all required fields and select a document'); return; }
     if (!documentType) { setError('Please select a document type'); return; }
@@ -192,6 +254,8 @@ export default function CreateLetter({ onLetterCreated, onToast }: CreateLetterP
     if (reqOther && !reqOtherText.trim()) { setError('Please specify the "Other" required action'); return; }
     if (isEndorsement && (!endorsementFor.trim() || !endorsementFrom.trim())) { setError('Please fill in Document For and Document From fields'); return; }
     if (isMemo && !memoTo.trim()) { setError('Please fill in the "To" field for the Memorandum'); return; }
+    if (isLetter && (!letterOffice || !letterSequence.trim() || !letterUnique.trim())) { setError('Please fill in office, sequence number, and unique number to generate Document No.'); return; }
+    if (isLetter && letterOffice === 'other' && !letterOtherOffice.trim()) { setError('Please specify the office/department'); return; }
     setShowConfirm(true);
   };
 
@@ -199,7 +263,8 @@ export default function CreateLetter({ onLetterCreated, onToast }: CreateLetterP
     setShowConfirm(false);
     setLoading(true);
     try {
-      const referenceNumber = generateReferenceNumber();
+      // Use the user-provided reference number
+      const trimmedRefNumber = referenceNumber.trim();
 
       // If "other", save the custom type to DB first so it appears in future dropdowns
       let finalDocType = documentType;
@@ -214,7 +279,7 @@ export default function CreateLetter({ onLetterCreated, onToast }: CreateLetterP
       }
 
       const letter = await insertLetter({
-        reference_number: referenceNumber, title,
+        reference_number: trimmedRefNumber, title,
         document_subject: [
           subject,
           isEndorsement && endorsementFor ? `Document For: ${endorsementFor}` : '',
@@ -222,6 +287,11 @@ export default function CreateLetter({ onLetterCreated, onToast }: CreateLetterP
           isEndorsement && endorsementFrom ? `Document From: ${endorsementFrom}` : '',
           isMemo && memoOrderNo ? `Memo Order No: ${memoOrderNo}` : '',
           isMemo && memoTo ? `To: ${memoTo}` : '',
+          isLetter && letterDocNo ? `Document No.: ${letterDocNo}` : '',
+          isLetter && letterFor ? `Document For: ${letterFor}` : '',
+          isLetter && letterThru ? `Thru: ${letterThru}` : '',
+          isLetter && letterFrom ? `Document From: ${letterFrom}` : '',
+          isLetter && letterSubject ? `Document Subject: ${letterSubject}` : '',
         ].filter(Boolean).join('\n'),
         document_type: finalDocType,
         handler_pin: pin,
@@ -269,13 +339,14 @@ export default function CreateLetter({ onLetterCreated, onToast }: CreateLetterP
 
           {/* ── LEFT COLUMN ── */}
           <div className="space-y-3">
-            <Card title="Document Details">
+            <Card title="Document Type">
               <div>
-                <FieldLabel>Document Type <span style={{ color: '#fca5a5' }}>*</span></FieldLabel>
+                <FieldLabel>Select Document Type <span style={{ color: '#fca5a5' }}>*</span></FieldLabel>
                 <CustomDropdown
                   value={documentType}
                   onChange={v => { setDocumentType(v); setOtherDocumentType(''); }}
                   placeholder="Select document type..."
+                  searchPlaceholder="Search document type..."
                   options={[
                     ...dbDocumentTypes.map(t => ({ value: t.name, label: t.name })),
                     { value: 'other', label: 'Other...' },
@@ -287,67 +358,231 @@ export default function CreateLetter({ onLetterCreated, onToast }: CreateLetterP
                     style={inp} placeholder="Specify document type..." required />
                 )}
               </div>
-              <div>
-                <FieldLabel>Document Title <span style={{ color: '#fca5a5' }}>*</span></FieldLabel>
-                <input type="text" value={title} onChange={e => setTitle(e.target.value)}
-                  className="w-full px-3 py-2.5 text-sm rounded-xl focus:outline-none focus:ring-1 focus:ring-green-600"
-                  style={inp} placeholder="e.g., Budget Approval Request" required />
-              </div>
-              <div>
-                <FieldLabel>Document Subject <span className="font-normal opacity-60">(Optional)</span></FieldLabel>
-                <textarea value={subject} onChange={e => setSubject(e.target.value)} rows={3}
-                  className="w-full px-3 py-2.5 text-sm rounded-xl focus:outline-none focus:ring-1 focus:ring-green-600 resize-none"
-                  style={inp} placeholder="Purpose of the document..." />
-              </div>
-
-              {/* ── Endorsement extra fields ── */}
-              {isEndorsement && (
-                <>
-                  <div style={{ borderTop: '1px solid rgba(var(--accent-rgb),0.15)', paddingTop: '10px' }}>
-                    <p className="text-xs font-semibold uppercase tracking-wide mb-2" style={{ color: 'rgba(var(--accent-rgb),0.7)' }}>Endorsement Details</p>
-                  </div>
-                  <div>
-                    <FieldLabel>Document For <span style={{ color: '#fca5a5' }}>*</span></FieldLabel>
-                    <input type="text" value={endorsementFor} onChange={e => setEndorsementFor(e.target.value)}
-                      className="w-full px-3 py-2.5 text-sm rounded-xl focus:outline-none focus:ring-1 focus:ring-green-600"
-                      style={inp} placeholder="e.g. MR. RONALD JME D. VIOLON, Provincial Treasurer" />
-                  </div>
-                  <div>
-                    <FieldLabel>Thru <span className="font-normal opacity-60">(Optional)</span></FieldLabel>
-                    <input type="text" value={endorsementThru} onChange={e => setEndorsementThru(e.target.value)}
-                      className="w-full px-3 py-2.5 text-sm rounded-xl focus:outline-none focus:ring-1 focus:ring-green-600"
-                      style={inp} placeholder="e.g. GJTU" />
-                  </div>
-                  <div>
-                    <FieldLabel>Document From <span style={{ color: '#fca5a5' }}>*</span></FieldLabel>
-                    <input type="text" value={endorsementFrom} onChange={e => setEndorsementFrom(e.target.value)}
-                      className="w-full px-3 py-2.5 text-sm rounded-xl focus:outline-none focus:ring-1 focus:ring-green-600"
-                      style={inp} placeholder="e.g. ANALIZA U. MISO / CSEA MANAGER FDC MPC" />
-                  </div>
-                </>
-              )}
-
-              {/* ── Memo extra fields ── */}
-              {isMemo && (
-                <>
-                  <div style={{ borderTop: '1px solid rgba(var(--accent-rgb),0.15)', paddingTop: '10px' }}>
-                    <p className="text-xs font-semibold uppercase tracking-wide mb-2" style={{ color: 'rgba(var(--accent-rgb),0.7)' }}>Memorandum Details</p>
-                  </div>
-                  <div>
-                    <FieldLabel>Memorandum Order No. <span className="font-normal opacity-60">(Optional)</span></FieldLabel>
-                    <input type="text" value={memoOrderNo} onChange={e => setMemoOrderNo(e.target.value)}
-                      className="w-full px-3 py-2.5 text-sm rounded-xl focus:outline-none focus:ring-1 focus:ring-green-600"
-                      style={inp} placeholder="e.g. GJTU No. 813 - 2026" />
-                  </div>
-                  <div>
-                    <FieldLabel>To <span style={{ color: '#fca5a5' }}>*</span></FieldLabel>
-                    <input type="text" value={memoTo} onChange={e => setMemoTo(e.target.value)}
-                      className="w-full px-3 py-2.5 text-sm rounded-xl focus:outline-none focus:ring-1 focus:ring-green-600"
-                      style={inp} placeholder="e.g. ALL DEPARTMENT HEADS/CHIEFS OF OFFICES" />
-                  </div>
-                </>
-              )}
             </Card>
+
+            {/* Show specific fields based on document type */}
+            {documentType && documentType !== 'other' && (
+              <>
+                {/* ── Endorsement Fields ── */}
+                {isEndorsement && (
+                  <Card title="Endorsement Details">
+                    <div>
+                      <FieldLabel>Reference Number <span style={{ color: '#fca5a5' }}>*</span></FieldLabel>
+                      <input type="text" value={referenceNumber} onChange={e => setReferenceNumber(e.target.value)}
+                        className="w-full px-3 py-2.5 text-sm rounded-xl focus:outline-none focus:ring-1 focus:ring-green-600"
+                        style={inp} placeholder="e.g., END-2026-001" required />
+                    </div>
+                    <div>
+                      <FieldLabel>Document Title <span style={{ color: '#fca5a5' }}>*</span></FieldLabel>
+                      <input type="text" value={title} onChange={e => setTitle(e.target.value)}
+                        className="w-full px-3 py-2.5 text-sm rounded-xl focus:outline-none focus:ring-1 focus:ring-green-600"
+                        style={inp} placeholder="e.g., Endorsement for Budget Approval" required />
+                    </div>
+                    <div>
+                      <FieldLabel>Document For <span style={{ color: '#fca5a5' }}>*</span></FieldLabel>
+                      <input type="text" value={endorsementFor} onChange={e => setEndorsementFor(e.target.value)}
+                        className="w-full px-3 py-2.5 text-sm rounded-xl focus:outline-none focus:ring-1 focus:ring-green-600"
+                        style={inp} placeholder="e.g. MR. RONALD JME D. VIOLON, Provincial Treasurer" />
+                    </div>
+                    <div>
+                      <FieldLabel>Thru <span className="font-normal opacity-60">(Optional)</span></FieldLabel>
+                      <input type="text" value={endorsementThru} onChange={e => setEndorsementThru(e.target.value)}
+                        className="w-full px-3 py-2.5 text-sm rounded-xl focus:outline-none focus:ring-1 focus:ring-green-600"
+                        style={inp} placeholder="e.g. GJTU" />
+                    </div>
+                    <div>
+                      <FieldLabel>Document From <span style={{ color: '#fca5a5' }}>*</span></FieldLabel>
+                      <input type="text" value={endorsementFrom} onChange={e => setEndorsementFrom(e.target.value)}
+                        className="w-full px-3 py-2.5 text-sm rounded-xl focus:outline-none focus:ring-1 focus:ring-green-600"
+                        style={inp} placeholder="e.g. ANALIZA U. MISO / CSEA MANAGER FDC MPC" />
+                    </div>
+                    <div>
+                      <FieldLabel>Subject / Notes <span className="font-normal opacity-60">(Optional)</span></FieldLabel>
+                      <textarea value={subject} onChange={e => setSubject(e.target.value)} rows={3}
+                        className="w-full px-3 py-2.5 text-sm rounded-xl focus:outline-none focus:ring-1 focus:ring-green-600 resize-none"
+                        style={inp} placeholder="Additional notes or subject..." />
+                    </div>
+                  </Card>
+                )}
+
+                {/* ── Memo Fields ── */}
+                {isMemo && (
+                  <Card title="Memorandum Details">
+                    <div>
+                      <FieldLabel>Reference Number <span style={{ color: '#fca5a5' }}>*</span></FieldLabel>
+                      <input type="text" value={referenceNumber} onChange={e => setReferenceNumber(e.target.value)}
+                        className="w-full px-3 py-2.5 text-sm rounded-xl focus:outline-none focus:ring-1 focus:ring-green-600"
+                        style={inp} placeholder="e.g., MEMO-2026-001" required />
+                    </div>
+                    <div>
+                      <FieldLabel>Document Title <span style={{ color: '#fca5a5' }}>*</span></FieldLabel>
+                      <input type="text" value={title} onChange={e => setTitle(e.target.value)}
+                        className="w-full px-3 py-2.5 text-sm rounded-xl focus:outline-none focus:ring-1 focus:ring-green-600"
+                        style={inp} placeholder="e.g., Memorandum on Office Hours" required />
+                    </div>
+                    <div>
+                      <FieldLabel>Memorandum Order No. <span className="font-normal opacity-60">(Optional)</span></FieldLabel>
+                      <input type="text" value={memoOrderNo} onChange={e => setMemoOrderNo(e.target.value)}
+                        className="w-full px-3 py-2.5 text-sm rounded-xl focus:outline-none focus:ring-1 focus:ring-green-600"
+                        style={inp} placeholder="e.g. GJTU No. 813 - 2026" />
+                    </div>
+                    <div>
+                      <FieldLabel>To <span style={{ color: '#fca5a5' }}>*</span></FieldLabel>
+                      <input type="text" value={memoTo} onChange={e => setMemoTo(e.target.value)}
+                        className="w-full px-3 py-2.5 text-sm rounded-xl focus:outline-none focus:ring-1 focus:ring-green-600"
+                        style={inp} placeholder="e.g. ALL DEPARTMENT HEADS/CHIEFS OF OFFICES" />
+                    </div>
+                    <div>
+                      <FieldLabel>Subject / Notes <span className="font-normal opacity-60">(Optional)</span></FieldLabel>
+                      <textarea value={subject} onChange={e => setSubject(e.target.value)} rows={3}
+                        className="w-full px-3 py-2.5 text-sm rounded-xl focus:outline-none focus:ring-1 focus:ring-green-600 resize-none"
+                        style={inp} placeholder="Additional notes or subject..." />
+                    </div>
+                  </Card>
+                )}
+
+                {/* ── Letter Fields ── */}
+                {isLetter && (
+                  <Card title="Letter Details">
+                    <div>
+                      <FieldLabel>Reference Number <span style={{ color: '#fca5a5' }}>*</span></FieldLabel>
+                      <input type="text" value={referenceNumber} onChange={e => setReferenceNumber(e.target.value)}
+                        className="w-full px-3 py-2.5 text-sm rounded-xl focus:outline-none focus:ring-1 focus:ring-green-600"
+                        style={inp} placeholder="e.g., LTR-2026-001" required />
+                      <p className="mt-1.5 text-xs" style={{ color: 'rgba(var(--accent-rgb),0.5)' }}>For tracking purposes only</p>
+                    </div>
+                    <div>
+                      <FieldLabel>Document Title <span style={{ color: '#fca5a5' }}>*</span></FieldLabel>
+                      <input type="text" value={title} onChange={e => setTitle(e.target.value)}
+                        className="w-full px-3 py-2.5 text-sm rounded-xl focus:outline-none focus:ring-1 focus:ring-green-600"
+                        style={inp} placeholder="e.g., Request for Budget Approval" required />
+                    </div>
+                    <div style={{ borderTop: '1px solid rgba(var(--accent-rgb),0.15)', paddingTop: '10px', marginTop: '10px' }}>
+                      <p className="text-xs font-semibold uppercase tracking-wide mb-2" style={{ color: 'rgba(var(--accent-rgb),0.7)' }}>Document Number Generation</p>
+                    </div>
+                    <div>
+                      <FieldLabel>Office / Department <span style={{ color: '#fca5a5' }}>*</span></FieldLabel>
+                      <CustomDropdown
+                        value={letterOffice}
+                        onChange={v => { setLetterOffice(v); setLetterOtherOffice(''); }}
+                        placeholder="Select office/department..."
+                        searchPlaceholder="Search office..."
+                        options={[
+                          ...OFFICES.map(o => ({ value: o, label: o })),
+                          { value: 'other', label: 'Other...' }
+                        ]}
+                      />
+                      {letterOffice === 'other' && (
+                        <input type="text" value={letterOtherOffice} onChange={e => setLetterOtherOffice(e.target.value)}
+                          className="w-full mt-2 px-3 py-2.5 text-sm rounded-xl focus:outline-none focus:ring-1 focus:ring-green-600"
+                          style={inp} placeholder="Specify office/department..." required />
+                      )}
+                    </div>
+                    <div>
+                      <FieldLabel>Sequence Number <span style={{ color: '#fca5a5' }}>*</span></FieldLabel>
+                      <input type="text" value={letterSequence} onChange={e => setLetterSequence(e.target.value)}
+                        className="w-full px-3 py-2.5 text-sm rounded-xl focus:outline-none focus:ring-1 focus:ring-green-600"
+                        style={inp} placeholder="e.g. 001, 002, 003..." />
+                      <p className="mt-1.5 text-xs" style={{ color: 'rgba(var(--accent-rgb),0.5)' }}>Enter the sequence number</p>
+                    </div>
+                    <div>
+                      <FieldLabel>Unique Number <span style={{ color: '#fca5a5' }}>*</span></FieldLabel>
+                      <input type="text" value={letterUnique} onChange={e => setLetterUnique(e.target.value)}
+                        className="w-full px-3 py-2.5 text-sm rounded-xl focus:outline-none focus:ring-1 focus:ring-green-600"
+                        style={inp} placeholder="e.g. 7234, 1234..." />
+                      <p className="mt-1.5 text-xs" style={{ color: 'rgba(var(--accent-rgb),0.5)' }}>Enter a unique identifier number</p>
+                    </div>
+                    {(letterOffice && (letterOffice !== 'other' || letterOtherOffice)) && letterSequence && letterUnique && (
+                      <div className="rounded-xl p-3" style={{ background: 'rgba(var(--accent-rgb),0.12)', border: '1px solid rgba(var(--accent-rgb),0.25)' }}>
+                        <p className="text-xs font-semibold mb-1" style={{ color: 'rgba(var(--accent-rgb),0.7)' }}>Generated Document No.:</p>
+                        <p className="text-sm font-bold" style={{ color: 'var(--accent)' }}>{letterDocNo}</p>
+                        <p className="text-xs mt-1" style={{ color: 'rgba(var(--accent-rgb),0.6)' }}>
+                          Office: {letterOffice === 'other' ? letterOtherOffice : letterOffice} → {officeToAcronym(letterOffice === 'other' ? letterOtherOffice : letterOffice)}
+                        </p>
+                        <p className="text-xs" style={{ color: 'rgba(var(--accent-rgb),0.5)' }}>
+                          Format: PGMO-[Office]-[Sequence]-[Unique]
+                        </p>
+                      </div>
+                    )}
+                    <div style={{ borderTop: '1px solid rgba(var(--accent-rgb),0.15)', paddingTop: '10px', marginTop: '10px' }}>
+                      <p className="text-xs font-semibold uppercase tracking-wide mb-2" style={{ color: 'rgba(var(--accent-rgb),0.7)' }}>Document Details</p>
+                    </div>
+                    <div>
+                      <FieldLabel>Document For <span className="font-normal opacity-60">(Optional)</span></FieldLabel>
+                      <input type="text" value={letterFor} onChange={e => setLetterFor(e.target.value)}
+                        className="w-full px-3 py-2.5 text-sm rounded-xl focus:outline-none focus:ring-1 focus:ring-green-600"
+                        style={inp} placeholder="e.g. MR. RONALD JME D. VIOLON, Provincial Treasurer" />
+                    </div>
+                    <div>
+                      <FieldLabel>Thru <span className="font-normal opacity-60">(Optional)</span></FieldLabel>
+                      <input type="text" value={letterThru} onChange={e => setLetterThru(e.target.value)}
+                        className="w-full px-3 py-2.5 text-sm rounded-xl focus:outline-none focus:ring-1 focus:ring-green-600"
+                        style={inp} placeholder="e.g. GJTU or Department Head" />
+                    </div>
+                    <div>
+                      <FieldLabel>Document From <span className="font-normal opacity-60">(Optional)</span></FieldLabel>
+                      <input type="text" value={letterFrom} onChange={e => setLetterFrom(e.target.value)}
+                        className="w-full px-3 py-2.5 text-sm rounded-xl focus:outline-none focus:ring-1 focus:ring-green-600"
+                        style={inp} placeholder="e.g. ANALIZA U. MISO / CSEA MANAGER FDC MPC" />
+                    </div>
+                    <div>
+                      <FieldLabel>Document Subject <span className="font-normal opacity-60">(Optional)</span></FieldLabel>
+                      <textarea value={letterSubject} onChange={e => setLetterSubject(e.target.value)} rows={3}
+                        className="w-full px-3 py-2.5 text-sm rounded-xl focus:outline-none focus:ring-1 focus:ring-green-600 resize-none"
+                        style={inp} placeholder="Purpose or subject of the document..." />
+                    </div>
+                  </Card>
+                )}
+
+                {/* ── Generic Document Fields (for Certificate, Report, etc.) ── */}
+                {!isEndorsement && !isMemo && !isLetter && (
+                  <Card title="Document Details">
+                    <div>
+                      <FieldLabel>Reference Number <span style={{ color: '#fca5a5' }}>*</span></FieldLabel>
+                      <input type="text" value={referenceNumber} onChange={e => setReferenceNumber(e.target.value)}
+                        className="w-full px-3 py-2.5 text-sm rounded-xl focus:outline-none focus:ring-1 focus:ring-green-600"
+                        style={inp} placeholder="e.g., DOC-2026-001" required />
+                    </div>
+                    <div>
+                      <FieldLabel>Document Title <span style={{ color: '#fca5a5' }}>*</span></FieldLabel>
+                      <input type="text" value={title} onChange={e => setTitle(e.target.value)}
+                        className="w-full px-3 py-2.5 text-sm rounded-xl focus:outline-none focus:ring-1 focus:ring-green-600"
+                        style={inp} placeholder="e.g., Budget Approval Request" required />
+                    </div>
+                    <div>
+                      <FieldLabel>Document Subject <span className="font-normal opacity-60">(Optional)</span></FieldLabel>
+                      <textarea value={subject} onChange={e => setSubject(e.target.value)} rows={3}
+                        className="w-full px-3 py-2.5 text-sm rounded-xl focus:outline-none focus:ring-1 focus:ring-green-600 resize-none"
+                        style={inp} placeholder="Purpose of the document..." />
+                    </div>
+                  </Card>
+                )}
+              </>
+            )}
+
+            {/* Show for "Other" document type */}
+            {documentType === 'other' && otherDocumentType && (
+              <Card title="Document Details">
+                <div>
+                  <FieldLabel>Reference Number <span style={{ color: '#fca5a5' }}>*</span></FieldLabel>
+                  <input type="text" value={referenceNumber} onChange={e => setReferenceNumber(e.target.value)}
+                    className="w-full px-3 py-2.5 text-sm rounded-xl focus:outline-none focus:ring-1 focus:ring-green-600"
+                    style={inp} placeholder="e.g., DOC-2026-001" required />
+                </div>
+                <div>
+                  <FieldLabel>Document Title <span style={{ color: '#fca5a5' }}>*</span></FieldLabel>
+                  <input type="text" value={title} onChange={e => setTitle(e.target.value)}
+                    className="w-full px-3 py-2.5 text-sm rounded-xl focus:outline-none focus:ring-1 focus:ring-green-600"
+                    style={inp} placeholder="e.g., Budget Approval Request" required />
+                </div>
+                <div>
+                  <FieldLabel>Document Subject <span className="font-normal opacity-60">(Optional)</span></FieldLabel>
+                  <textarea value={subject} onChange={e => setSubject(e.target.value)} rows={3}
+                    className="w-full px-3 py-2.5 text-sm rounded-xl focus:outline-none focus:ring-1 focus:ring-green-600 resize-none"
+                    style={inp} placeholder="Purpose of the document..." />
+                </div>
+              </Card>
+            )}
 
             <Card title="Attach Document File">
               <div className="rounded-xl p-5 text-center cursor-pointer transition-colors"
@@ -406,6 +641,7 @@ export default function CreateLetter({ onLetterCreated, onToast }: CreateLetterP
                         value={senderOffice}
                         onChange={setSenderOffice}
                         placeholder="Select office/department..."
+                        searchPlaceholder="Search office..."
                         options={OFFICES.map(o => ({ value: o, label: o }))}
                       />
                     </div>
@@ -506,6 +742,7 @@ export default function CreateLetter({ onLetterCreated, onToast }: CreateLetterP
           <h2 className="text-lg font-bold mb-2" style={{ color: 'var(--accent-text)' }}>Create Document</h2>
           <p className="mb-3 text-sm" style={{ color: 'rgba(var(--accent-text-rgb),0.65)' }}>Are you sure you want to create this document?</p>
           <div className="rounded-xl p-3 mb-4 space-y-1.5 text-sm" style={{ background: 'rgba(0,0,0,0.2)', border: '1px solid rgba(var(--accent-rgb),0.1)' }}>
+            <p><span style={{ color: 'rgba(var(--accent-rgb),0.7)' }}>Reference No.:</span> <span className="font-medium" style={{ color: 'var(--accent-text)' }}>{referenceNumber}</span></p>
             <p><span style={{ color: 'rgba(var(--accent-rgb),0.7)' }}>Title:</span> <span className="font-medium" style={{ color: 'var(--accent-text)' }}>{title}</span></p>
             <p><span style={{ color: 'rgba(var(--accent-rgb),0.7)' }}>Type:</span> <span className="font-medium capitalize" style={{ color: 'var(--accent-text)' }}>{documentType === 'other' ? otherDocumentType : documentType}</span></p>
             {subject && <p><span style={{ color: 'rgba(var(--accent-rgb),0.7)' }}>Subject:</span> <span className="font-medium" style={{ color: 'var(--accent-text)' }}>{subject}</span></p>}

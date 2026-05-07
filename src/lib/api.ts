@@ -243,9 +243,19 @@ export interface DocumentType {
 }
 
 export const getDocumentTypes = async (): Promise<DocumentType[]> => {
-  const res = await fetch(`${BASE}/document-types`, { headers: authHeaders() });
-  if (!res.ok) return [];
-  return res.json();
+  try {
+    const res = await fetch(`${BASE}/document-types`, { headers: authHeaders() });
+    if (!res.ok) {
+      console.error('Failed to fetch document types:', res.status, res.statusText);
+      return [];
+    }
+    const data = await res.json();
+    console.log('Document types fetched:', data);
+    return data;
+  } catch (error) {
+    console.error('Error fetching document types:', error);
+    return [];
+  }
 };
 
 export const addDocumentType = async (name: string): Promise<DocumentType> => {

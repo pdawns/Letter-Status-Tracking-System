@@ -319,18 +319,13 @@ export default function Receipt({ letterId, onBack }: ReceiptProps) {
             </div>
           )}
 
-          {/* Footer Section — centered text + logo */}
+          {/* Footer Section — centered text only */}
           <div className="pt-2" style={{ borderTop: '1px solid #e5e7eb' }}>
-            <div className="flex items-center justify-between gap-3">
-              <div className="flex-1 text-center text-[9px]" style={{ color: '#6b7280' }}>
-                <p className="font-semibold uppercase text-[10px]" style={{ color: '#374151' }}>Office of the Provincial Treasurer</p>
-                <p>1st Floor, Provincial Capitol Building, Provincial Capitol Compound</p>
-                <p>Don Apolinar Velez St., Cagayan de Oro City &nbsp;|&nbsp; Email: misor.pto@gmail.com</p>
-                <p className="mt-0.5" style={{ color: '#9ca3af' }}>Generated on {new Date().toLocaleString()}</p>
-              </div>
-              <div className="flex-shrink-0">
-                <img src="/bangon-misor-gov.png" alt="Bangon Mis.Or." className="object-contain" style={{ width: 68, height: 68 }} />
-              </div>
+            <div className="text-center text-[9px]" style={{ color: '#6b7280' }}>
+              <p className="font-semibold uppercase text-[10px]" style={{ color: '#374151' }}>Office of the Provincial Treasurer</p>
+              <p>1st Floor, Provincial Capitol Building, Provincial Capitol Compound</p>
+              <p>Don Apolinar Velez St., Cagayan de Oro City &nbsp;|&nbsp; Email: misor.pto@gmail.com</p>
+              <p className="mt-0.5" style={{ color: '#9ca3af' }}>Generated on {new Date().toLocaleString()}</p>
             </div>
           </div>
         </div>

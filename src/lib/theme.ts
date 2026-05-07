@@ -1,4 +1,5 @@
 export type ThemeKey = 'green' | 'navy';
+export type ThemeMode = 'light' | 'dark';
 
 export interface Theme {
   key: ThemeKey;
@@ -70,7 +71,52 @@ export const THEMES: Record<ThemeKey, Theme> = {
   },
 };
 
+// Light mode versions of themes
+export const LIGHT_THEMES: Record<ThemeKey, Theme> = {
+  green: {
+    key: 'green',
+    label: 'Light Green',
+    appBg: 'linear-gradient(160deg, #e8f5e9 0%, #c8e6c9 50%, #e8f5e9 100%)',
+    accent: '#1b5e20',
+    accentRgb: '27,94,32',
+    accentText: '#0d3d15',
+    accentTextRgb: '13,61,21',
+    primary: '#2e7d32',
+    primaryHover: '#1b5e20',
+    primaryRgb: '46,125,50',
+    cardBg: 'rgba(255,255,255,0.9)',
+    cardBorder: 'rgba(27,94,32,0.25)',
+    cardHeader: 'rgba(232,245,233,0.95)',
+    cardHeaderBorder: 'rgba(27,94,32,0.2)',
+    sidebarBg: 'rgba(255,255,255,0.95)',
+    inputBg: 'rgba(255,255,255,0.8)',
+    inputBorder: 'rgba(27,94,32,0.3)',
+    scrollThumb: 'rgba(27,94,32,0.4)',
+  },
+  navy: {
+    key: 'navy',
+    label: 'Light Blue',
+    appBg: 'linear-gradient(160deg, #e3f2fd 0%, #bbdefb 50%, #e3f2fd 100%)',
+    accent: '#0d47a1',
+    accentRgb: '13,71,161',
+    accentText: '#01579b',
+    accentTextRgb: '1,87,155',
+    primary: '#1565c0',
+    primaryHover: '#0d47a1',
+    primaryRgb: '21,101,192',
+    cardBg: 'rgba(255,255,255,0.9)',
+    cardBorder: 'rgba(13,71,161,0.25)',
+    cardHeader: 'rgba(227,242,253,0.95)',
+    cardHeaderBorder: 'rgba(13,71,161,0.2)',
+    sidebarBg: 'rgba(255,255,255,0.95)',
+    inputBg: 'rgba(255,255,255,0.8)',
+    inputBorder: 'rgba(13,71,161,0.3)',
+    scrollThumb: 'rgba(13,71,161,0.4)',
+  },
+};
+
 const STORAGE_KEY = 'dts_theme';
+const MODE_STORAGE_KEY = 'dts_theme_mode';
 
 export function getTheme(): Theme {
   const saved = localStorage.getItem(STORAGE_KEY) as ThemeKey | null;
@@ -80,6 +126,33 @@ export function getTheme(): Theme {
 export function setTheme(key: ThemeKey) {
   localStorage.setItem(STORAGE_KEY, key);
   applyTheme(THEMES[key]);
+}
+
+export function getThemeMode(): ThemeMode {
+  const saved = localStorage.getItem(MODE_STORAGE_KEY) as ThemeMode | null;
+  return saved ?? 'dark';
+}
+
+export function setThemeMode(mode: ThemeMode) {
+  localStorage.setItem(MODE_STORAGE_KEY, mode);
+  applyThemeMode(mode);
+}
+
+export function applyThemeMode(mode: ThemeMode) {
+  const r = document.documentElement;
+  const currentThemeKey = getTheme().key;
+  
+  if (mode === 'light') {
+    r.classList.add('light-mode');
+    r.classList.remove('dark-mode');
+    // Apply light version of current theme
+    applyTheme(LIGHT_THEMES[currentThemeKey]);
+  } else {
+    r.classList.add('dark-mode');
+    r.classList.remove('light-mode');
+    // Apply dark version of current theme
+    applyTheme(THEMES[currentThemeKey]);
+  }
 }
 
 export function applyTheme(theme: Theme) {

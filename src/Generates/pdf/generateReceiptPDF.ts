@@ -29,16 +29,16 @@ async function loadImageAsBase64(url: string): Promise<string> {
 }
 
 /**
- * Generate PDF receipt from receipt component data with professional table layout
+ * Generate PDF receipt from receipt component data with landscape layout
  */
 export async function generateReceiptPDF(
   letter: Letter,
   statuses: LetterStatus[]
 ): Promise<jsPDF> {
   try {
-    // Create a new PDF document
+    // Create a new PDF document in LANDSCAPE orientation
     const pdf = new jsPDF({
-      orientation: 'portrait',
+      orientation: 'landscape',
       unit: 'mm',
       format: 'a4',
       compress: true
@@ -53,13 +53,11 @@ export async function generateReceiptPDF(
       creator: 'DocuTrack'
     });
 
-    let yPosition = 20;
-    
     // Generate QR code as data URL with reference number and document type
     const origin = (typeof window !== 'undefined' && window.location.origin) ? window.location.origin : '';
     const trackingUrl = `${origin}/?ref=${letter.reference_number}&type=${letter.document_type || 'document'}&id=${letter.id}`;
     const qrCodeDataUrl = await QRCode.toDataURL(trackingUrl, {
-      width: 200,
+      width: 300,
       margin: 1,
       errorCorrectionLevel: 'H'
     });
@@ -73,185 +71,150 @@ export async function generateReceiptPDF(
     try { logo3 = await loadImageAsBase64(`${baseUrl}/LOGO3.jpg`); } catch { /* skip */ }
     try { logoBangonGov = await loadImageAsBase64(`${baseUrl}/bangon-misor-gov.png`); } catch { /* skip */ }
 
-    // ── Letterhead Header ──────────────────────────────────
-    const logoSize = 14;
-    const headerY = 6;
+    // ── HEADER: Three logos centered at top ────────────────
+    const logoSize = 22;
+    const centerX = 148.5; // Center of landscape A4 (297mm / 2)
+    const logoSpacing = 28;
+    const headerY = 15;
 
-    if (logoBagong) pdf.addImage(logoBagong, 'PNG', 10, headerY, logoSize, logoSize);
-    if (logo2)      pdf.addImage(logo2,      'PNG', 26, headerY, logoSize, logoSize);
-    if (logo1)      pdf.addImage(logo1,      'PNG', 166, headerY, logoSize, logoSize);
-    if (logo3)      pdf.addImage(logo3,      'PNG', 182, headerY, logoSize, logoSize);
+    // Three logos: Bagong Pilipinas (left), Unity (center), Province Seal (right)
+    if (logoBagong) pdf.addImage(logoBagong, 'PNG', centerX - logoSpacing - logoSize/2, headerY, logoSize, logoSize);
+    if (logo3)      pdf.addImage(logo3,      'JPEG', centerX - logoSize/2, headerY, logoSize, logoSize);
+    if (logo2)      pdf.addImage(logo2,      'PNG', centerX + logoSpacing - logoSize/2, headerY, logoSize, logoSize);
 
-    pdf.setFontSize(7);
-    pdf.setFont('helvetica', 'normal');
-    pdf.setTextColor(55, 65, 81);
-    pdf.text('Republic of the Philippines', 105, headerY + 3, { align: 'center' });
-
+    // Text below logos
+    let textY = headerY + logoSize + 4;
+    
     pdf.setFontSize(8);
-    pdf.setFont('helvetica', 'bold');
-    pdf.setTextColor(30, 58, 95);
-    pdf.text('PROVINCE OF MISAMIS ORIENTAL', 105, headerY + 7.5, { align: 'center' });
-
-    pdf.setFontSize(10);
-    pdf.setFont('helvetica', 'bold');
-    pdf.setTextColor(30, 58, 95);
-    pdf.text('OFFICE OF THE PROVINCIAL TREASURER', 105, headerY + 13, { align: 'center' });
-
-    pdf.setFontSize(6.5);
     pdf.setFont('helvetica', 'normal');
-    pdf.setTextColor(107, 114, 128);
-    pdf.text('www.misamisoriental.gov.ph', 105, headerY + 17, { align: 'center' });
-
-    // Double line separator
-    pdf.setDrawColor(30, 58, 95);
-    pdf.setLineWidth(0.7);
-    pdf.line(10, headerY + 20, 200, headerY + 20);
-    pdf.setLineWidth(0.25);
-    pdf.line(10, headerY + 22, 200, headerY + 22);
-
-    yPosition = headerY + 28;
-
-    // ── Title + Reference + Status ─────────────────────────
-    pdf.setFontSize(11);
-    pdf.setFont('helvetica', 'bold');
-    pdf.setTextColor(0, 69, 38);
-    pdf.text('DOCUMENT TRACKING RECEIPT', 105, yPosition, { align: 'center' });
-    yPosition += 7;
-
-    pdf.setFontSize(9);
+    pdf.text('Republic of the Philippines', centerX, textY, { align: 'center' });
+    
+    textY += 5;
+    pdf.setFontSize(12);
     pdf.setFont('helvetica', 'bold');
     pdf.setTextColor(0, 0, 0);
-    pdf.text(`Reference: ${letter.reference_number}`, 10, yPosition);
+    pdf.text('PROVINCE OF MISAMIS ORIENTAL', centerX, textY, { align: 'center' });
+    
+    textY += 5;
+    pdf.setFontSize(9);
+    pdf.setFont('helvetica', 'normal');
+    pdf.setTextColor(60, 60, 60);
+    pdf.text('Provincial Capitol, Cagayan de Oro City', centerX, textY, { align: 'center' });
 
-    const hasNoted = statuses.some(s => s.status_type === 'noted');
-    const hasReviewed = statuses.some(s => s.status_type === 'reviewed');
-    const hasApproved = statuses.some(s => s.status_type === 'approved');
-    const allComplete = hasNoted && hasReviewed && hasApproved;
-    pdf.text(`Status: ${allComplete ? 'COMPLETE' : 'IN PROGRESS'}`, 200, yPosition, { align: 'right' });
-    yPosition += 6;
+    // ── LEFT SIDE: Document information ────────────────────
+    const leftX = 15;
+    let leftY = 70;
+    const lineHeight = 6;
+    const indentX = 35; // Indent for values
 
-    // ── Document info table + QR side by side ──────────────
-    const qrSize = 30;
-    const qrX = 168;
-    const tableStartY = yPosition;
-    const leftColX = 10;
-    const leftColW = 45;
-    const rightColX = 55;
-    const rightColW = 108;
-    const lh = 4;
-    const padV = 2.5;
-    let currentY = tableStartY;
-
-    const drawRow = (label: string, value: string) => {
-      const lines: string[] = pdf.splitTextToSize(value, rightColW - 3);
-      const cellH = padV * 2 + lines.length * lh;
-      pdf.setDrawColor(200, 200, 200);
-      pdf.setLineWidth(0.25);
-      pdf.rect(leftColX, currentY, leftColW, cellH);
-      pdf.rect(rightColX, currentY, rightColW, cellH);
-      pdf.setFontSize(8);
+    // Helper function to add field with label and value
+    const addField = (label: string, value: string, indent: boolean = true) => {
+      pdf.setFontSize(10);
       pdf.setFont('helvetica', 'bold');
-      pdf.setTextColor(80, 80, 80);
-      pdf.text(label, leftColX + 2, currentY + padV + lh - 1);
-      pdf.setFont('helvetica', 'normal');
       pdf.setTextColor(0, 0, 0);
-      lines.forEach((line, i) => pdf.text(line, rightColX + 2, currentY + padV + lh - 1 + i * lh));
-      currentY += cellH;
+      pdf.text(`${label}:`, leftX, leftY);
+      leftY += lineHeight;
+      
+      pdf.setFont('helvetica', 'normal');
+      pdf.setTextColor(40, 40, 40);
+      const maxWidth = 140;
+      const lines = pdf.splitTextToSize(value, maxWidth);
+      lines.forEach((line: string) => {
+        pdf.text(line, indent ? indentX : leftX, leftY);
+        leftY += lineHeight;
+      });
+      leftY += 1; // Extra spacing between fields
     };
 
-    drawRow('Title', letter.title);
-    if (letter.document_type) drawRow('Document Type', letter.document_type.toUpperCase());
-    if (letter.document_subject) drawRow('Subject', letter.document_subject);
-    if (letter.description) drawRow('Description', letter.description);
-    drawRow('Created Date', new Date(letter.created_at).toLocaleDateString());
-    if (letter.document_direction === 'sending')
-      drawRow('Date Sent', new Date(letter.sent_at || letter.created_at).toLocaleString());
-    if (letter.document_direction === 'receiving') {
-      const rev = statuses.find(s => s.status_type === 'for review' || s.status_type === 'reviewed');
-      if (rev) drawRow('Date Received', new Date(rev.signed_at).toLocaleString());
+    // Display document fields from document_subject
+    if (letter.document_subject) {
+      const subjectLines = letter.document_subject.split('\n').filter(line => line.trim());
+      let firstField = true;
+      
+      subjectLines.forEach(line => {
+        // Check if line contains a colon (field format like "Document No.: value")
+        if (line.includes(':')) {
+          const colonIndex = line.indexOf(':');
+          const label = line.substring(0, colonIndex).trim();
+          const value = line.substring(colonIndex + 1).trim();
+          
+          // Skip Document Type field from document_subject - we'll add it manually
+          if (label.toLowerCase() !== 'document type') {
+            addField(label, value);
+            
+            // Add Document Type right after Document No.
+            if (firstField && label.toLowerCase().includes('document no') && letter.document_type) {
+              addField('Document Type', letter.document_type);
+            }
+            firstField = false;
+          }
+        } else {
+          // Display as continuation of previous field
+          pdf.setFontSize(10);
+          pdf.setFont('helvetica', 'normal');
+          pdf.setTextColor(40, 40, 40);
+          const lines = pdf.splitTextToSize(line, 140);
+          lines.forEach((l: string) => {
+            pdf.text(l, indentX, leftY);
+            leftY += lineHeight;
+          });
+          leftY += 1;
+        }
+      });
     }
 
-    const tableEndY = currentY;
-    const tableH = tableEndY - tableStartY;
-    const qrY = tableStartY + Math.max(0, (tableH - qrSize) / 2);
+    // Add Date Created
+    addField('Date Created', new Date(letter.created_at).toLocaleString('en-US', {
+      month: '2-digit',
+      day: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: true
+    }));
+
+    // ── RIGHT SIDE: QR Code ────────────────────────────────
+    const qrSize = 50;
+    const qrX = 230;
+    const qrY = 70;
     pdf.addImage(qrCodeDataUrl, 'PNG', qrX, qrY, qrSize, qrSize);
-    pdf.setFontSize(6.5);
-    pdf.setFont('helvetica', 'normal');
-    pdf.setTextColor(150, 150, 150);
-    pdf.text('Scan to track', qrX + qrSize / 2, qrY + qrSize + 3, { align: 'center' });
 
-    yPosition = Math.max(tableEndY, qrY + qrSize + 5) + 5;
-
-    // ── Noted By + Bangon logo side by side ────────────────
-    pdf.setFontSize(9);
-    pdf.setFont('helvetica', 'bold');
-    pdf.setTextColor(0, 69, 38);
-    pdf.text('NOTED BY', 10, yPosition);
-    yPosition += 4;
-
-    const bangonSize = 24;
-    const bangonX = 176;
-    const bangonY = yPosition;
+    // ── BOTTOM RIGHT: Signature area ───────────────────────
+    const sigY = 135;
+    const sigX = 200;
 
     if (statuses.length > 0) {
       const ns = statuses[0];
-      const boxX = 10;
-      const labelW = 32;
-      const rlh = 4.5;
-
+      
+      // Signature line
+      pdf.setLineWidth(0.5);
+      pdf.setDrawColor(0, 0, 0);
+      pdf.line(sigX, sigY, sigX + 60, sigY);
+      
+      pdf.setFontSize(10);
+      pdf.setFont('helvetica', 'bold');
+      pdf.setTextColor(0, 0, 0);
+      pdf.text(fixNamePdf(ns.signed_by), sigX + 30, sigY + 5, { align: 'center' });
+      
       pdf.setFontSize(8);
-      let ry = yPosition;
-
-      pdf.setFont('helvetica', 'bold'); pdf.setTextColor(60, 60, 60);
-      pdf.text('Signed by:', boxX, ry);
-      pdf.setFont('helvetica', 'normal'); pdf.setTextColor(0, 0, 0);
-      pdf.text(fixNamePdf(ns.signed_by), boxX + labelW, ry);
-      ry += rlh;
-
-      pdf.setFont('helvetica', 'bold'); pdf.setTextColor(60, 60, 60);
-      pdf.text('Date & Time:', boxX, ry);
-      pdf.setFont('helvetica', 'normal'); pdf.setTextColor(0, 0, 0);
-      pdf.text(new Date(ns.signed_at).toLocaleString(), boxX + labelW, ry);
-      ry += rlh;
-
-      if (ns.notes) {
-        pdf.setFont('helvetica', 'bold'); pdf.setTextColor(60, 60, 60);
-        pdf.text('Notes:', boxX, ry);
-        pdf.setFont('helvetica', 'normal'); pdf.setTextColor(0, 0, 0);
-        const noteLines = pdf.splitTextToSize(fixNamePdf(ns.notes), 128);
-        noteLines.forEach((line: string, i: number) => pdf.text(line, boxX + labelW, ry + i * rlh));
-        ry += noteLines.length * rlh;
-      }
-
-      yPosition = ry + 3;
-    } else {
-      pdf.setFontSize(8);
-      pdf.setFont('helvetica', 'italic');
-      pdf.setTextColor(150, 150, 150);
-      pdf.text('Document has not been noted by Sir Ronald yet.', 10, yPosition);
-      yPosition += 7;
+      pdf.setFont('helvetica', 'normal');
+      pdf.setTextColor(100, 100, 100);
+      const dateStr = new Date(ns.signed_at).toLocaleString('en-US', {
+        month: '2-digit',
+        day: '2-digit',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: true
+      });
+      pdf.text(dateStr, sigX + 30, sigY + 10, { align: 'center' });
     }
 
-    // Bangon logo beside Noted By
+    // Bangon logo at bottom right
+    const bangonSize = 28;
+    const bangonX = 245;
+    const bangonY = 155;
     if (logoBangonGov) pdf.addImage(logoBangonGov, 'PNG', bangonX, bangonY, bangonSize, bangonSize);
-
-    // ── Footer ─────────────────────────────────────────────
-    yPosition = Math.max(yPosition, bangonY + bangonSize + 3) + 4;
-    pdf.setDrawColor(200, 200, 200);
-    pdf.setLineWidth(0.25);
-    pdf.line(10, yPosition, 200, yPosition);
-    yPosition += 3;
-
-    pdf.setFontSize(7);
-    pdf.setFont('helvetica', 'bold');
-    pdf.setTextColor(55, 65, 81);
-    pdf.text('OFFICE OF THE PROVINCIAL TREASURER', 10, yPosition);
-    yPosition += 3.5;
-    pdf.setFont('helvetica', 'normal');
-    pdf.setTextColor(107, 114, 128);
-    pdf.text('1st Floor, Provincial Capitol Building, Provincial Capitol Compound', 10, yPosition);
-    yPosition += 3.5;
-    pdf.text(`Don Apolinar Velez St., Cagayan de Oro City  |  Email: misor.pto@gmail.com  |  Generated on ${new Date().toLocaleString()}`, 10, yPosition);
     
     return pdf;
     
